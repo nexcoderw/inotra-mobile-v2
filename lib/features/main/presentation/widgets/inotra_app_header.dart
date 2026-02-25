@@ -1,4 +1,6 @@
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
+
 import "../../../../core/constants/app_colors.dart";
 
 class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -6,7 +8,6 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onMenuTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onProfileTap;
-
   final String displayName;
 
   const InotraAppHeader({
@@ -32,8 +33,12 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: 8,
       leading: IconButton(
         tooltip: "Menu",
-        icon: const Icon(Icons.menu_rounded),
         onPressed: onMenuTap,
+        icon: const HugeIcon(
+          icon: HugeIcons.strokeRoundedMenu01,
+          size: 24,
+          strokeWidth: 2.0,
+        ),
       ),
       title: Text(
         title,
@@ -42,8 +47,12 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         IconButton(
           tooltip: "Notifications",
-          icon: const Icon(Icons.notifications_outlined),
           onPressed: onNotificationsTap,
+          icon: const HugeIcon(
+            icon: HugeIcons.strokeRoundedNotification01,
+            size: 24,
+            strokeWidth: 2.0,
+          ),
         ),
         const SizedBox(width: 6),
         InkWell(
@@ -56,10 +65,11 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.primary.withOpacity(0.12),
-                  child: Icon(
-                    Icons.person_outline,
-                    color: AppColors.primary,
+                  child: const HugeIcon(
+                    icon: HugeIcons.strokeRoundedUser,
                     size: 18,
+                    strokeWidth: 2.0,
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: 10),
