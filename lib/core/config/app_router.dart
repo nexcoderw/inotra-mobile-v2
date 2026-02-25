@@ -12,14 +12,10 @@ import "../../features/auth/presentation/pages/reset_password_page.dart";
 import "../../features/auth/presentation/pages/confirm_password_reset_page.dart";
 
 // Main pages
-import "../../features/main/presentation/pages/home_page.dart";
 import "../../features/main/presentation/pages/trip_packages_page.dart";
 import "../../features/main/presentation/pages/trip_package_details_page.dart";
-import "../../features/main/presentation/pages/listings_page.dart";
 import "../../features/main/presentation/pages/listing_details_page.dart";
-import "../../features/main/presentation/pages/events_page.dart";
 import "../../features/main/presentation/pages/event_details_page.dart";
-import "../../features/main/presentation/pages/ai_chat_page.dart";
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
 import "../../features/main/presentation/pages/profile_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
@@ -29,7 +25,9 @@ final class AppRouter {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      // -------------------
       // Auth
+      // -------------------
       case AppRoutes.login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
 
@@ -37,9 +35,8 @@ final class AppRouter {
         return MaterialPageRoute(builder: (_) => const RegisterPage());
 
       case AppRoutes.verifyRegistrationOtp:
-        final email = settings.arguments as String?;
         return MaterialPageRoute(
-          builder: (_) => VerifyRegistrationOtpPage(email: email),
+          builder: (_) => const ConfirmRegistrationOtpPage(),
         );
 
       case AppRoutes.forgotPassword:
@@ -55,7 +52,9 @@ final class AppRouter {
           builder: (_) => ConfirmPasswordResetPage(email: email),
         );
 
+      // -------------------
       // Main tab shell routes (bottom nav visible only here)
+      // -------------------
       case AppRoutes.home:
         return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 0));
 
@@ -71,6 +70,9 @@ final class AppRouter {
       case AppRoutes.highlights:
         return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 4));
 
+      // -------------------
+      // Other pages
+      // -------------------
       case AppRoutes.tripPackages:
         return MaterialPageRoute(builder: (_) => const TripPackagesPage());
 
@@ -101,6 +103,9 @@ final class AppRouter {
       case AppRoutes.notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsPage());
 
+      // -------------------
+      // Fallback
+      // -------------------
       default:
         return MaterialPageRoute(
           builder: (_) => const Scaffold(
