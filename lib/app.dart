@@ -16,7 +16,9 @@ class App extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         fontFamily: "DMSans",
       ),
-      initialRoute: AppRoutes.login,
+
+      // ✅ First page is now Home (no auth guard for now)
+      initialRoute: AppRoutes.home,
       onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
