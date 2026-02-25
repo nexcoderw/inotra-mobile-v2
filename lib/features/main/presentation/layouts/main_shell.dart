@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/services/auth_session.dart";
 import "../widgets/inotra_bottom_nav.dart";
 import "../widgets/inotra_app_header.dart";
 import "../widgets/inotra_sidebar_drawer.dart";
@@ -23,6 +24,7 @@ class _MainShellState extends State<MainShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late int _index;
+  AuthSession? _authSession;
 
   final _tabs = const [
     ExploreTab(),
@@ -35,6 +37,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    _ensureAuthSession();
     _index = widget.initialIndex.clamp(0, _tabs.length - 1);
   }
 
@@ -92,8 +95,21 @@ class _MainShellState extends State<MainShell> {
     Navigator.pushReplacementNamed(context, route);
   }
 
+  void _handleAuthChange() {
+    if (mounted) setState(() {});
+  }
+
+  void _ensureAuthSession() {
+    if (_authSession != null) return;
+    _authSession = AuthSession.instance;
+    _authSession!.addListener(_handleAuthChange);
+  }
+
   @override
   Widget build(BuildContext context) {
+    _ensureAuthSession();
+    final session = _authSession!.value;
+
     return Scaffold(
       key: _scaffoldKey,
 
@@ -102,7 +118,8 @@ class _MainShellState extends State<MainShell> {
         onMenuTap: _openDrawer,
         onNotificationsTap: _goToNotifications,
         onProfileTap: _goToProfile,
-        displayName: "Guest",
+        displayName: session.displayName,
+        isAuthenticated: session.isAuthenticated,
       ),
 
       drawer: InotraSidebarDrawer(
@@ -132,5 +149,11 @@ class _MainShellState extends State<MainShell> {
         onChanged: _onTabChange,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _authSession?.removeListener(_handleAuthChange);
+    super.dispose();
   }
 }
