@@ -1,7 +1,9 @@
 import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:toastification/toastification.dart";
 
+import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
 
 const double _kDrawerTopTileHeight = 72; // same height for links + dropdown headers
@@ -23,9 +25,10 @@ class InotraSidebarDrawer extends StatelessWidget {
 
   final VoidCallback onTripReservationsTap;
   final VoidCallback onSettingsTap;
-  final VoidCallback onProfileTap;
+  final VoidCallback? onProfileTap;
 
-  final VoidCallback onLogoutTap;
+  /// Optional callback for additional logout side effects (e.g., clearing tokens).
+  final VoidCallback? onLogoutTap;
 
   const InotraSidebarDrawer({
     super.key,
@@ -40,9 +43,36 @@ class InotraSidebarDrawer extends StatelessWidget {
     required this.onListingBookingTap,
     required this.onTripReservationsTap,
     required this.onSettingsTap,
-    required this.onProfileTap,
-    required this.onLogoutTap,
+    this.onProfileTap,
+    this.onLogoutTap,
   });
+
+  void _openProfile(BuildContext context) {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop(); // close drawer first
+
+    onProfileTap?.call();
+    navigator.pushNamed(AppRoutes.profile);
+  }
+
+  void _logout(BuildContext context) {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop(); // close drawer first
+
+    onLogoutTap?.call();
+
+    toastification.show(
+      context: context,
+      type: ToastificationType.success,
+      style: ToastificationStyle.fillColored,
+      title: const Text("Logged out"),
+      description: const Text("You have been signed out successfully."),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 3),
+    );
+
+    navigator.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +197,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                               icon: HugeIcons.strokeRoundedUser,
                               title: "Open Profile",
                               subtitle: "Account & personal details",
-                              onTap: onProfileTap,
+                              onTap: () => _openProfile(context),
                               showTrailing: false, // ✅ no arrow, same as others
                             ),
 
@@ -187,7 +217,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                               icon: HugeIcons.strokeRoundedLogout01,
                               title: "Logout",
                               subtitle: "Sign out of your account",
-                              onTap: onLogoutTap,
+                              onTap: () => _logout(context),
                             ),
 
                             const SizedBox(height: 10),
