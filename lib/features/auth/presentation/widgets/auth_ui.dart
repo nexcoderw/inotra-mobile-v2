@@ -24,10 +24,18 @@ final class AuthUI {
         ),
       );
 
-  static Text label(String text) => Text(
-        text,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-      );
+  static Text label(String text) =>
+      const Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800));
+
+  static const TextStyle fieldTextStyle = TextStyle(
+    fontSize: 12,
+    letterSpacing: 1.2,
+  );
+
+  static const TextStyle buttonTextStyle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w800,
+  );
 
   static InputDecoration fieldDecoration({
     required String hint,
@@ -36,6 +44,11 @@ final class AuthUI {
   }) {
     return InputDecoration(
       hintText: hint,
+      hintStyle: TextStyle(
+        fontSize: 12,
+        color: Colors.black.withOpacity(0.45),
+        fontWeight: FontWeight.w500,
+      ),
       filled: true,
       fillColor: const Color(0xFFF3F4F6),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
@@ -63,7 +76,7 @@ final class AuthUI {
         padding: const EdgeInsets.only(left: 14, right: 10),
         child: HugeIcon(
           icon: icon,
-          size: 18,
+          size: 22,
           strokeWidth: 2,
           color: Colors.black.withOpacity(0.45),
         ),
@@ -76,11 +89,11 @@ final class AuthUI {
   }) {
     return SizedBox(
       height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
@@ -88,7 +101,7 @@ final class AuthUI {
         ),
         child: Text(
           busy ? "Please wait..." : text,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          style: buttonTextStyle,
         ),
       ),
     );
