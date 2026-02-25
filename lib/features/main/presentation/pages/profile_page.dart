@@ -1,12 +1,13 @@
 import "package:flutter/material.dart";
 import "../../../../core/config/app_routes.dart";
 import "../widgets/main_scaffold.dart";
+import "../../../../core/services/auth_session.dart";
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   void _logout(BuildContext context) {
-    // TODO: Call API auth/logout/ and clear local tokens.
+    AuthSession.instance.signOut();
     Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
   }
 
