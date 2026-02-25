@@ -50,6 +50,13 @@ class _MainShellState extends State<MainShell> {
     _scaffoldKey.currentState?.openDrawer();
   }
 
+  void _closeDrawer() {
+    // Only pop if drawer is open (safe to call anyway)
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+  }
+
   void _goToNotifications() {
     Navigator.pushNamed(context, AppRoutes.notifications);
   }
@@ -59,13 +66,18 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _comingSoon(String label) {
-    Navigator.pop(context); // close drawer
+    _closeDrawer();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("$label — coming soon"),
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  void _goFromDrawerTo(String route) {
+    _closeDrawer();
+    Navigator.pushNamed(context, route);
   }
 
   void _onTabChange(int next) {
@@ -99,11 +111,23 @@ class _MainShellState extends State<MainShell> {
 
       drawer: InotraSidebarDrawer(
         onDashboardTap: () => _comingSoon("Dashboard"),
+
+        // EVENTS dropdown
         onMyEventsTap: () => _comingSoon("My Events"),
+        onMyEventSubmissionsTap: () => _comingSoon("My Event Submissions"),
+        onEventReviewTap: () => _comingSoon("Event Review"),
+        onEventTicketsTap: () => _comingSoon("Event Tickets"),
+
+        // LISTINGS dropdown
         onMyListingsTap: () => _comingSoon("My Listings"),
+        onMyListingSubmissionsTap: () => _comingSoon("My Listing Submissions"),
+        onListingReviewsTap: () => _comingSoon("Listing Reviews"),
+        onListingBookingTap: () => _comingSoon("Listing Booking"),
+
         onTripReservationsTap: () => _comingSoon("Trip Reservations"),
+
         onProfileTap: () {
-          Navigator.pop(context);
+          _closeDrawer();
           _goToProfile();
         },
       ),
