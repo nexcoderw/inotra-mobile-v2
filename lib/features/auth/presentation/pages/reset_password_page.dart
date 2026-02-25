@@ -1,11 +1,12 @@
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../widgets/auth_scaffold.dart";
+import "../widgets/auth_ui.dart";
 
 class ResetPasswordPage extends StatefulWidget {
-  final String? email;
-  const ResetPasswordPage({super.key, this.email});
+  const ResetPasswordPage({super.key});
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -18,12 +19,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _isBusy = false;
 
   @override
-  void initState() {
-    super.initState();
-    _email.text = widget.email ?? "";
-  }
-
-  @override
   void dispose() {
     _email.dispose();
     _otp.dispose();
@@ -32,58 +27,62 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   Future<void> _onContinue() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isBusy = true);
-
-    // TODO: Call API auth/password/reset/confirm/ here (email + otp) if needed.
     await Future<void>.delayed(const Duration(milliseconds: 500));
-
     if (!mounted) return;
     setState(() => _isBusy = false);
 
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.confirmPasswordReset,
-      arguments: _email.text.trim(),
-    );
+    Navigator.pushNamed(context, AppRoutes.confirmPasswordReset);
   }
 
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      title: "Reset Password",
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            AuthUI.heading("Reset Password"),
+            const SizedBox(height: 6),
+            AuthUI.subheading("Enter your email and OTP code"),
+            const SizedBox(height: 26),
+
+            AuthUI.label("Email"),
+            const SizedBox(height: 10),
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(),
+              decoration: AuthUI.fieldDecoration(
+                hint: "Enter your email",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMail01),
               ),
-              validator: (v) {
-                final value = (v ?? "").trim();
-                if (value.isEmpty) return "Email is required";
-                if (!value.contains("@")) return "Enter a valid email";
-                return null;
-              },
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "Email is required" : null,
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 18),
+
+            AuthUI.label("OTP Code"),
+            const SizedBox(height: 10),
             TextFormField(
               controller: _otp,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: "OTP",
-                border: OutlineInputBorder(),
+              decoration: AuthUI.fieldDecoration(
+                hint: "Enter OTP",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedKey01),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? "OTP is required" : null,
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "OTP is required" : null,
             ),
-            const SizedBox(height: 16),
-            FilledButton(
+
+            const SizedBox(height: 18),
+
+            AuthUI.primaryPillButton(
+              text: "Continue",
+              busy: _isBusy,
               onPressed: _isBusy ? null : _onContinue,
-              child: Text(_isBusy ? "Continuing..." : "Continue"),
             ),
           ],
         ),
