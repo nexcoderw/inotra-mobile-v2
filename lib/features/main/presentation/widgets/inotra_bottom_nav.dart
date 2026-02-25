@@ -66,7 +66,7 @@ class InotraBottomNav extends StatelessWidget {
                   _NavItem(
                     selected: currentIndex == 3,
                     label: "Events",
-                    icon: HugeIcons.strokeRoundedConfetti,
+                    icon: HugeIcons.strokeRoundedSparkles,
                     onTap: () => onChanged(3),
                   ),
                   _NavItem(
@@ -108,7 +108,7 @@ class _NavItem extends StatelessWidget {
       curve: Curves.easeOutCubic,
       tween: Tween<double>(begin: 0, end: selected ? 1 : 0),
       builder: (context, t, child) {
-        final width = lerpDouble(46, 150, t)!;
+        final width = lerpDouble(40, 100, t)!;
         final scale = lerpDouble(1.0, 1.05, t)!;
 
         return GestureDetector(
@@ -118,7 +118,7 @@ class _NavItem extends StatelessWidget {
             duration: const Duration(milliseconds: 340),
             curve: Curves.easeOutCubic,
             width: width,
-            height: 46,
+            height: 40,
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(23),
@@ -134,12 +134,12 @@ class _NavItem extends StatelessWidget {
                       icon: icon,
                       key: ValueKey("$label-$selected"),
                       color: fg,
-                      size: 22,
+                      size: 14,
                       strokeWidth: 2.0,
                     ),
                   ),
                   if (selected) ...[
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 7),
                     Flexible(
                       child: AnimatedOpacity(
                         duration: const Duration(milliseconds: 200),
@@ -150,7 +150,7 @@ class _NavItem extends StatelessWidget {
                           style: TextStyle(
                             color: fg,
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
+                            fontSize: 11,
                             letterSpacing: -0.2,
                           ),
                         ),
