@@ -354,7 +354,7 @@ class _GlassNavTile extends StatelessWidget {
 /// ----------------------------
 /// SECTION (dropdown)
 /// ----------------------------
-class _GlassSection extends StatelessWidget {
+class _GlassSection extends StatefulWidget {
   final String title;
   final dynamic icon;
   final List<Widget> children;
@@ -366,64 +366,108 @@ class _GlassSection extends StatelessWidget {
   });
 
   @override
+  State<_GlassSection> createState() => _GlassSectionState();
+}
+
+class _GlassSectionState extends State<_GlassSection>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = false;
+
+  void _toggle() => setState(() => _expanded = !_expanded);
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     return _GlassCard(
       radius: 18,
       padding: EdgeInsets.zero,
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: EdgeInsets.zero, // ✅ we control padding ourselves
-          childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-          // ✅ custom header with fixed height
-          title: SizedBox(
-            height: _kDrawerTopTileHeight,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Row(
-                children: [
-                  _IconPill(icon: icon),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          "Tap to expand",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11,
-                            color: scheme.onSurface.withOpacity(0.60),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ✅ FIXED HEIGHT HEADER (exactly like _GlassNavTile)
+          InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: _toggle,
+            child: SizedBox(
+              height: _kDrawerTopTileHeight, // ✅ guaranteed equal height
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: Row(
+                  children: [
+                    _IconPill(icon: widget.icon),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 3),
+                          Text(
+                            "Tap to expand",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                              color: scheme.onSurface.withOpacity(0.60),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedArrowDown01,
-                    size: 14,
-                    strokeWidth: 2.0,
-                    color: scheme.onSurface.withOpacity(0.55),
-                  ),
-                ],
+
+                    // ✅ consistent chevron space (so alignment never changes)
+                    AnimatedRotation(
+                      turns: _expanded ? 0.5 : 0.0,
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowDown01,
+                        size: 14,
+                        strokeWidth: 2.0,
+                        color: scheme.onSurface.withOpacity(0.55),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          trailing: const SizedBox.shrink(), // ✅ prevent default trailing layout
-          children: children,
-        ),
+
+          // ✅ Animated expand area (does NOT affect header height)
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(18),
+              bottomRight: Radius.circular(18),
+            ),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: _expanded
+                    ? const BoxConstraints()
+                    : const BoxConstraints(maxHeight: 0),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+                  child: Column(
+                    children: widget.children,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
