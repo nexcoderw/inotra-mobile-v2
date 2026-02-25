@@ -1,3 +1,4 @@
+import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
@@ -24,17 +25,14 @@ class InotraSidebarDrawer extends StatelessWidget {
   const InotraSidebarDrawer({
     super.key,
     required this.onDashboardTap,
-
     required this.onMyEventsTap,
     required this.onMyEventSubmissionsTap,
     required this.onEventReviewTap,
     required this.onEventTicketsTap,
-
     required this.onMyListingsTap,
     required this.onMyListingSubmissionsTap,
     required this.onListingReviewsTap,
     required this.onListingBookingTap,
-
     required this.onTripReservationsTap,
     required this.onProfileTap,
   });
@@ -42,159 +40,208 @@ class InotraSidebarDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
       child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.08),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.black.withOpacity(0.06),
+        child: Container(
+          decoration: BoxDecoration(
+            // Glass base surface
+            color: scheme.surface.withOpacity(isDark ? 0.55 : 0.80),
+          ),
+          child: Stack(
+            children: [
+              // soft blobs (premium glass feel)
+              Positioned(
+                top: -80,
+                left: -60,
+                child: _GlowBlob(color: AppColors.primary.withOpacity(0.20), size: 220),
+              ),
+              Positioned(
+                bottom: -90,
+                right: -60,
+                child: _GlowBlob(color: scheme.secondary.withOpacity(0.16), size: 240),
+              ),
+
+              // main content
+              ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                  child: Column(
+                    children: [
+                      _GlassHeader(),
+
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                          children: [
+                            _GlassNavTile(
+                              icon: HugeIcons.strokeRoundedDashboardSquare01,
+                              title: "Dashboard",
+                              subtitle: "Overview & quick stats",
+                              onTap: onDashboardTap,
+                              // no trailing arrow for non-dropdown links ✅
+                              showTrailing: false,
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _GlassSection(
+                              title: "My Events",
+                              icon: HugeIcons.strokeRoundedCalendar01,
+                              children: [
+                                _GlassSubTile(
+                                  title: "My Events",
+                                  icon: HugeIcons.strokeRoundedCalendar01,
+                                  onTap: onMyEventsTap,
+                                ),
+                                _GlassSubTile(
+                                  title: "My Event Submissions",
+                                  icon: HugeIcons.strokeRoundedTask01,
+                                  onTap: onMyEventSubmissionsTap,
+                                ),
+                                _GlassSubTile(
+                                  title: "Review",
+                                  icon: HugeIcons.strokeRoundedStar,
+                                  onTap: onEventReviewTap,
+                                ),
+                                _GlassSubTile(
+                                  title: "Tickets",
+                                  icon: HugeIcons.strokeRoundedTicket01,
+                                  onTap: onEventTicketsTap,
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _GlassSection(
+                              title: "My Listings",
+                              icon: HugeIcons.strokeRoundedLocation01,
+                              children: [
+                                _GlassSubTile(
+                                  title: "My Listings",
+                                  icon: HugeIcons.strokeRoundedLocation01,
+                                  onTap: onMyListingsTap,
+                                ),
+                                _GlassSubTile(
+                                  title: "My Listing Submissions",
+                                  icon: HugeIcons.strokeRoundedTask01,
+                                  onTap: onMyListingSubmissionsTap,
+                                ),
+                                _GlassSubTile(
+                                  title: "Reviews",
+                                  icon: HugeIcons.strokeRoundedStar,
+                                  onTap: onListingReviewsTap,
+                                ),
+                                _GlassSubTile(
+                                  title: "Booking",
+                                  icon: HugeIcons.strokeRoundedCalendarCheckIn01,
+                                  onTap: onListingBookingTap,
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _GlassNavTile(
+                              icon: HugeIcons.strokeRoundedTicket01,
+                              title: "Trip Reservations",
+                              subtitle: "Your bookings & status",
+                              onTap: onTripReservationsTap,
+                              showTrailing: false, // ✅ no arrow
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            _GlassPrimaryButton(
+                              icon: HugeIcons.strokeRoundedUser,
+                              label: "Open Profile",
+                              onTap: onProfileTap,
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            Text(
+                              "INOTRA • v1.0",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: scheme.onSurface.withOpacity(0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: AppColors.primary,
-                    child: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedCompass01,
-                      color: Colors.white,
-                      size: 22,
-                      strokeWidth: 2.0,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "INOTRA",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          "Menu",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            height: 1.1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ----------------------------
+/// HEADER
+/// ----------------------------
+class _GlassHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      child: _GlassCard(
+        radius: 22,
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        child: Row(
+          children: [
+            Container(
+              height: 44,
+              width: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(isDark ? 0.35 : 0.18),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(isDark ? 0.10 : 0.22)),
+              ),
+              child: const Center(
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedCompass01,
+                  size: 22,
+                  strokeWidth: 2.0,
+                  color: AppColors.primary,
+                ),
               ),
             ),
-
-            // Body (scrollable)
+            const SizedBox(width: 12),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _DrawerLink(
-                    icon: HugeIcons.strokeRoundedDashboardSquare01,
-                    title: "Dashboard",
-                    onTap: onDashboardTap,
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // EVENTS dropdown
-                  _DrawerSection(
-                    title: "My Events",
-                    icon: HugeIcons.strokeRoundedCalendar01,
-                    children: [
-                      _DrawerSubLink(
-                        title: "My Events",
-                        icon: HugeIcons.strokeRoundedCalendar01,
-                        onTap: onMyEventsTap,
-                      ),
-                      _DrawerSubLink(
-                        title: "My Event Submissions",
-                        icon: HugeIcons.strokeRoundedTask01,
-                        onTap: onMyEventSubmissionsTap,
-                      ),
-                      _DrawerSubLink(
-                        title: "Review",
-                        icon: HugeIcons.strokeRoundedStar,
-                        onTap: onEventReviewTap,
-                      ),
-                      _DrawerSubLink(
-                        title: "Tickets",
-                        icon: HugeIcons.strokeRoundedTicket01,
-                        onTap: onEventTicketsTap,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // LISTINGS dropdown
-                  _DrawerSection(
-                    title: "My Listings",
-                    icon: HugeIcons.strokeRoundedLocation01,
-                    children: [
-                      _DrawerSubLink(
-                        title: "My Listings",
-                        icon: HugeIcons.strokeRoundedLocation01,
-                        onTap: onMyListingsTap,
-                      ),
-                      _DrawerSubLink(
-                        title: "My Listing Submissions",
-                        icon: HugeIcons.strokeRoundedTask01,
-                        onTap: onMyListingSubmissionsTap,
-                      ),
-                      _DrawerSubLink(
-                        title: "Reviews",
-                        icon: HugeIcons.strokeRoundedStar,
-                        onTap: onListingReviewsTap,
-                      ),
-                      _DrawerSubLink(
-                        title: "Booking",
-                        icon: HugeIcons.strokeRoundedCalendarCheckIn01,
-                        onTap: onListingBookingTap,
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  _DrawerLink(
-                    icon: HugeIcons.strokeRoundedTicket01,
-                    title: "Trip Reservations",
-                    onTap: onTripReservationsTap,
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // Premium profile button
-                  OutlinedButton.icon(
-                    onPressed: onProfileTap,
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedUser,
-                      size: 20,
-                      strokeWidth: 2.0,
+                  Text(
+                    "INOTRA",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.6,
+                      color: scheme.onSurface,
+                      fontSize: 16,
                     ),
-                    label: const Text("Open Profile"),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(48),
-                      foregroundColor: scheme.onSurface,
-                      side: BorderSide(color: scheme.outlineVariant),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "Premium navigation",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface.withOpacity(0.62),
+                      height: 1.1,
                     ),
                   ),
                 ],
@@ -207,45 +254,88 @@ class InotraSidebarDrawer extends StatelessWidget {
   }
 }
 
-class _DrawerLink extends StatelessWidget {
+/// ----------------------------
+/// TOP LEVEL TILE (no dropdown)
+/// ----------------------------
+class _GlassNavTile extends StatelessWidget {
   final dynamic icon;
   final String title;
+  final String? subtitle;
   final VoidCallback onTap;
+  final bool showTrailing;
 
-  const _DrawerLink({
+  const _GlassNavTile({
     required this.icon,
     required this.title,
     required this.onTap,
+    this.subtitle,
+    this.showTrailing = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Material(
-      color: scheme.surface,
-      borderRadius: BorderRadius.circular(14),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        leading: HugeIcon(icon: icon, size: 22, strokeWidth: 2.0),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        trailing: const HugeIcon(
-          icon: HugeIcons.strokeRoundedArrowRight01,
-          size: 20,
-          strokeWidth: 2.0,
-        ),
+    return _GlassCard(
+      radius: 18,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Row(
+            children: [
+              _IconPill(icon: icon),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12.5,
+                          color: scheme.onSurface.withOpacity(0.62),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (showTrailing)
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 18,
+                  strokeWidth: 2.0,
+                  color: scheme.onSurface.withOpacity(0.55),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _DrawerSection extends StatelessWidget {
+/// ----------------------------
+/// SECTION (dropdown)
+/// ----------------------------
+class _GlassSection extends StatelessWidget {
   final String title;
   final dynamic icon;
   final List<Widget> children;
 
-  const _DrawerSection({
+  const _GlassSection({
     required this.title,
     required this.icon,
     required this.children,
@@ -255,27 +345,32 @@ class _DrawerSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(0.8)),
-      ),
+    return _GlassCard(
+      radius: 18,
+      padding: EdgeInsets.zero,
       child: Theme(
-        // Remove default ExpansionTile divider/paddings and make it cleaner
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          tilePadding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
           childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-          leading: HugeIcon(icon: icon, size: 22, strokeWidth: 2.0),
+          leading: _IconPill(icon: icon),
           title: Text(
             title,
             style: const TextStyle(fontWeight: FontWeight.w900),
           ),
-          trailing: const HugeIcon(
+          subtitle: Text(
+            "Tap to expand",
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
+              color: scheme.onSurface.withOpacity(0.60),
+            ),
+          ),
+          trailing: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowDown01,
-            size: 20,
+            size: 18,
             strokeWidth: 2.0,
+            color: scheme.onSurface.withOpacity(0.55),
           ),
           children: children,
         ),
@@ -284,12 +379,15 @@ class _DrawerSection extends StatelessWidget {
   }
 }
 
-class _DrawerSubLink extends StatelessWidget {
+/// ----------------------------
+/// SUB TILE (inside section)
+/// ----------------------------
+class _GlassSubTile extends StatelessWidget {
   final String title;
   final dynamic icon;
   final VoidCallback onTap;
 
-  const _DrawerSubLink({
+  const _GlassSubTile({
     required this.title,
     required this.icon,
     required this.onTap,
@@ -299,34 +397,201 @@ class _DrawerSubLink extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Material(
-      color: Colors.transparent,
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        child: Row(
+          children: [
+            HugeIcon(icon: icon, size: 18, strokeWidth: 2.0),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            // keep it clean but still premium
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowRight01,
+              size: 18,
+              strokeWidth: 2.0,
+              color: scheme.onSurface.withOpacity(0.50),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ----------------------------
+/// PRIMARY CTA BUTTON
+/// ----------------------------
+class _GlassPrimaryButton extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _GlassPrimaryButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return _GlassCard(
+      radius: 18,
+      padding: EdgeInsets.zero,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary.withOpacity(isDark ? 0.38 : 0.18),
+                scheme.secondary.withOpacity(isDark ? 0.22 : 0.12),
+              ],
+            ),
+          ),
           child: Row(
             children: [
-              HugeIcon(icon: icon, size: 18, strokeWidth: 2.0),
+              HugeIcon(
+                icon: icon,
+                size: 20,
+                strokeWidth: 2.0,
+                color: scheme.onSurface,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  title,
+                  label,
                   style: TextStyle(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w900,
                     color: scheme.onSurface,
                   ),
                 ),
               ),
-              const HugeIcon(
+              HugeIcon(
                 icon: HugeIcons.strokeRoundedArrowRight01,
                 size: 18,
                 strokeWidth: 2.0,
+                color: scheme.onSurface.withOpacity(0.65),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// ----------------------------
+/// REUSABLE GLASS CARD
+/// ----------------------------
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  final double radius;
+  final EdgeInsets padding;
+
+  const _GlassCard({
+    required this.child,
+    this.radius = 16,
+    this.padding = const EdgeInsets.all(12),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: scheme.surface.withOpacity(isDark ? 0.35 : 0.62),
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(
+              color: Colors.white.withOpacity(isDark ? 0.10 : 0.22),
+            ),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 18,
+                spreadRadius: 0,
+                offset: const Offset(0, 10),
+                color: Colors.black.withOpacity(isDark ? 0.18 : 0.08),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// ----------------------------
+/// ICON PILL
+/// ----------------------------
+class _IconPill extends StatelessWidget {
+  final dynamic icon;
+
+  const _IconPill({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      height: 40,
+      width: 40,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(isDark ? 0.26 : 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(isDark ? 0.08 : 0.18)),
+      ),
+      child: Center(
+        child: HugeIcon(
+          icon: icon,
+          size: 20,
+          strokeWidth: 2.0,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+/// ----------------------------
+/// GLOW BLOB
+/// ----------------------------
+class _GlowBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+
+  const _GlowBlob({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
       ),
     );
   }

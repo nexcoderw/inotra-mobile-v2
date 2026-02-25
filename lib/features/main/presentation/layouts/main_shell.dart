@@ -75,10 +75,6 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  void _goFromDrawerTo(String route) {
-    _closeDrawer();
-    Navigator.pushNamed(context, route);
-  }
 
   void _onTabChange(int next) {
     if (next == _index) return;
