@@ -176,17 +176,26 @@ class _RegisterPageState extends State<RegisterPage> {
             SizedBox(
               height: 56,
               child: ShadSelect<String>(
-                placeholder: Text(
-                  "Choose Language",
-                  style: AuthUI.fieldTextStyle.copyWith(
-                    color: Colors.black.withOpacity(0.45),
-                  ),
+                placeholder: Row(
+                  children: [
+                    AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
+                    const SizedBox(width: 6),
+                    Text(
+                      "Choose Language",
+                      style: AuthUI.fieldTextStyle.copyWith(
+                        color: Colors.black.withOpacity(0.45),
+                      ),
+                    ),
+                  ],
                 ),
                 initialValue: _preferredLanguage,
                 onChanged: (v) => setState(() => _preferredLanguage = v ?? "English"),
-                selectedOptionBuilder: (_, value) => Text(
-                  value,
-                  style: AuthUI.fieldTextStyle,
+                selectedOptionBuilder: (_, value) => Row(
+                  children: [
+                    AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
+                    const SizedBox(width: 6),
+                    Text(value, style: AuthUI.fieldTextStyle),
+                  ],
                 ),
                 options: const [
                   ShadOption(value: "Kinyarwanda", child: Text("Kinyarwanda")),
@@ -209,7 +218,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                leading: AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
                 trailing: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
               ),
             ),
