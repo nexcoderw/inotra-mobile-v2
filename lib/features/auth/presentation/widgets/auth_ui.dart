@@ -24,8 +24,10 @@ final class AuthUI {
         ),
       );
 
-  static Text label(String text) =>
-      const Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800));
+  static Text label(String text) => Text(
+        text,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+      );
 
   static const TextStyle fieldTextStyle = TextStyle(
     fontSize: 12,
