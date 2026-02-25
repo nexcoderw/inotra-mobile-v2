@@ -6,7 +6,8 @@ import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
 class ConfirmPasswordResetPage extends StatefulWidget {
-  const ConfirmPasswordResetPage({super.key});
+  final String? email;
+  const ConfirmPasswordResetPage({super.key, this.email});
 
   @override
   State<ConfirmPasswordResetPage> createState() => _ConfirmPasswordResetPageState();
