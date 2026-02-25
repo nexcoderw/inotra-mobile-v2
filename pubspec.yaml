@@ -72,7 +72,6 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/fonts/dm_sans/
-    - packages/intl_phone_field/assets/flags/
 
   fonts:
     - family: DMSans
