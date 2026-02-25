@@ -4,6 +4,7 @@ import "package:hugeicons/hugeicons.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
 import "../widgets/auth_scaffold.dart";
+import "../widgets/auth_ui.dart";
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -41,36 +42,6 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushReplacementNamed(context, AppRoutes.home);
   }
 
-  InputDecoration _fieldDecoration({
-    required String hint,
-    Widget? prefix,
-    Widget? suffix,
-  }) {
-    return InputDecoration(
-      hintText: hint,
-      filled: true,
-      fillColor: const Color(0xFFF3F4F6),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      prefixIcon: prefix,
-      suffixIcon: suffix,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide(
-          color: AppColors.primary.withOpacity(0.35),
-          width: 1.2,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -79,36 +50,19 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              "Sign in",
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.8,
-              ),
-            ),
+            AuthUI.heading("Sign in"),
             const SizedBox(height: 6),
-            Text(
-              "Please enter your information to proceed",
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.black.withOpacity(0.45),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            AuthUI.subheading("Please enter your information to proceed"),
             const SizedBox(height: 26),
 
-            const Text(
-              "Phone number",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-            ),
+            AuthUI.label("Phone number"),
             const SizedBox(height: 10),
 
             TextFormField(
               controller: _phone,
-              style: const TextStyle(letterSpacing: 1.2, fontSize: 12),
+              style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.phone,
-              decoration: _fieldDecoration(
+              decoration: AuthUI.fieldDecoration(
                 hint: "780 000 000",
                 prefix: _PhonePrefix(
                   code: "+250",
@@ -129,19 +83,16 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 18),
 
-            const Text(
-              "Password",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-            ),
+            AuthUI.label("Password"),
             const SizedBox(height: 10),
 
             TextFormField(
               controller: _password,
               obscureText: _obscure,
-              style: const TextStyle(letterSpacing: 1.2, fontSize: 12),
-              decoration: _fieldDecoration(
+              style: AuthUI.fieldTextStyle,
+              decoration: AuthUI.fieldDecoration(
                 hint: "Enter password",
-                prefix: const _FieldIconPrefix(icon: HugeIcons.strokeRoundedLockPassword),
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure = !_obscure),
                   icon: HugeIcon(
@@ -231,10 +182,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: Text(
                         _isBusy ? "Signing In..." : "Sign In",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: AuthUI.buttonTextStyle,
                       ),
                     ),
                   ),
@@ -262,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     child: const HugeIcon(
                       icon: HugeIcons.strokeRoundedFaceId,
-                      size: 26,
+                      size: 32,
                       strokeWidth: 2.2,
                       color: Colors.white,
                     ),
@@ -273,21 +221,7 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 22),
 
-            Row(
-              children: [
-                Expanded(child: Divider(color: Colors.black.withOpacity(0.10))),
-                const SizedBox(width: 12),
-                Text(
-                  "Or",
-                  style: TextStyle(
-                    color: Colors.black.withOpacity(0.35),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Divider(color: Colors.black.withOpacity(0.10))),
-              ],
-            ),
+            AuthUI.orDivider(),
 
             const SizedBox(height: 18),
 
@@ -416,24 +350,6 @@ class _PhonePrefix extends StatelessWidget {
             const SizedBox(width: 6),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FieldIconPrefix extends StatelessWidget {
-  final dynamic icon;
-  const _FieldIconPrefix({required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 14, right: 10),
-      child: HugeIcon(
-        icon: icon,
-        size: 22,
-        strokeWidth: 2,
-        color: Colors.black.withOpacity(0.45),
       ),
     );
   }
