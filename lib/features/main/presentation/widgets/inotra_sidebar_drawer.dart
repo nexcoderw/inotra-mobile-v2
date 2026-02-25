@@ -161,16 +161,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                               showTrailing: false, // ✅ no arrow
                             ),
 
-                            const SizedBox(height: 12),
-
-                            _GlassNavTile(
-                              icon: HugeIcons.strokeRoundedSettings02,
-                              title: "Settings",
-                              subtitle: "Your settings & preferences",
-                              onTap: onSettingsTap,
-                              showTrailing: false, // ✅ no arrow
-                            ),
-
                             const SizedBox(height: 16),
 
                             _GlassNavTile(
@@ -179,6 +169,16 @@ class InotraSidebarDrawer extends StatelessWidget {
                               subtitle: "Account & personal details",
                               onTap: onProfileTap,
                               showTrailing: false, // ✅ no arrow, same as others
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _GlassNavTile(
+                              icon: HugeIcons.strokeRoundedSettings02,
+                              title: "Settings",
+                              subtitle: "Your settings & preferences",
+                              onTap: onSettingsTap,
+                              showTrailing: false, // ✅ no arrow
                             ),
 
                             const SizedBox(height: 12),
@@ -624,77 +624,6 @@ class _GlassSubTile extends StatelessWidget {
               color: scheme.onSurface.withOpacity(0.50),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// ----------------------------
-/// PRIMARY CTA BUTTON
-/// ----------------------------
-class _GlassPrimaryButton extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _GlassPrimaryButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return _GlassCard(
-      radius: 18,
-      padding: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primary.withOpacity(isDark ? 0.38 : 0.18),
-                scheme.secondary.withOpacity(isDark ? 0.22 : 0.12),
-              ],
-            ),
-          ),
-          child: Row(
-            children: [
-              HugeIcon(
-                icon: icon,
-                size: 20,
-                strokeWidth: 2.0,
-                color: scheme.onSurface,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                    color: scheme.onSurface,
-                  ),
-                ),
-              ),
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
-                size: 18,
-                strokeWidth: 2.0,
-                color: scheme.onSurface.withOpacity(0.65),
-              ),
-            ],
-          ),
         ),
       ),
     );
