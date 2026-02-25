@@ -7,6 +7,5 @@ final class PlaceEndpoints {
   static String book(String placeId) => "api/place/$placeId/book/";
   static String reviews(String placeId) => "api/place/$placeId/reviews/";
   static String addReview(String placeId) => "api/place/$placeId/add/";
-  static String reportReview(String placeId, String reviewId) =>
-      "api/place/$placeId/review/$reviewId/report/";
+  static String reportReview(String placeId, String reviewId) => "api/place/$placeId/review/$reviewId/report/";
 }
