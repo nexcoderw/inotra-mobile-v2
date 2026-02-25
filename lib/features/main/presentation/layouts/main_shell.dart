@@ -128,6 +128,8 @@ class _MainShellState extends State<MainShell> {
           _closeDrawer();
           _goToProfile();
         },
+
+        onLogoutTap: () => _comingSoon("Logout"),
       ),
 
       body: IndexedStack(index: _index, children: _tabs),
