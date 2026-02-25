@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:intl_phone_field/intl_phone_field.dart";
+import "package:world_countries/world_countries.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../widgets/auth_scaffold.dart";
@@ -55,6 +57,29 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  Future<void> _chooseCountry() async {
+    final chosen = await showModalBottomSheet<WorldCountry?>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: CountryPicker(
+              onSelect: (country) => Navigator.pop(context, country),
+              showSearchBar: true,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (chosen != null) {
+      setState(() => _nationality.text = chosen.name.common);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
@@ -99,15 +124,19 @@ class _RegisterPageState extends State<RegisterPage> {
 
             AuthUI.label("Phone number"),
             const SizedBox(height: 10),
-            TextFormField(
+            IntlPhoneField(
               controller: _phone,
               style: AuthUI.fieldTextStyle,
-              keyboardType: TextInputType.phone,
               decoration: AuthUI.fieldDecoration(
-                hint: "780 000 000",
-                prefix: const _PhonePrefix(),
+                hint: "Enter phone number",
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? "Phone is required" : null,
+              initialCountryCode: "RW",
+              dropdownIconPosition: IconPosition.trailing,
+              dropdownIcon: Icon(Icons.keyboard_arrow_down_rounded,
+                  color: Colors.black.withOpacity(0.45)),
+              keyboardType: TextInputType.phone,
+              validator: (phone) =>
+                  (phone == null || phone.number.trim().isEmpty) ? "Phone is required" : null,
             ),
 
             const SizedBox(height: 18),
@@ -117,9 +146,15 @@ class _RegisterPageState extends State<RegisterPage> {
             TextFormField(
               controller: _nationality,
               style: AuthUI.fieldTextStyle,
+              readOnly: true,
+              onTap: _chooseCountry,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter your Nationality",
+                hint: "Select your country",
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedGlobe),
+                suffix: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Colors.black.withOpacity(0.45),
+                ),
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? "Nationality is required" : null,
@@ -277,49 +312,6 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _PhonePrefix extends StatelessWidget {
-  const _PhonePrefix();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 14, right: 10),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 26,
-            height: 18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: Colors.black.withOpacity(0.10)),
-              color: const Color(0xFF2D9CDB),
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF2C94C),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(4),
-                    bottomRight: Radius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          const Text("+250", style: TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(width: 6),
-          Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black.withOpacity(0.40)),
-          const SizedBox(width: 6),
-        ],
       ),
     );
   }
