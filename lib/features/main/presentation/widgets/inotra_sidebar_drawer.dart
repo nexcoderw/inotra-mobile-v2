@@ -108,6 +108,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Column(
                   children: [
+                    const SizedBox(height: 40),
                     _GlassHeader(),
 
                     Expanded(
