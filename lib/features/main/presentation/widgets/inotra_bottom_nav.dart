@@ -1,5 +1,6 @@
 import "dart:ui";
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
 
@@ -15,7 +16,6 @@ class InotraBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Glass surface
     return SafeArea(
       top: false,
       child: Padding(
@@ -25,7 +25,7 @@ class InotraBottomNav extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
-              height: 60,
+              height: 64,
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.92),
                 borderRadius: BorderRadius.circular(34),
@@ -41,38 +41,38 @@ class InotraBottomNav extends StatelessWidget {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _NavItem(
                     selected: currentIndex == 0,
                     label: "Explore",
-                    icon: Icons.home_outlined,
+                    icon: HugeIcons.strokeRoundedHome01,
                     onTap: () => onChanged(0),
                   ),
                   _NavItem(
                     selected: currentIndex == 1,
                     label: "Listings",
-                    icon: Icons.travel_explore_outlined,
+                    icon: HugeIcons.strokeRoundedSearch01,
                     onTap: () => onChanged(1),
                   ),
                   _NavItem(
                     selected: currentIndex == 2,
                     label: "AI Chat",
-                    icon: Icons.auto_awesome_outlined,
+                    icon: HugeIcons.strokeRoundedSparkles,
                     onTap: () => onChanged(2),
                   ),
                   _NavItem(
                     selected: currentIndex == 3,
                     label: "Events",
-                    icon: Icons.celebration_outlined,
+                    icon: HugeIcons.strokeRoundedConfetti,
                     onTap: () => onChanged(3),
                   ),
                   _NavItem(
                     selected: currentIndex == 4,
                     label: "Highlights",
-                    icon: Icons.play_circle_outline,
+                    icon: HugeIcons.strokeRoundedPlay,
                     onTap: () => onChanged(4),
                   ),
                 ],
@@ -88,7 +88,7 @@ class InotraBottomNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   final bool selected;
   final String label;
-  final IconData icon;
+  final dynamic icon; // HugeIcons.* type
   final VoidCallback onTap;
 
   const _NavItem({
@@ -108,7 +108,7 @@ class _NavItem extends StatelessWidget {
       curve: Curves.easeOutCubic,
       tween: Tween<double>(begin: 0, end: selected ? 1 : 0),
       builder: (context, t, child) {
-        final width = lerpDouble(46, 100, t)!; // pill expands like your screenshot
+        final width = lerpDouble(46, 150, t)!;
         final scale = lerpDouble(1.0, 1.05, t)!;
 
         return GestureDetector(
@@ -130,15 +130,16 @@ class _NavItem extends StatelessWidget {
                 children: [
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      icon,
+                    child: HugeIcon(
+                      icon: icon,
                       key: ValueKey("$label-$selected"),
                       color: fg,
-                      size: 18,
+                      size: 22,
+                      strokeWidth: 2.0,
                     ),
                   ),
                   if (selected) ...[
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Flexible(
                       child: AnimatedOpacity(
                         duration: const Duration(milliseconds: 200),
@@ -149,7 +150,7 @@ class _NavItem extends StatelessWidget {
                           style: TextStyle(
                             color: fg,
                             fontWeight: FontWeight.w700,
-                            fontSize: 11,
+                            fontSize: 15,
                             letterSpacing: -0.2,
                           ),
                         ),
