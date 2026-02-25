@@ -66,7 +66,7 @@ class InotraBottomNav extends StatelessWidget {
                   _NavItem(
                     selected: currentIndex == 3,
                     label: "Events",
-                    icon: HugeIcons.strokeRoundedSparkles,
+                    icon: HugeIcons.strokeRoundedFireworks,
                     onTap: () => onChanged(3),
                   ),
                   _NavItem(
