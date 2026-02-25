@@ -1,11 +1,12 @@
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../widgets/auth_scaffold.dart";
+import "../widgets/auth_ui.dart";
 
 class ConfirmPasswordResetPage extends StatefulWidget {
-  final String? email;
-  const ConfirmPasswordResetPage({super.key, this.email});
+  const ConfirmPasswordResetPage({super.key});
 
   @override
   State<ConfirmPasswordResetPage> createState() => _ConfirmPasswordResetPageState();
@@ -15,9 +16,10 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
   final _formKey = GlobalKey<FormState>();
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
-  bool _isBusy = false;
+
   bool _obscure1 = true;
   bool _obscure2 = true;
+  bool _isBusy = false;
 
   @override
   void dispose() {
@@ -26,71 +28,89 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
     super.dispose();
   }
 
-  Future<void> _onConfirm() async {
+  Future<void> _onSave() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isBusy = true);
-
-    // TODO: Call API auth/password/reset/confirm/ (new password confirm endpoint) if required.
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-
+    await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     setState(() => _isBusy = false);
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      title: "Confirm Password Reset",
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.email != null && widget.email!.isNotEmpty) ...[
-              Text("Account: ${widget.email}"),
-              const SizedBox(height: 10),
-            ],
+            AuthUI.heading("Set New Password"),
+            const SizedBox(height: 6),
+            AuthUI.subheading("Create new password"),
+            const SizedBox(height: 26),
+
+            AuthUI.label("New Password"),
+            const SizedBox(height: 10),
             TextFormField(
               controller: _newPassword,
               obscureText: _obscure1,
-              decoration: InputDecoration(
-                labelText: "New password",
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
+              decoration: AuthUI.fieldDecoration(
+                hint: "**********",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
+                suffix: IconButton(
                   onPressed: () => setState(() => _obscure1 = !_obscure1),
-                  icon: Icon(_obscure1 ? Icons.visibility : Icons.visibility_off),
+                  icon: HugeIcon(
+                    icon: _obscure1
+                        ? HugeIcons.strokeRoundedViewOff
+                        : HugeIcons.strokeRoundedView,
+                    size: 22,
+                    strokeWidth: 2,
+                    color: Colors.black.withOpacity(0.55),
+                  ),
                 ),
               ),
-              validator: (v) {
-                final value = v ?? "";
-                if (value.isEmpty) return "New password is required";
-                if (value.length < 6) return "Password must be at least 6 characters";
-                return null;
-              },
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? "Password is required" : null,
             ),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 18),
+
+            AuthUI.label("Confirm New Password"),
+            const SizedBox(height: 10),
             TextFormField(
               controller: _confirmPassword,
               obscureText: _obscure2,
-              decoration: InputDecoration(
-                labelText: "Confirm new password",
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
+              decoration: AuthUI.fieldDecoration(
+                hint: "**********",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
+                suffix: IconButton(
                   onPressed: () => setState(() => _obscure2 = !_obscure2),
-                  icon: Icon(_obscure2 ? Icons.visibility : Icons.visibility_off),
+                  icon: HugeIcon(
+                    icon: _obscure2
+                        ? HugeIcons.strokeRoundedViewOff
+                        : HugeIcons.strokeRoundedView,
+                    size: 22,
+                    strokeWidth: 2,
+                    color: Colors.black.withOpacity(0.55),
+                  ),
                 ),
               ),
               validator: (v) {
-                if ((v ?? "").isEmpty) return "Confirm password is required";
+                if (v == null || v.isEmpty) return "Confirm password is required";
                 if (v != _newPassword.text) return "Passwords do not match";
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _isBusy ? null : _onConfirm,
-              child: Text(_isBusy ? "Saving..." : "Confirm"),
+
+            const SizedBox(height: 22),
+
+            AuthUI.primaryPillButton(
+              text: "Save Changes",
+              busy: _isBusy,
+              onPressed: _isBusy ? null : _onSave,
             ),
           ],
         ),
