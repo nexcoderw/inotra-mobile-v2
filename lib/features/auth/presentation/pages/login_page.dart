@@ -3,6 +3,7 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
+import "../../../../core/services/auth_session.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -37,6 +38,8 @@ class _LoginPageState extends State<LoginPage> {
 
     if (!mounted) return;
     setState(() => _isBusy = false);
+
+    AuthSession.instance.signIn(displayName: _identifier.text.trim());
 
     // static navigation for now
     Navigator.pushReplacementNamed(context, AppRoutes.home);
