@@ -72,6 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _name,
+              style: const TextStyle(fontSize: 12),
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter your name",
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedUser),
@@ -85,6 +86,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
+              style: const TextStyle(fontSize: 12),
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter your email",
@@ -99,6 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _phone,
+              style: const TextStyle(fontSize: 12),
               keyboardType: TextInputType.phone,
               decoration: AuthUI.fieldDecoration(
                 hint: "780 000 000",
@@ -113,6 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _nationality,
+              style: const TextStyle(fontSize: 12),
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter your Nationality",
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedGlobe),
@@ -134,6 +138,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 DropdownMenuItem(value: "German", child: Text("German")),
                 DropdownMenuItem(value: "Spanish", child: Text("Spanish")),
               ],
+              style: const TextStyle(fontSize: 12),
               decoration: AuthUI.fieldDecoration(
                 hint: "Choose Language",
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
@@ -147,6 +152,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _password,
+              style: const TextStyle(fontSize: 12),
               obscureText: _obscure1,
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter password",
@@ -171,6 +177,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _confirmPassword,
+              style: const TextStyle(fontSize: 12),
               obscureText: _obscure2,
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter Confirm Password",
@@ -233,7 +240,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: TextStyle(
                         color: Colors.black.withOpacity(0.70),
                         fontWeight: FontWeight.w800,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -251,6 +258,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   style: TextStyle(
                     color: Colors.black.withOpacity(0.35),
                     fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
                 InkWell(
@@ -260,6 +268,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w900,
+                      fontSize: 12,
                       decoration: TextDecoration.underline,
                     ),
                   ),
