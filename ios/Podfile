@@ -9,7 +9,17 @@ project 'Runner', {
   'Release' => :release,
 }
 
-require_relative 'Flutter/podhelper'
+# Derive the Flutter SDK path from the generated xcconfig (more robust than a copied podhelper.rb).
+flutter_root = File.readlines(File.join(__dir__, 'Flutter', 'Generated.xcconfig'))
+  .map { |line| line.match(/FLUTTER_ROOT=(.*)/)&.captures&.first }
+  .compact
+  .first
+
+unless flutter_root && File.directory?(flutter_root)
+  raise 'FLUTTER_ROOT not found. Run "flutter pub get" to regenerate ios/Flutter/Generated.xcconfig.'
+end
+
+require File.expand_path('packages/flutter_tools/bin/podhelper', flutter_root)
 
 flutter_ios_podfile_setup
 

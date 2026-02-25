@@ -175,7 +175,7 @@ class _RegisterPageState extends State<RegisterPage> {
             SizedBox(
               height: 56,
               child: DropdownButtonFormField<String>(
-                value: _preferredLanguage,
+                initialValue: _preferredLanguage,
                 icon: const SizedBox.shrink(), // using custom suffix icon
                 dropdownColor: Colors.white,
                 decoration: AuthUI.fieldDecoration(
