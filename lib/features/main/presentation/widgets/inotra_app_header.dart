@@ -31,30 +31,47 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: scheme.surface,
       foregroundColor: scheme.onSurface,
       titleSpacing: 8,
-      leading: IconButton(
-        tooltip: "Menu",
-        onPressed: onMenuTap,
-        icon: const HugeIcon(
-          icon: HugeIcons.strokeRoundedMenu01,
-          size: 24,
-          strokeWidth: 2.0,
+
+      // Give room for 2 icons on the leading side
+      leadingWidth: 104,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: "Menu",
+              onPressed: onMenuTap,
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedMenuCircle,
+                size: 24,
+                strokeWidth: 2.0,
+              ),
+            ),
+            IconButton(
+              tooltip: "Notifications",
+              onPressed: onNotificationsTap,
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedNotification01,
+                size: 24,
+                strokeWidth: 2.0,
+              ),
+            ),
+          ],
         ),
       ),
+
       title: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
-      actions: [
-        IconButton(
-          tooltip: "Notifications",
-          onPressed: onNotificationsTap,
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedNotification01,
-            size: 24,
-            strokeWidth: 2.0,
-          ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 16.5,
+          letterSpacing: 0.1,
         ),
-        const SizedBox(width: 6),
+      ),
+
+      actions: [
         InkWell(
           borderRadius: BorderRadius.circular(999),
           onTap: onProfileTap,
@@ -73,9 +90,13 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 140),
+                  child: Text(
+                    displayName,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ),
               ],
             ),
