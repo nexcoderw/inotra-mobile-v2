@@ -2,11 +2,9 @@ import "package:flutter/material.dart";
 import "package:flutter/foundation.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:intl_phone_field/intl_phone_field.dart";
-import "package:shadcn_ui/shadcn_ui.dart";
 import "package:world_countries/world_countries.dart";
 
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/constants/app_colors.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -176,50 +174,27 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             SizedBox(
               height: 56,
-              child: ShadSelect<String>(
-                placeholder: Row(
-                  children: [
-                    AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
-                    const SizedBox(width: 6),
-                    Text(
-                      "Choose Language",
-                      style: AuthUI.fieldTextStyle.copyWith(
-                        color: Colors.black.withOpacity(0.45),
-                      ),
-                    ),
-                  ],
+              child: DropdownButtonFormField<String>(
+                value: _preferredLanguage,
+                icon: const SizedBox.shrink(), // using custom suffix icon
+                dropdownColor: Colors.white,
+                decoration: AuthUI.fieldDecoration(
+                  hint: "Choose Language",
+                  prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
+                  suffix: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.black.withOpacity(0.55),
+                  ),
                 ),
-                initialValue: _preferredLanguage,
-                onChanged: (v) => setState(() => _preferredLanguage = v ?? "English"),
-                selectedOptionBuilder: (_, value) => Row(
-                  children: [
-                    AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
-                    const SizedBox(width: 6),
-                    Text(value, style: AuthUI.fieldTextStyle),
-                  ],
-                ),
-                options: const [
-                  ShadOption(value: "Kinyarwanda", child: Text("Kinyarwanda")),
-                  ShadOption(value: "English", child: Text("English")),
-                  ShadOption(value: "French", child: Text("French")),
-                  ShadOption(value: "German", child: Text("German")),
-                  ShadOption(value: "Spanish", child: Text("Spanish")),
+                style: AuthUI.fieldTextStyle.copyWith(fontWeight: FontWeight.w700),
+                items: const [
+                  DropdownMenuItem(value: "Kinyarwanda", child: Text("Kinyarwanda")),
+                  DropdownMenuItem(value: "English", child: Text("English")),
+                  DropdownMenuItem(value: "French", child: Text("French")),
+                  DropdownMenuItem(value: "German", child: Text("German")),
+                  DropdownMenuItem(value: "Spanish", child: Text("Spanish")),
                 ],
-                decoration: ShadDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  border: ShadBorder.all(
-                    color: const Color(0x00000000),
-                    width: 0,
-                    radius: BorderRadius.circular(18),
-                  ),
-                  focusedBorder: ShadBorder.all(
-                    color: AppColors.primary.withOpacity(0.35),
-                    width: 1.2,
-                    radius: BorderRadius.circular(18),
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                trailing: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                onChanged: (v) => setState(() => _preferredLanguage = v ?? "English"),
               ),
             ),
 
