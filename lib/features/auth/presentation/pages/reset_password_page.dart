@@ -6,7 +6,8 @@ import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
 class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key});
+  final String? email;
+  const ResetPasswordPage({super.key, this.email});
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -14,9 +15,15 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController();
+  late final TextEditingController _email;
   final _otp = TextEditingController();
   bool _isBusy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _email = TextEditingController(text: widget.email ?? "");
+  }
 
   @override
   void dispose() {
@@ -33,7 +40,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (!mounted) return;
     setState(() => _isBusy = false);
 
-    Navigator.pushNamed(context, AppRoutes.confirmPasswordReset);
+    Navigator.pushNamed(
+      context,
+      AppRoutes.confirmPasswordReset,
+      arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
+    );
   }
 
   @override
