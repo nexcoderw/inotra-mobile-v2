@@ -57,6 +57,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _newPassword,
+              style: AuthUI.fieldTextStyle,
               obscureText: _obscure1,
               decoration: AuthUI.fieldDecoration(
                 hint: "**********",
@@ -83,6 +84,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _confirmPassword,
+              style: AuthUI.fieldTextStyle,
               obscureText: _obscure2,
               decoration: AuthUI.fieldDecoration(
                 hint: "**********",
