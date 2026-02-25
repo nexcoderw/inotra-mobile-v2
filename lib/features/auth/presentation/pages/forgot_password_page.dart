@@ -1,7 +1,9 @@
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../widgets/auth_scaffold.dart";
+import "../widgets/auth_ui.dart";
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -21,55 +23,77 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  Future<void> _onRequest() async {
+  Future<void> _onReset() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isBusy = true);
-
-    // TODO: Call API auth/password/reset/request/ here.
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-
+    await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
     setState(() => _isBusy = false);
 
-    Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.resetPassword,
-      arguments: _email.text.trim(),
-    );
+    Navigator.pushNamed(context, AppRoutes.resetPassword);
   }
 
   @override
   Widget build(BuildContext context) {
     return AuthScaffold(
-      title: "Forgot Password",
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            AuthUI.heading("Forget Password"),
+            const SizedBox(height: 6),
+            AuthUI.subheading("Please enter your information to proceed"),
+            const SizedBox(height: 26),
+
+            AuthUI.label("Email"),
+            const SizedBox(height: 10),
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(),
+              decoration: AuthUI.fieldDecoration(
+                hint: "Enter your email",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMail01),
               ),
-              validator: (v) {
-                final value = (v ?? "").trim();
-                if (value.isEmpty) return "Email is required";
-                if (!value.contains("@")) return "Enter a valid email";
-                return null;
-              },
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "Email is required" : null,
             ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _isBusy ? null : _onRequest,
-              child: Text(_isBusy ? "Sending..." : "Send OTP"),
+
+            const SizedBox(height: 18),
+
+            AuthUI.primaryPillButton(
+              text: "Reset Password",
+              busy: _isBusy,
+              onPressed: _isBusy ? null : _onReset,
             ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
-              child: const Text("Back to Login"),
+
+            const SizedBox(height: 22),
+            AuthUI.orDivider(),
+            const SizedBox(height: 18),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Back to ",
+                  style: TextStyle(
+                    color: Colors.black.withOpacity(0.35),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                InkWell(
+                  onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+                  child: Text(
+                    "Sign In",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w900,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
