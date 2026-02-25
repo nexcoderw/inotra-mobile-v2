@@ -4,6 +4,8 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
 
+const double _kDrawerTopTileHeight = 72; // same height for links + dropdown headers
+
 class InotraSidebarDrawer extends StatelessWidget {
   final VoidCallback onDashboardTap;
 
@@ -298,24 +300,30 @@ class _GlassNavTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          child: Row(
-            children: [
-              _IconPill(icon: icon),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 3),
+        child: SizedBox(
+          height: _kDrawerTopTileHeight, // ✅ fixed height
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _IconPill(icon: icon),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                      ),
+                      const SizedBox(height: 3),
+                      // ✅ always reserve the subtitle line height so all tiles match
+                      Text(
+                        (subtitle ?? ""),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -325,17 +333,17 @@ class _GlassNavTile extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-              if (showTrailing)
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedArrowRight01,
-                  size: 18,
-                  strokeWidth: 2.0,
-                  color: scheme.onSurface.withOpacity(0.55),
-                ),
-            ],
+                if (showTrailing)
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowRight01,
+                    size: 18,
+                    strokeWidth: 2.0,
+                    color: scheme.onSurface.withOpacity(0.55),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -367,27 +375,53 @@ class _GlassSection extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          tilePadding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+          tilePadding: EdgeInsets.zero, // ✅ we control padding ourselves
           childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-          leading: _IconPill(icon: icon),
-          title: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-          ),
-          subtitle: Text(
-            "Tap to expand",
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-              color: scheme.onSurface.withOpacity(0.60),
+          // ✅ custom header with fixed height
+          title: SizedBox(
+            height: _kDrawerTopTileHeight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Row(
+                children: [
+                  _IconPill(icon: icon),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          "Tap to expand",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            color: scheme.onSurface.withOpacity(0.60),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowDown01,
+                    size: 14,
+                    strokeWidth: 2.0,
+                    color: scheme.onSurface.withOpacity(0.55),
+                  ),
+                ],
+              ),
             ),
           ),
-          trailing: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowDown01,
-            size: 14,
-            strokeWidth: 2.0,
-            color: scheme.onSurface.withOpacity(0.55),
-          ),
+          trailing: const SizedBox.shrink(), // ✅ prevent default trailing layout
           children: children,
         ),
       ),
