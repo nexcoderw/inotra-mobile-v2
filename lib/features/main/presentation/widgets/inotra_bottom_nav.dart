@@ -55,7 +55,7 @@ class InotraBottomNav extends StatelessWidget {
                   _NavItem(
                     selected: currentIndex == 1,
                     label: "Listings",
-                    icon: HugeIcons.strokeRoundedSearch01,
+                    icon: HugeIcons.strokeRoundedHotelBell,
                     onTap: () => onChanged(1),
                   ),
                   _NavItem(
