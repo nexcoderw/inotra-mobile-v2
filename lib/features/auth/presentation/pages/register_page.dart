@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/foundation.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:intl_phone_field/intl_phone_field.dart";
 import "package:world_countries/world_countries.dart";
@@ -139,6 +140,7 @@ class _RegisterPageState extends State<RegisterPage> {
               dropdownIconPosition: IconPosition.trailing,
               dropdownIcon: Icon(Icons.keyboard_arrow_down_rounded,
                   color: Colors.black.withOpacity(0.45)),
+              showCountryFlag: !kIsWeb, // avoid web asset fetch failures
               flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               keyboardType: TextInputType.phone,
               validator: (phone) =>
