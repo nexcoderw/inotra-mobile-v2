@@ -9,17 +9,19 @@ final class AppRoutes {
   static const resetPassword = "/reset-password";
   static const confirmPasswordReset = "/confirm-password-reset";
 
-  // Main
+  // Main shell tabs
   static const home = "/home";
+  static const listings = "/listings";
+  static const aiChat = "/ai-chat";
+  static const events = "/events";
+  static const highlights = "/highlights";
+
+  // Other pages
   static const tripPackages = "/trip-packages";
   static const tripPackageDetails = "/trip-package-details";
-  static const listings = "/listings";
   static const listingDetails = "/listing-details";
-  static const events = "/events";
   static const eventDetails = "/event-details";
-  static const aiChat = "/ai-chat";
   static const aiChatConversations = "/ai-chat-conversations";
-  static const highlights = "/highlights";
   static const profile = "/profile";
   static const notifications = "/notifications";
 }
