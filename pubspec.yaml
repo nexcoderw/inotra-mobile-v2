@@ -38,6 +38,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   hugeicons: ^1.1.5
   toastification: ^3.0.3
+  intl_phone_field: ^3.2.0
+  shadcn_ui: ^0.46.1
+  world_countries: ^3.9.4
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
@@ -69,6 +72,7 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/fonts/dm_sans/
+    - packages/intl_phone_field/assets/flags/
 
   fonts:
     - family: DMSans
