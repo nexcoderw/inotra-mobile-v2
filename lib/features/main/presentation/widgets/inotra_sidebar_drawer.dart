@@ -1,4 +1,6 @@
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
+
 import "../../../../core/constants/app_colors.dart";
 
 class InotraSidebarDrawer extends StatelessWidget {
@@ -39,7 +41,12 @@ class InotraSidebarDrawer extends StatelessWidget {
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: AppColors.primary,
-                    child: const Icon(Icons.explore, color: Colors.white),
+                    child: const HugeIcon(
+                      icon: HugeIcons.strokeRoundedCompass01,
+                      color: Colors.white,
+                      size: 22,
+                      strokeWidth: 2.0,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -70,22 +77,22 @@ class InotraSidebarDrawer extends StatelessWidget {
             const SizedBox(height: 8),
 
             _DrawerLink(
-              icon: Icons.dashboard_outlined,
+              icon: HugeIcons.strokeRoundedDashboardSquare01,
               title: "Dashboard",
               onTap: onDashboardTap,
             ),
             _DrawerLink(
-              icon: Icons.celebration_outlined,
+              icon: HugeIcons.strokeRoundedCalendar01,
               title: "My Events",
               onTap: onMyEventsTap,
             ),
             _DrawerLink(
-              icon: Icons.place_outlined,
+              icon: HugeIcons.strokeRoundedLocation01,
               title: "My Listings",
               onTap: onMyListingsTap,
             ),
             _DrawerLink(
-              icon: Icons.receipt_long_outlined,
+              icon: HugeIcons.strokeRoundedTicket01,
               title: "Trip Reservations",
               onTap: onTripReservationsTap,
             ),
@@ -96,7 +103,11 @@ class InotraSidebarDrawer extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: OutlinedButton.icon(
                 onPressed: onProfileTap,
-                icon: const Icon(Icons.person_outline),
+                icon: const HugeIcon(
+                  icon: HugeIcons.strokeRoundedUser,
+                  size: 20,
+                  strokeWidth: 2.0,
+                ),
                 label: const Text("Open Profile"),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
@@ -111,7 +122,7 @@ class InotraSidebarDrawer extends StatelessWidget {
 }
 
 class _DrawerLink extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final VoidCallback onTap;
 
@@ -124,9 +135,13 @@ class _DrawerLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon),
+      leading: HugeIcon(icon: icon, size: 22, strokeWidth: 2.0),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: const HugeIcon(
+        icon: HugeIcons.strokeRoundedArrowRight01,
+        size: 20,
+        strokeWidth: 2.0,
+      ),
       onTap: onTap,
     );
   }
