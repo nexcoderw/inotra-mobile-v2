@@ -129,11 +129,17 @@ class _RegisterPageState extends State<RegisterPage> {
               style: AuthUI.fieldTextStyle,
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter phone number",
+              ).copyWith(
+                // widen prefix area to avoid overflow with flag + dial code row
+                prefixIconConstraints: const BoxConstraints(minWidth: 0, maxWidth: 120),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
               ),
               initialCountryCode: "RW",
               dropdownIconPosition: IconPosition.trailing,
               dropdownIcon: Icon(Icons.keyboard_arrow_down_rounded,
                   color: Colors.black.withOpacity(0.45)),
+              flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               keyboardType: TextInputType.phone,
               validator: (phone) =>
                   (phone == null || phone.number.trim().isEmpty) ? "Phone is required" : null,
