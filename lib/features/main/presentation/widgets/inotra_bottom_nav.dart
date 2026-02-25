@@ -25,7 +25,7 @@ class InotraBottomNav extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
-              height: 74,
+              height: 60,
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.92),
                 borderRadius: BorderRadius.circular(34),
@@ -41,7 +41,7 @@ class InotraBottomNav extends StatelessWidget {
                   ),
                 ],
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -108,7 +108,7 @@ class _NavItem extends StatelessWidget {
       curve: Curves.easeOutCubic,
       tween: Tween<double>(begin: 0, end: selected ? 1 : 0),
       builder: (context, t, child) {
-        final width = lerpDouble(52, 168, t)!; // pill expands like your screenshot
+        final width = lerpDouble(46, 100, t)!; // pill expands like your screenshot
         final scale = lerpDouble(1.0, 1.05, t)!;
 
         return GestureDetector(
@@ -118,10 +118,10 @@ class _NavItem extends StatelessWidget {
             duration: const Duration(milliseconds: 340),
             curve: Curves.easeOutCubic,
             width: width,
-            height: 52,
+            height: 46,
             decoration: BoxDecoration(
               color: bg,
-              borderRadius: BorderRadius.circular(26),
+              borderRadius: BorderRadius.circular(23),
             ),
             child: Transform.scale(
               scale: scale,
@@ -134,7 +134,7 @@ class _NavItem extends StatelessWidget {
                       icon,
                       key: ValueKey("$label-$selected"),
                       color: fg,
-                      size: 26,
+                      size: 18,
                     ),
                   ),
                   if (selected) ...[
@@ -149,7 +149,7 @@ class _NavItem extends StatelessWidget {
                           style: TextStyle(
                             color: fg,
                             fontWeight: FontWeight.w700,
-                            fontSize: 18,
+                            fontSize: 11,
                             letterSpacing: -0.2,
                           ),
                         ),
