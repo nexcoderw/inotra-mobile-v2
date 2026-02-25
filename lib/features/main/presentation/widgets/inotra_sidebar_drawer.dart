@@ -198,59 +198,62 @@ class _GlassHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-      child: _GlassCard(
-        radius: 22,
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-        child: Row(
-          children: [
-            Container(
-              height: 44,
-              width: 44,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(isDark ? 0.35 : 0.18),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(isDark ? 0.10 : 0.22)),
-              ),
-              child: const Center(
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedCompass01,
-                  size: 22,
-                  strokeWidth: 2.0,
-                  color: AppColors.primary,
+  padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+  child: Container(
+    // ✅ Transparent background
+    color: Colors.transparent,
+    child: Row(
+      children: [
+        Container(
+          height: 44,
+          width: 44,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(isDark ? 0.35 : 0.18),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(isDark ? 0.10 : 0.22),
+            ),
+          ),
+          child: const Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedCompass01,
+              size: 22,
+              strokeWidth: 2.0,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "INOTRA",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.6,
+                  color: scheme.onSurface,
+                  fontSize: 14,
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "INOTRA",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                      color: scheme.onSurface,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    "Premium navigation",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface.withOpacity(0.62),
-                      height: 1.1,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 3),
+              Text(
+                "Premium navigation",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                  color: scheme.onSurface.withOpacity(0.62),
+                  height: 1.1,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 }
 
@@ -294,7 +297,7 @@ class _GlassNavTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
                     ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 3),
@@ -304,7 +307,7 @@ class _GlassNavTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          fontSize: 12.5,
+                          fontSize: 11,
                           color: scheme.onSurface.withOpacity(0.62),
                         ),
                       ),
@@ -356,19 +359,19 @@ class _GlassSection extends StatelessWidget {
           leading: _IconPill(icon: icon),
           title: Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.w900),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
           ),
           subtitle: Text(
             "Tap to expand",
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: 12.5,
+              fontSize: 11,
               color: scheme.onSurface.withOpacity(0.60),
             ),
           ),
           trailing: HugeIcon(
             icon: HugeIcons.strokeRoundedArrowDown01,
-            size: 18,
+            size: 14,
             strokeWidth: 2.0,
             color: scheme.onSurface.withOpacity(0.55),
           ),
@@ -409,10 +412,12 @@ class _GlassSubTile extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12, // ✅ dropdown item font size
+                ),
               ),
             ),
-            // keep it clean but still premium
             HugeIcon(
               icon: HugeIcons.strokeRoundedArrowRight01,
               size: 18,
@@ -478,6 +483,7 @@ class _GlassPrimaryButton extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
+                    fontSize: 12,
                     color: scheme.onSurface,
                   ),
                 ),
