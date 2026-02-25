@@ -18,8 +18,9 @@ class InotraBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
+      bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(34),
           child: BackdropFilter(
