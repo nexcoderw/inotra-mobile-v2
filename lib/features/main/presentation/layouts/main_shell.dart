@@ -2,8 +2,6 @@ import "package:flutter/material.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../widgets/inotra_bottom_nav.dart";
-
-// Tab pages (lightweight, no nested Scaffold)
 import "../tabs/explore_tab.dart";
 import "../tabs/listings_tab.dart";
 import "../tabs/ai_chat_tab.dart";
@@ -40,15 +38,15 @@ class _MainShellState extends State<MainShell> {
 
     setState(() => _index = next);
 
-    // Update route name so back button / deep links make sense
     final route = switch (next) {
-      0 => AppRoutes.home,
-      1 => AppRoutes.listings,
-      2 => AppRoutes.aiChat,
-      3 => AppRoutes.events,
-      _ => AppRoutes.highlights,
+      0 => AppRoutes.home,       // Explore -> Home
+      1 => AppRoutes.listings,   // Listings
+      2 => AppRoutes.aiChat,     // AI Chat
+      3 => AppRoutes.events,     // Events
+      _ => AppRoutes.highlights, // Highlights
     };
 
+    // ✅ This makes the URL/stack match the selected tab
     Navigator.pushReplacementNamed(context, route);
   }
 
