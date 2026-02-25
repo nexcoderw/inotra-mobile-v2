@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 
 import "app_routes.dart";
+import "../../features/main/presentation/layouts/main_shell.dart";
 
 // Auth pages
 import "../../features/auth/presentation/pages/login_page.dart";
@@ -54,9 +55,21 @@ final class AppRouter {
           builder: (_) => ConfirmPasswordResetPage(email: email),
         );
 
-      // Main
+      // Main tab shell routes (bottom nav visible only here)
       case AppRoutes.home:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 0));
+
+      case AppRoutes.listings:
+        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 1));
+
+      case AppRoutes.aiChat:
+        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 2));
+
+      case AppRoutes.events:
+        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 3));
+
+      case AppRoutes.highlights:
+        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 4));
 
       case AppRoutes.tripPackages:
         return MaterialPageRoute(builder: (_) => const TripPackagesPage());
@@ -67,26 +80,17 @@ final class AppRouter {
           builder: (_) => TripPackageDetailsPage(packageId: id),
         );
 
-      case AppRoutes.listings:
-        return MaterialPageRoute(builder: (_) => const ListingsPage());
-
       case AppRoutes.listingDetails:
         final id = settings.arguments as String?;
         return MaterialPageRoute(
           builder: (_) => ListingDetailsPage(placeId: id),
         );
 
-      case AppRoutes.events:
-        return MaterialPageRoute(builder: (_) => const EventsPage());
-
       case AppRoutes.eventDetails:
         final id = settings.arguments as String?;
         return MaterialPageRoute(
           builder: (_) => EventDetailsPage(eventId: id),
         );
-
-      case AppRoutes.aiChat:
-        return MaterialPageRoute(builder: (_) => const AiChatPage());
 
       case AppRoutes.aiChatConversations:
         return MaterialPageRoute(builder: (_) => const AiChatConversationsPage());
