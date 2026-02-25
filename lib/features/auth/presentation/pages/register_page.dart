@@ -195,12 +195,22 @@ class _RegisterPageState extends State<RegisterPage> {
                   ShadOption(value: "German", child: Text("German")),
                   ShadOption(value: "Spanish", child: Text("Spanish")),
                 ],
-                decoration: AuthUI.fieldDecoration(
-                  hint: "",
-                  prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
-                  suffix: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+                decoration: ShadDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  border: ShadBorder.all(
+                    color: const Color(0x00000000),
+                    width: 0,
+                    radius: BorderRadius.circular(18),
+                  ),
+                  focusedBorder: ShadBorder.all(
+                    color: AppColors.primary.withOpacity(0.35),
+                    width: 1.2,
+                    radius: BorderRadius.circular(18),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                leading: AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
+                trailing: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
               ),
             ),
 
