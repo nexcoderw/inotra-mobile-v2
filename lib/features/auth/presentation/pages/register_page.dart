@@ -48,7 +48,11 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
     setState(() => _isBusy = false);
 
-    Navigator.pushNamed(context, AppRoutes.confirmRegistrationOtp);
+    Navigator.pushNamed(
+      context,
+      AppRoutes.verifyRegistrationOtp,
+      arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
+    );
   }
 
   @override
