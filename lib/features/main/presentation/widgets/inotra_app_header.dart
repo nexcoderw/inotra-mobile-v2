@@ -19,7 +19,7 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.onNotificationsTap,
     required this.onProfileTap,
     this.displayName = "Guest",
-    this.isAuthenticated = true,
+    this.isAuthenticated = false,
   });
 
   @override
