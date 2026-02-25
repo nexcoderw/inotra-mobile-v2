@@ -82,164 +82,163 @@ class InotraSidebarDrawer extends StatelessWidget {
     return Drawer(
       elevation: 0,
       backgroundColor: Colors.transparent,
-      child: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            // Glass base surface
-            color: scheme.surface.withOpacity(isDark ? 0.55 : 0.80),
-          ),
-          child: Stack(
-            children: [
-              // soft blobs (premium glass feel)
-              Positioned(
-                top: -80,
-                left: -60,
-                child: _GlowBlob(color: AppColors.primary.withOpacity(0.20), size: 220),
-              ),
-              Positioned(
-                bottom: -90,
-                right: -60,
-                child: _GlowBlob(color: scheme.secondary.withOpacity(0.16), size: 240),
-              ),
+      child: Container(
+        height: MediaQuery.of(context).size.height,
+        decoration: BoxDecoration(
+          // Glass base surface
+          color: scheme.surface.withOpacity(isDark ? 0.55 : 0.80),
+        ),
+        child: Stack(
+          children: [
+            // soft blobs (premium glass feel)
+            Positioned(
+              top: -80,
+              left: -60,
+              child: _GlowBlob(color: AppColors.primary.withOpacity(0.20), size: 220),
+            ),
+            Positioned(
+              bottom: -90,
+              right: -60,
+              child: _GlowBlob(color: scheme.secondary.withOpacity(0.16), size: 240),
+            ),
 
-              // main content
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                  child: Column(
-                    children: [
-                      _GlassHeader(),
+            // main content
+            ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Column(
+                  children: [
+                    _GlassHeader(),
 
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-                          children: [
-                            _GlassNavTile(
-                              icon: HugeIcons.strokeRoundedDashboardSquare01,
-                              title: "Dashboard",
-                              subtitle: "Overview & quick stats",
-                              onTap: onDashboardTap,
-                              // no trailing arrow for non-dropdown links ✅
-                              showTrailing: false,
-                            ),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                        children: [
+                          _GlassNavTile(
+                            icon: HugeIcons.strokeRoundedDashboardSquare01,
+                            title: "Dashboard",
+                            subtitle: "Overview & quick stats",
+                            onTap: onDashboardTap,
+                            // no trailing arrow for non-dropdown links ✅
+                            showTrailing: false,
+                          ),
 
-                            const SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
-                            _GlassSection(
-                              title: "My Events",
-                              icon: HugeIcons.strokeRoundedCalendar01,
-                              children: [
-                                _GlassSubTile(
-                                  title: "My Events",
-                                  icon: HugeIcons.strokeRoundedCalendar01,
-                                  onTap: onMyEventsTap,
-                                ),
-                                _GlassSubTile(
-                                  title: "My Event Submissions",
-                                  icon: HugeIcons.strokeRoundedTask01,
-                                  onTap: onMyEventSubmissionsTap,
-                                ),
-                                _GlassSubTile(
-                                  title: "Review",
-                                  icon: HugeIcons.strokeRoundedStar,
-                                  onTap: onEventReviewTap,
-                                ),
-                                _GlassSubTile(
-                                  title: "Tickets",
-                                  icon: HugeIcons.strokeRoundedTicket01,
-                                  onTap: onEventTicketsTap,
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _GlassSection(
-                              title: "My Listings",
-                              icon: HugeIcons.strokeRoundedLocation01,
-                              children: [
-                                _GlassSubTile(
-                                  title: "My Listings",
-                                  icon: HugeIcons.strokeRoundedLocation01,
-                                  onTap: onMyListingsTap,
-                                ),
-                                _GlassSubTile(
-                                  title: "My Listing Submissions",
-                                  icon: HugeIcons.strokeRoundedTask01,
-                                  onTap: onMyListingSubmissionsTap,
-                                ),
-                                _GlassSubTile(
-                                  title: "Reviews",
-                                  icon: HugeIcons.strokeRoundedStar,
-                                  onTap: onListingReviewsTap,
-                                ),
-                                _GlassSubTile(
-                                  title: "Booking",
-                                  icon: HugeIcons.strokeRoundedCalendarCheckIn01,
-                                  onTap: onListingBookingTap,
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _GlassNavTile(
-                              icon: HugeIcons.strokeRoundedTicket01,
-                              title: "Trip Reservations",
-                              subtitle: "Your bookings & status",
-                              onTap: onTripReservationsTap,
-                              showTrailing: false, // ✅ no arrow
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            _GlassNavTile(
-                              icon: HugeIcons.strokeRoundedUser,
-                              title: "Open Profile",
-                              subtitle: "Account & personal details",
-                              onTap: () => _openProfile(context),
-                              showTrailing: false, // ✅ no arrow, same as others
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _GlassNavTile(
-                              icon: HugeIcons.strokeRoundedSettings02,
-                              title: "Settings",
-                              subtitle: "Your settings & preferences",
-                              onTap: onSettingsTap,
-                              showTrailing: false, // ✅ no arrow
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            _GlassDangerTile(
-                              icon: HugeIcons.strokeRoundedLogout01,
-                              title: "Logout",
-                              subtitle: "Sign out of your account",
-                              onTap: () => _logout(context),
-                            ),
-
-                            const SizedBox(height: 10),
-
-                            Text(
-                              "INOTRA • v1.0",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.onSurface.withOpacity(0.55),
+                          _GlassSection(
+                            title: "My Events",
+                            icon: HugeIcons.strokeRoundedCalendar01,
+                            children: [
+                              _GlassSubTile(
+                                title: "My Events",
+                                icon: HugeIcons.strokeRoundedCalendar01,
+                                onTap: onMyEventsTap,
                               ),
+                              _GlassSubTile(
+                                title: "My Event Submissions",
+                                icon: HugeIcons.strokeRoundedTask01,
+                                onTap: onMyEventSubmissionsTap,
+                              ),
+                              _GlassSubTile(
+                                title: "Review",
+                                icon: HugeIcons.strokeRoundedStar,
+                                onTap: onEventReviewTap,
+                              ),
+                              _GlassSubTile(
+                                title: "Tickets",
+                                icon: HugeIcons.strokeRoundedTicket01,
+                                onTap: onEventTicketsTap,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          _GlassSection(
+                            title: "My Listings",
+                            icon: HugeIcons.strokeRoundedLocation01,
+                            children: [
+                              _GlassSubTile(
+                                title: "My Listings",
+                                icon: HugeIcons.strokeRoundedLocation01,
+                                onTap: onMyListingsTap,
+                              ),
+                              _GlassSubTile(
+                                title: "My Listing Submissions",
+                                icon: HugeIcons.strokeRoundedTask01,
+                                onTap: onMyListingSubmissionsTap,
+                              ),
+                              _GlassSubTile(
+                                title: "Reviews",
+                                icon: HugeIcons.strokeRoundedStar,
+                                onTap: onListingReviewsTap,
+                              ),
+                              _GlassSubTile(
+                                title: "Booking",
+                                icon: HugeIcons.strokeRoundedCalendarCheckIn01,
+                                onTap: onListingBookingTap,
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          _GlassNavTile(
+                            icon: HugeIcons.strokeRoundedTicket01,
+                            title: "Trip Reservations",
+                            subtitle: "Your bookings & status",
+                            onTap: onTripReservationsTap,
+                            showTrailing: false, // ✅ no arrow
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          _GlassNavTile(
+                            icon: HugeIcons.strokeRoundedUser,
+                            title: "Open Profile",
+                            subtitle: "Account & personal details",
+                            onTap: () => _openProfile(context),
+                            showTrailing: false, // ✅ no arrow, same as others
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          _GlassNavTile(
+                            icon: HugeIcons.strokeRoundedSettings02,
+                            title: "Settings",
+                            subtitle: "Your settings & preferences",
+                            onTap: onSettingsTap,
+                            showTrailing: false, // ✅ no arrow
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          _GlassDangerTile(
+                            icon: HugeIcons.strokeRoundedLogout01,
+                            title: "Logout",
+                            subtitle: "Sign out of your account",
+                            onTap: () => _logout(context),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Text(
+                            "INOTRA • v1.0",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface.withOpacity(0.55),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
