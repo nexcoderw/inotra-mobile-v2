@@ -64,6 +64,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
+              style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter your email",
@@ -79,6 +80,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _otp,
+              style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.number,
               decoration: AuthUI.fieldDecoration(
                 hint: "Enter OTP",
