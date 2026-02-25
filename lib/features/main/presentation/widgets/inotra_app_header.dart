@@ -1,5 +1,4 @@
 import "package:flutter/material.dart";
-import "package:hugeicons/hugeicons.dart";
 
 import "inotra_authenticated_header.dart";
 import "inotra_guest_header.dart";
