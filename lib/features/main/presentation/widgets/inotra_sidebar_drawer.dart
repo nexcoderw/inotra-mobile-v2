@@ -25,6 +25,8 @@ class InotraSidebarDrawer extends StatelessWidget {
   final VoidCallback onSettingsTap;
   final VoidCallback onProfileTap;
 
+  final VoidCallback onLogoutTap;
+
   const InotraSidebarDrawer({
     super.key,
     required this.onDashboardTap,
@@ -39,6 +41,7 @@ class InotraSidebarDrawer extends StatelessWidget {
     required this.onTripReservationsTap,
     required this.onSettingsTap,
     required this.onProfileTap,
+    required this.onLogoutTap,
   });
 
   @override
@@ -170,10 +173,21 @@ class InotraSidebarDrawer extends StatelessWidget {
 
                             const SizedBox(height: 16),
 
-                            _GlassPrimaryButton(
+                            _GlassNavTile(
                               icon: HugeIcons.strokeRoundedUser,
-                              label: "Open Profile",
+                              title: "Open Profile",
+                              subtitle: "Account & personal details",
                               onTap: onProfileTap,
+                              showTrailing: false, // ✅ no arrow, same as others
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _GlassDangerTile(
+                              icon: HugeIcons.strokeRoundedLogout01,
+                              title: "Logout",
+                              subtitle: "Sign out of your account",
+                              onTap: onLogoutTap,
                             ),
 
                             const SizedBox(height: 10),
@@ -342,6 +356,100 @@ class _GlassNavTile extends StatelessWidget {
                     strokeWidth: 2.0,
                     color: scheme.onSurface.withOpacity(0.55),
                   ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassDangerTile extends StatelessWidget {
+  final dynamic icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _GlassDangerTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return _GlassCard(
+      radius: 18,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: SizedBox(
+          height: _kDrawerTopTileHeight, // ✅ same height
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Row(
+              children: [
+                // danger pill
+                Container(
+                  height: 40,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(isDark ? 0.18 : 0.10),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(isDark ? 0.08 : 0.16),
+                    ),
+                  ),
+                  child: Center(
+                    child: HugeIcon(
+                      icon: icon,
+                      size: 20,
+                      strokeWidth: 2.0,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                          color: scheme.onSurface.withOpacity(0.62),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedArrowRight01,
+                  size: 18,
+                  strokeWidth: 2.0,
+                  color: scheme.onSurface.withOpacity(0.45),
+                ),
               ],
             ),
           ),
