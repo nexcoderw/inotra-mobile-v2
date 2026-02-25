@@ -15,7 +15,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _phone = TextEditingController();
+  final _identifier = TextEditingController();
   final _password = TextEditingController();
 
   bool _rememberMe = false;
@@ -24,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _phone.dispose();
+    _identifier.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -55,30 +55,19 @@ class _LoginPageState extends State<LoginPage> {
             AuthUI.subheading("Please enter your information to proceed"),
             const SizedBox(height: 26),
 
-            AuthUI.label("Phone number"),
+            AuthUI.label("Email / Phone / Username"),
             const SizedBox(height: 10),
 
             TextFormField(
-              controller: _phone,
+              controller: _identifier,
               style: AuthUI.fieldTextStyle,
-              keyboardType: TextInputType.phone,
+              keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
-                hint: "780 000 000",
-                prefix: _PhonePrefix(
-                  code: "+250",
-                  onTap: () {
-                    // static for now; later can open country picker
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Country picker coming soon"),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
+                hint: "Enter email, phone number, or username",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedUser),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "Phone number is required" : null,
+                  (v == null || v.trim().isEmpty) ? "Identifier is required" : null,
             ),
 
             const SizedBox(height: 18),
@@ -194,14 +183,14 @@ class _LoginPageState extends State<LoginPage> {
                   width: 48,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Biometric sign-in coming soon"),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Biometric sign-in coming soon"),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -289,65 +278,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PhonePrefix extends StatelessWidget {
-  final String code;
-  final VoidCallback onTap;
-
-  const _PhonePrefix({
-    required this.code,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 14, right: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Static Rwanda flag look (no extra assets needed)
-            Container(
-              width: 26,
-              height: 18,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.black.withOpacity(0.10)),
-                color: const Color(0xFF2D9CDB),
-              ),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF2C94C),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(4),
-                      bottomRight: Radius.circular(4),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              code,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(width: 6),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: Colors.black.withOpacity(0.40),
-            ),
-            const SizedBox(width: 6),
           ],
         ),
       ),
