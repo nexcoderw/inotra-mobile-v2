@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               "Please enter your information to proceed",
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 12,
                 color: Colors.black.withOpacity(0.45),
                 fontWeight: FontWeight.w500,
               ),
@@ -100,12 +100,13 @@ class _LoginPageState extends State<LoginPage> {
 
             const Text(
               "Phone number",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 10),
 
             TextFormField(
               controller: _phone,
+              style: const TextStyle(letterSpacing: 1.2, fontSize: 12),
               keyboardType: TextInputType.phone,
               decoration: _fieldDecoration(
                 hint: "780 000 000",
@@ -130,13 +131,14 @@ class _LoginPageState extends State<LoginPage> {
 
             const Text(
               "Password",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 10),
 
             TextFormField(
               controller: _password,
               obscureText: _obscure,
+              style: const TextStyle(letterSpacing: 1.2, fontSize: 12),
               decoration: _fieldDecoration(
                 hint: "Enter password",
                 prefix: const _FieldIconPrefix(icon: HugeIcons.strokeRoundedLockPassword),
@@ -146,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                     icon: _obscure
                         ? HugeIcons.strokeRoundedViewOff
                         : HugeIcons.strokeRoundedView,
-                    size: 22,
+                    size: 18,
                     strokeWidth: 2,
                     color: Colors.black.withOpacity(0.55),
                   ),
@@ -186,6 +188,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(
                           color: Colors.black.withOpacity(0.60),
                           fontWeight: FontWeight.w600,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -199,6 +202,9 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       color: Colors.black.withOpacity(0.55),
                       fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.black.withOpacity(0.55),
                     ),
                   ),
                 ),
@@ -212,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                 // Sign In pill
                 Expanded(
                   child: SizedBox(
-                    height: 58,
+                    height: 48,
                     child: ElevatedButton(
                       onPressed: _isBusy ? null : _onLogin,
                       style: ElevatedButton.styleFrom(
@@ -226,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         _isBusy ? "Signing In..." : "Sign In",
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -237,8 +243,8 @@ class _LoginPageState extends State<LoginPage> {
 
                 // Biometric circle button
                 SizedBox(
-                  width: 58,
-                  height: 58,
+                  width: 48,
+                  height: 48,
                   child: ElevatedButton(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -313,7 +319,7 @@ class _LoginPageState extends State<LoginPage> {
                       style: TextStyle(
                         color: Colors.black.withOpacity(0.70),
                         fontWeight: FontWeight.w800,
-                        fontSize: 16,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -331,6 +337,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(
                     color: Colors.black.withOpacity(0.35),
                     fontWeight: FontWeight.w700,
+                    fontSize: 12,
                   ),
                 ),
                 InkWell(
@@ -340,6 +347,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w900,
+                      fontSize: 12,
                       decoration: TextDecoration.underline,
                       decorationColor: AppColors.primary,
                     ),

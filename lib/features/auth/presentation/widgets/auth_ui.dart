@@ -18,7 +18,7 @@ final class AuthUI {
   static Text subheading(String text) => Text(
         text,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 12,
           color: Colors.black.withOpacity(0.45),
           fontWeight: FontWeight.w500,
         ),
@@ -26,7 +26,7 @@ final class AuthUI {
 
   static Text label(String text) => Text(
         text,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
       );
 
   static InputDecoration fieldDecoration({
@@ -63,7 +63,7 @@ final class AuthUI {
         padding: const EdgeInsets.only(left: 14, right: 10),
         child: HugeIcon(
           icon: icon,
-          size: 22,
+          size: 18,
           strokeWidth: 2,
           color: Colors.black.withOpacity(0.45),
         ),
@@ -75,7 +75,7 @@ final class AuthUI {
     bool busy = false,
   }) {
     return SizedBox(
-      height: 58,
+      height: 48,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -88,7 +88,7 @@ final class AuthUI {
         ),
         child: Text(
           busy ? "Please wait..." : text,
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
         ),
       ),
     );

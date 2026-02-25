@@ -29,12 +29,12 @@ class AuthScaffold extends StatelessWidget {
                   Center(
                     child: Image.asset(
                       "assets/branding/logo_black.png",
-                      height: 42,
+                      height: 82,
                       fit: BoxFit.contain,
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 48),
                   child,
                 ],
               ),
