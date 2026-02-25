@@ -123,13 +123,6 @@ class _MainShellState extends State<MainShell> {
         onTripReservationsTap: () => _comingSoon("Trip Reservations"),
 
         onSettingsTap: () => _comingSoon("Settings"),
-
-        onProfileTap: () {
-          _closeDrawer();
-          _goToProfile();
-        },
-
-        onLogoutTap: () => _comingSoon("Logout"),
       ),
 
       body: IndexedStack(index: _index, children: _tabs),
