@@ -64,7 +64,6 @@ final class AppRouter {
 
     case AppRoutes.aiChat:
       return AuthGuard.protect(
-        context: context,
         featureLabel: "AI Chat",
         builder: (_) => const MainShell(initialIndex: 2),
       );
@@ -101,14 +100,12 @@ final class AppRouter {
 
     case AppRoutes.aiChatConversations:
       return AuthGuard.protect(
-        context: context,
         featureLabel: "AI Chat",
         builder: (_) => const AiChatConversationsPage(),
       );
 
     case AppRoutes.profile:
       return AuthGuard.protect(
-        context: context,
         featureLabel: "Profile",
         description:
             "Sign in to view and manage your Inotra profile, preferences, and account settings.",
@@ -117,7 +114,6 @@ final class AppRouter {
 
     case AppRoutes.notifications:
       return AuthGuard.protect(
-        context: context,
         featureLabel: "Notifications",
         description: "Sign in to view your personalized notifications and alerts.",
         builder: (_) => const NotificationsPage(),
