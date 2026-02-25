@@ -6,6 +6,7 @@ import "package:shadcn_ui/shadcn_ui.dart";
 import "package:world_countries/world_countries.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/constants/app_colors.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
