@@ -20,6 +20,7 @@ class InotraSidebarDrawer extends StatelessWidget {
   final VoidCallback onListingBookingTap;
 
   final VoidCallback onTripReservationsTap;
+  final VoidCallback onSettingsTap;
   final VoidCallback onProfileTap;
 
   const InotraSidebarDrawer({
@@ -34,6 +35,7 @@ class InotraSidebarDrawer extends StatelessWidget {
     required this.onListingReviewsTap,
     required this.onListingBookingTap,
     required this.onTripReservationsTap,
+    required this.onSettingsTap,
     required this.onProfileTap,
   });
 
@@ -154,6 +156,16 @@ class InotraSidebarDrawer extends StatelessWidget {
                               showTrailing: false, // ✅ no arrow
                             ),
 
+                            const SizedBox(height: 12),
+
+                            _GlassNavTile(
+                              icon: HugeIcons.strokeRoundedSettings02,
+                              title: "Settings",
+                              subtitle: "Your settings & preferences",
+                              onTap: onSettingsTap,
+                              showTrailing: false, // ✅ no arrow
+                            ),
+
                             const SizedBox(height: 16),
 
                             _GlassPrimaryButton(
@@ -192,68 +204,69 @@ class InotraSidebarDrawer extends StatelessWidget {
 /// HEADER
 /// ----------------------------
 class _GlassHeader extends StatelessWidget {
+  const _GlassHeader();
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-  padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-  child: Container(
-    // ✅ Transparent background
-    color: Colors.transparent,
-    child: Row(
-      children: [
-        Container(
-          height: 44,
-          width: 44,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(isDark ? 0.35 : 0.18),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.10 : 0.22),
-            ),
-          ),
-          child: const Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedCompass01,
-              size: 22,
-              strokeWidth: 2.0,
-              color: AppColors.primary,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "INOTRA",
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.6,
-                  color: scheme.onSurface,
-                  fontSize: 14,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+      child: Container(
+        color: Colors.transparent,
+        child: Row(
+          children: [
+            // ✅ Logo from assets (instead of icon)
+            Container(
+              height: 44,
+              width: 44,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: scheme.surface.withOpacity(isDark ? 0.18 : 0.10),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withOpacity(isDark ? 0.10 : 0.22),
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                "Premium navigation",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                  color: scheme.onSurface.withOpacity(0.62),
-                  height: 1.1,
-                ),
+              child: Image.asset(
+                "assets/branding/logo_color.png",
+                fit: BoxFit.contain,
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "INOTRA",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.6,
+                      color: scheme.onSurface,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "Premium navigation",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      color: scheme.onSurface.withOpacity(0.62),
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
 }
 
