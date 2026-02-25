@@ -5,7 +5,7 @@ import "../../../../core/services/auth_session.dart";
 import "../widgets/inotra_bottom_nav.dart";
 import "../widgets/inotra_app_header.dart";
 import "../widgets/inotra_sidebar_drawer.dart";
-import "../widgets/ai_chat_auth_dialog.dart";
+import "../widgets/auth_dialog.dart";
 
 import "../tabs/explore_tab.dart";
 import "../tabs/listings_tab.dart";
@@ -83,7 +83,7 @@ class _MainShellState extends State<MainShell> {
   void _onTabChange(int next) async {
     if (next == _index) return;
 
-    if (next == 2 && await _maybeShowAiChatDialog()) {
+    if (next == 2 && await _maybeShowAuthDialog(featureLabel: "AI Chat")) {
       return;
     }
 
@@ -110,13 +110,18 @@ class _MainShellState extends State<MainShell> {
     _authSession!.addListener(_handleAuthChange);
   }
 
-  Future<bool> _maybeShowAiChatDialog() async {
+  Future<bool> _maybeShowAuthDialog({required String featureLabel}) async {
     _ensureAuthSession();
     final isAuthed = _authSession?.value.isAuthenticated ?? false;
     if (isAuthed) return false;
 
     if (!mounted) return true;
-    await AiChatAuthDialog.show(context);
+    await AuthDialog.show(
+      context,
+      featureLabel: featureLabel,
+      description:
+          "Sign in or create an account to use $featureLabel and keep your progress saved.",
+    );
     return true;
   }
 
