@@ -19,6 +19,7 @@ import "../../features/main/presentation/pages/event_details_page.dart";
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
 import "../../features/main/presentation/pages/profile_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
+import "../guards/auth_guard.dart";
 
 final class AppRouter {
   AppRouter._();
@@ -55,14 +56,18 @@ final class AppRouter {
       // -------------------
       // Main tab shell routes (bottom nav visible only here)
       // -------------------
-      case AppRoutes.home:
-        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 0));
+    case AppRoutes.home:
+      return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 0));
 
       case AppRoutes.listings:
         return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 1));
 
-      case AppRoutes.aiChat:
-        return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 2));
+    case AppRoutes.aiChat:
+      return AuthGuard.protect(
+        context: context,
+        featureLabel: "AI Chat",
+        builder: (_) => const MainShell(initialIndex: 2),
+      );
 
       case AppRoutes.events:
         return MaterialPageRoute(builder: (_) => const MainShell(initialIndex: 3));
@@ -94,14 +99,29 @@ final class AppRouter {
           builder: (_) => EventDetailsPage(eventId: id),
         );
 
-      case AppRoutes.aiChatConversations:
-        return MaterialPageRoute(builder: (_) => const AiChatConversationsPage());
+    case AppRoutes.aiChatConversations:
+      return AuthGuard.protect(
+        context: context,
+        featureLabel: "AI Chat",
+        builder: (_) => const AiChatConversationsPage(),
+      );
 
-      case AppRoutes.profile:
-        return MaterialPageRoute(builder: (_) => const ProfilePage());
+    case AppRoutes.profile:
+      return AuthGuard.protect(
+        context: context,
+        featureLabel: "Profile",
+        description:
+            "Sign in to view and manage your Inotra profile, preferences, and account settings.",
+        builder: (_) => const ProfilePage(),
+      );
 
-      case AppRoutes.notifications:
-        return MaterialPageRoute(builder: (_) => const NotificationsPage());
+    case AppRoutes.notifications:
+      return AuthGuard.protect(
+        context: context,
+        featureLabel: "Notifications",
+        description: "Sign in to view your personalized notifications and alerts.",
+        builder: (_) => const NotificationsPage(),
+      );
 
       // -------------------
       // Fallback
