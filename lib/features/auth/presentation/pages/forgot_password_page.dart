@@ -130,7 +130,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.email_hint"),
