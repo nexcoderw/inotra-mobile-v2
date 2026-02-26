@@ -1,0 +1,80 @@
+const supportedLanguages = [
+  "en",
+  "rw",
+  "fr",
+  "es",
+  "de",
+];
+
+/// Static translations for core UI texts. Extend as needed.
+const translations = {
+  "en": {
+    "settings.title": "Settings",
+    "settings.theme": "Theme",
+    "settings.language": "Language",
+    "settings.privacy": "Privacy Policy",
+    "settings.terms": "Terms of Service",
+    "settings.help": "Help Center",
+    "settings.support": "Contact Support",
+    "theme.light": "Light",
+    "theme.dark": "Dark",
+    "theme.system": "System",
+    "language.choose": "Choose your preferred language",
+  },
+  "rw": {
+    "settings.title": "Amagenamiterere",
+    "settings.theme": "Imiterere y'amabara",
+    "settings.language": "Ururimi",
+    "settings.privacy": "Politiki y'ibanga",
+    "settings.terms": "Amasezerano ya serivisi",
+    "settings.help": "Ikigo cy'Ubufasha",
+    "settings.support": "Vugana natwe",
+    "theme.light": "Urumuri",
+    "theme.dark": "Umwijima",
+    "theme.system": "By'igikoresho",
+    "language.choose": "Hitamo ururimi ukunda",
+  },
+  "fr": {
+    "settings.title": "Paramètres",
+    "settings.theme": "Thème",
+    "settings.language": "Langue",
+    "settings.privacy": "Politique de confidentialité",
+    "settings.terms": "Conditions d'utilisation",
+    "settings.help": "Centre d'aide",
+    "settings.support": "Contacter le support",
+    "theme.light": "Clair",
+    "theme.dark": "Sombre",
+    "theme.system": "Système",
+    "language.choose": "Choisissez votre langue préférée",
+  },
+  "es": {
+    "settings.title": "Configuración",
+    "settings.theme": "Tema",
+    "settings.language": "Idioma",
+    "settings.privacy": "Política de privacidad",
+    "settings.terms": "Términos de servicio",
+    "settings.help": "Centro de ayuda",
+    "settings.support": "Contactar soporte",
+    "theme.light": "Claro",
+    "theme.dark": "Oscuro",
+    "theme.system": "Sistema",
+    "language.choose": "Elige tu idioma preferido",
+  },
+  "de": {
+    "settings.title": "Einstellungen",
+    "settings.theme": "Design",
+    "settings.language": "Sprache",
+    "settings.privacy": "Datenschutzrichtlinie",
+    "settings.terms": "Nutzungsbedingungen",
+    "settings.help": "Hilfecenter",
+    "settings.support": "Support kontaktieren",
+    "theme.light": "Hell",
+    "theme.dark": "Dunkel",
+    "theme.system": "System",
+    "language.choose": "Wähle deine bevorzugte Sprache",
+  },
+};
+
+String t(String lang, String key) {
+  return translations[lang]?[key] ?? translations["en"]![key] ?? key;
+}
