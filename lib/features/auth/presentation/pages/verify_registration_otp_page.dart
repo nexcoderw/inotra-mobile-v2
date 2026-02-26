@@ -21,11 +21,20 @@ class ConfirmRegistrationOtpPage extends StatefulWidget {
 class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage> {
   final _email = TextEditingController();
 
-  final _c = List.generate(6, (_) => TextEditingController());
-  final _f = List.generate(6, (_) => FocusNode());
+  final List<TextEditingController> _c = [];
+  final List<FocusNode> _f = [];
 
   bool _isBusy = false;
   String? _initialEmail;
+
+  void _ensureOtpFields() {
+    while (_c.length < 6) {
+      _c.add(TextEditingController());
+    }
+    while (_f.length < 6) {
+      _f.add(FocusNode());
+    }
+  }
 
   @override
   void dispose() {
@@ -129,6 +138,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
 
   @override
   Widget build(BuildContext context) {
+    _ensureOtpFields();
     // pick up email from navigation args once
     _initialEmail ??= ModalRoute.of(context)?.settings.arguments as String?;
     if ((_initialEmail ?? "").isNotEmpty && _email.text.isEmpty) {
@@ -165,8 +175,8 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(6, (i) {
               return SizedBox(
-                width: 54,
-                height: 54,
+                width: 48,
+                height: 52,
                 child: TextField(
                   controller: _c[i],
                   focusNode: _f[i],
@@ -182,9 +192,10 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
                     filled: true,
                     fillColor: const Color(0xFFF3F4F6),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
+                    contentPadding: EdgeInsets.zero,
                   ),
                   onChanged: (v) {
                     if (v.isNotEmpty && i < 5) {
