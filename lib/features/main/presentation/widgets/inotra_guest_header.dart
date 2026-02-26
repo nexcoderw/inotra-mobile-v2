@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 
 import "../../../../core/constants/app_colors.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/translations.dart";
+import "../../../../i18n/lang.dart";
 
 class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
   static const double defaultHeight = kToolbarHeight + 6;
@@ -16,6 +18,7 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
 
     return PreferredSize(
       preferredSize: preferredSize,
@@ -37,7 +40,7 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Welcome to Inotra",
+                        t(lang, "welcome.title"),
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 15,
@@ -46,7 +49,7 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        "Sign in to unlock the full experience",
+                        t(lang, "welcome.subtitle"),
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
@@ -73,9 +76,9 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                      child: Text(
+                        t(lang, "auth.sign_in"),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -92,9 +95,9 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                         elevation: 0,
                       ),
                       onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
-                      child: const Text(
-                        "Register",
-                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                      child: Text(
+                        t(lang, "auth.sign_up"),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                       ),
                     ),
                   ],
