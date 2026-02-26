@@ -13,6 +13,7 @@ import "../../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
 import "../../../../../core/services/language_service.dart";
 import "../../../../../i18n/translations.dart";
+import "../../../../../i18n/lang.dart";
 
 class SettingsLanguagePage extends StatefulWidget {
   const SettingsLanguagePage({super.key});
@@ -54,6 +55,7 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
   Future<void> _select(String code) async {
     if (_busy) return;
     setState(() => _busy = true);
+    final lang = currentLangSync();
     try {
       final tokens = AuthSession.instance.value.accessToken;
       if (tokens == null || tokens.isEmpty) {
@@ -93,7 +95,7 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
             type: ToastificationType.success,
             style: ToastificationStyle.fillColored,
             title: Text(t(_selected, "settings.language")),
-            description: const Text("Language updated"),
+            description: Text(t(lang, "auth.update_success")),
             alignment: Alignment.topCenter,
             autoCloseDuration: const Duration(seconds: 3),
           );
@@ -107,7 +109,7 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Update failed"),
+          title: Text(t(lang, "auth.update_failed")),
           description: Text(e.toString()),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
@@ -121,17 +123,18 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
 
     return MainScaffold(
-      title: "Language",
+      title: t(lang, "settings.language"),
       showAppBar: false,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          const PageHeader(title: "Language"),
+          PageHeader(title: t(lang, "settings.language")),
           const SizedBox(height: 10),
           Text(
-            "Choose your preferred language",
+            t(lang, "language.choose"),
             style: TextStyle(
               fontSize: 12,
               height: 1.25,
