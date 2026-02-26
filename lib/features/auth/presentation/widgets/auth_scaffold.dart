@@ -212,7 +212,7 @@ class _LangSelectorState extends State<_LangSelector> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: Image.asset(
-                      "icons/language/$c.png",
+                      "assets/icons/language/$c.png",
                           width: 20,
                           height: 14,
                           fit: BoxFit.cover,
@@ -260,7 +260,7 @@ class _LangSelectorState extends State<_LangSelector> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
               child: Image.asset(
-                "icons/language/${widget.current}.png",
+                "assets/icons/language/${widget.current}.png",
                     width: 20,
                     height: 14,
                     fit: BoxFit.cover,
