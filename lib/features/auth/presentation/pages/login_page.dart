@@ -239,26 +239,6 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 16),
 
-            if (_error != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withOpacity(0.18)),
-                ),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-
             Row(
               children: [
                 // Sign In pill
