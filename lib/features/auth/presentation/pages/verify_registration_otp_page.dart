@@ -163,7 +163,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
           TextFormField(
             controller: _email,
             readOnly: true,
-            style: AuthUI.fieldTextStyle,
+            style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
             decoration: AuthUI.fieldDecoration(
               hint: "",
               prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMail01),
@@ -186,6 +186,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
                   focusNode: _f[i],
                   style: AuthUI.fieldTextStyle.copyWith(
                     fontWeight: FontWeight.w700,
+                    color: Colors.black,
                     letterSpacing: 0,
                   ),
                   keyboardType: TextInputType.number,
