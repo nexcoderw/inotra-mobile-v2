@@ -27,10 +27,10 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
   void initState() {
     super.initState();
     final current = AuthSession.instance.value.user?["preferred_language"] as String?;
-    _selected = current?.isNotEmpty == true ? _normalize(current!) : "en";
+    _selected = current?.isNotEmpty == true ? _normalizeToCode(current!) : "en";
   }
 
-  String _normalize(String v) {
+  String _normalizeToCode(String v) {
     final lower = v.toLowerCase();
     if (lower.startsWith("en")) return "en";
     if (lower.startsWith("rw")) return "rw";
@@ -39,6 +39,14 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
     if (lower.startsWith("de")) return "de";
     return "en";
   }
+
+  String _codeToBackendLabel(String code) => switch (code) {
+        "rw" => "Kinyarwanda",
+        "fr" => "French",
+        "es" => "Spanish",
+        "de" => "German",
+        _ => "English",
+      };
 
   Future<void> _select(String code) async {
     if (_busy) return;
@@ -56,7 +64,9 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
           "Content-Type": "application/json",
           "Authorization": "Bearer $tokens",
         },
-        body: '{"preferred_language":"$code"}',
+        body: jsonEncode({
+          "preferred_language": _codeToBackendLabel(code),
+        }),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
