@@ -171,6 +171,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final onSurface = scheme.onSurface;
 
     final score = _passwordScore(_newPassword.text);
     final match = _confirmPassword.text.isNotEmpty &&
@@ -184,17 +185,20 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AuthUI.heading(tr("auth.set_new_password")),
+              AuthUI.heading(
+                tr("auth.set_new_password"),
+                color: onSurface.withOpacity(0.96),
+              ),
               const SizedBox(height: 6),
 
-              // ✅ subtitle visible in both themes
+              // ✅ subtitle visible in both themes (same vibe as title)
               Text(
                 tr("auth.set_new_password_sub"),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   height: 1.2,
-                  color: scheme.onSurface.withOpacity(0.92),
+                  color: onSurface.withOpacity(0.88),
                 ),
               ),
 
@@ -215,7 +219,9 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
 
               const SizedBox(height: 14),
 
-              AuthUI.label(tr("auth.new_password")),
+              AuthUI.label(tr("auth.new_password"), 
+                color: onSurface.withOpacity(0.96),
+              ),
               const SizedBox(height: 10),
               _GlassPasswordField(
                 controller: _newPassword,
@@ -229,7 +235,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
 
               const SizedBox(height: 16),
 
-              AuthUI.label(tr("auth.confirm_new_password")),
+              AuthUI.label(tr("auth.confirm_new_password"), color: onSurface.withOpacity(0.92)),
               const SizedBox(height: 10),
               _GlassPasswordField(
                 controller: _confirmPassword,
@@ -252,7 +258,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
 
               const SizedBox(height: 18),
 
-              // ✅ NOT const (important for hot reload scenarios)
+              // ✅ keep this NOT const (helps hot-reload changes)
               _PrimaryButton(
                 label: tr("auth.save_changes"),
                 busy: _isBusy,
@@ -507,7 +513,6 @@ class _PrimaryButton extends StatefulWidget {
 
 class _PrimaryButtonState extends State<_PrimaryButton> {
   bool _pressed = false;
-
   void _setPressed(bool v) => setState(() => _pressed = v);
 
   @override
@@ -535,7 +540,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
                 scheme.primary.withOpacity(0.88),
               ],
             ),
-            boxShadow: const [], // ✅ no shadow on hover/click
+            boxShadow: const [], // ✅ no shadow
           ),
           child: Center(
             child: AnimatedSwitcher(
@@ -552,7 +557,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
                       widget.label,
                       key: const ValueKey("label"),
                       style: const TextStyle(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                         fontSize: 14,
                         color: Colors.white,
                       ),
@@ -596,7 +601,7 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
-        final t = _c.value; // 0..1
+        final t = _c.value;
 
         double bump(double phase) {
           final x = (t - phase) * 2 * math.pi;
@@ -653,7 +658,8 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            color: scheme.surface.withOpacity(0.55), // ✅ no border/gradient/shadow
+            // ✅ main container: no border, no shadow, no gradient
+            color: scheme.surface.withOpacity(0.55),
           ),
           child: child,
         ),
