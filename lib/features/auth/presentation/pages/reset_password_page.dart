@@ -4,6 +4,8 @@ import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/services/reset_password_cache.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -42,8 +44,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Invalid code"),
-        description: const Text("Enter the 6-digit code we emailed you."),
+        title: Text(tr("auth.invalid_code_short")),
+        description: Text(tr("auth.invalid_code_email")),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 3),
       );
@@ -73,45 +75,45 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthUI.heading("Reset Password"),
+            AuthUI.heading(tr("auth.reset_heading")),
             const SizedBox(height: 6),
-            AuthUI.subheading("Enter your email and OTP code"),
+            AuthUI.subheading(tr("auth.reset_sub")),
             const SizedBox(height: 26),
 
-            AuthUI.label("Email"),
+            AuthUI.label(tr("auth.email_label")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
               style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter your email",
+                hint: tr("auth.email_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMail01),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "Email is required" : null,
+                  (v == null || v.trim().isEmpty) ? tr("auth.email_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("OTP Code"),
+            AuthUI.label(tr("auth.otp_code")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _otp,
               style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.number,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter OTP",
+                hint: tr("auth.otp_code"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedKey01),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "OTP is required" : null,
+                  (v == null || v.trim().isEmpty) ? tr("auth.otp_required") : null,
             ),
 
             const SizedBox(height: 18),
 
             AuthUI.primaryPillButton(
-              text: "Continue",
+              text: tr("auth.continue"),
               busy: _isBusy,
               onPressed: _isBusy ? null : _onContinue,
             ),
