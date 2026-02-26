@@ -9,6 +9,8 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/reset_password_cache.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -72,8 +74,8 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
           context: context,
           type: ToastificationType.success,
           style: ToastificationStyle.fillColored,
-          title: const Text("Password updated"),
-          description: const Text("You can now sign in with your new password."),
+          title: Text(tr("auth.password_updated")),
+          description: Text(tr("auth.password_updated_desc")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 3),
         );
@@ -88,7 +90,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Reset failed"),
+        title: Text(tr("auth.reset_failed")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -99,8 +101,8 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Network error"),
-          description: const Text("Unable to save password. Try again shortly."),
+          title: Text(tr("auth.network_error")),
+          description: Text(tr("auth.reset_retry")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
         );
@@ -124,7 +126,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
     final body = _safeJson(response.body);
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
-    return "We couldn't reset your password. Please double-check the code and try again.";
+    return tr("auth.reset_retry");
   }
 
   @override
@@ -135,19 +137,19 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthUI.heading("Set New Password"),
+            AuthUI.heading(tr("auth.set_new_password")),
             const SizedBox(height: 6),
-            AuthUI.subheading("Create new password"),
+            AuthUI.subheading(tr("auth.set_new_password_sub")),
             const SizedBox(height: 26),
 
-            AuthUI.label("New Password"),
+            AuthUI.label(tr("auth.new_password")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _newPassword,
               style: AuthUI.fieldTextStyle,
               obscureText: _obscure1,
               decoration: AuthUI.fieldDecoration(
-                hint: "**********",
+                hint: tr("auth.new_password_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure1 = !_obscure1),
@@ -162,19 +164,19 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                 ),
               ),
               validator: (v) =>
-                  (v == null || v.isEmpty) ? "Password is required" : null,
+                  (v == null || v.isEmpty) ? tr("auth.password_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Confirm New Password"),
+            AuthUI.label(tr("auth.confirm_new_password")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _confirmPassword,
               style: AuthUI.fieldTextStyle,
               obscureText: _obscure2,
               decoration: AuthUI.fieldDecoration(
-                hint: "**********",
+                hint: tr("auth.confirm_new_password_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure2 = !_obscure2),
@@ -189,8 +191,8 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                 ),
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return "Confirm password is required";
-                if (v != _newPassword.text) return "Passwords do not match";
+                if (v == null || v.isEmpty) return tr("auth.confirm_password_required");
+                if (v != _newPassword.text) return tr("auth.passwords_mismatch");
                 return null;
               },
             ),
@@ -198,7 +200,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
             const SizedBox(height: 22),
 
             AuthUI.primaryPillButton(
-              text: "Save Changes",
+              text: tr("auth.save_changes"),
               busy: _isBusy,
               onPressed: _isBusy ? null : _onSave,
             ),
