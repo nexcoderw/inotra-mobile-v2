@@ -41,6 +41,13 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
     final cache = ResetPasswordCache.instance;
     _email = widget.email ?? cache.email ?? "";
     _otp = cache.otp ?? "";
+
+    _newPassword.addListener(() {
+      if (mounted) setState(() {});
+    });
+    _confirmPassword.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -97,7 +104,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         toastification.show(
           context: context,
@@ -130,9 +137,42 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
     return tr("auth.reset_retry");
   }
 
+  String _maskEmail(String email) {
+    final e = email.trim();
+    if (e.isEmpty || !e.contains("@")) return e.isEmpty ? "—" : e;
+    final parts = e.split("@");
+    final name = parts.first;
+    final domain = parts.last;
+    if (name.length <= 2) return "${name[0]}***@$domain";
+    return "${name.substring(0, 2)}***@$domain";
+  }
+
+  int _passwordScore(String v) {
+    final s = v.trim();
+    if (s.isEmpty) return 0;
+    var score = 0;
+    if (s.length >= 8) score++;
+    if (RegExp(r"[A-Z]").hasMatch(s)) score++;
+    if (RegExp(r"[0-9]").hasMatch(s)) score++;
+    if (RegExp(r"[^A-Za-z0-9]").hasMatch(s)) score++;
+    return score; // 0..4
+  }
+
+  String _passwordLabel(int score) => switch (score) {
+        0 => "Too weak",
+        1 => "Weak",
+        2 => "Okay",
+        3 => "Strong",
+        _ => "Very strong",
+      };
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
+    final score = _passwordScore(_newPassword.text);
+    final match = _confirmPassword.text.isNotEmpty &&
+        _confirmPassword.text == _newPassword.text;
 
     return AuthScaffold(
       child: Form(
@@ -145,19 +185,23 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
               AuthUI.heading(tr("auth.set_new_password")),
               const SizedBox(height: 6),
               AuthUI.subheading(tr("auth.set_new_password_sub")),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
 
-              // Small premium hint
-              Text(
-                "Use a strong password (8+ characters).",
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.2,
-                  color: scheme.onSurface.withOpacity(0.65),
-                ),
+              // ✅ Secure context pill
+              _InfoPill(
+                icon: HugeIcons.strokeRoundedMail01,
+                text: "Reset for: ${_maskEmail(_email)}",
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // ✅ Strength hint row
+              _StrengthRow(
+                score: score,
+                label: _passwordLabel(score),
+              ),
+
+              const SizedBox(height: 14),
 
               AuthUI.label(tr("auth.new_password")),
               const SizedBox(height: 10),
@@ -180,9 +224,15 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                 hint: tr("auth.confirm_new_password_hint"),
                 obscure: _obscure2,
                 enabled: !_isBusy,
+                trailingBadge: _MatchBadge(
+                  visible: _confirmPassword.text.isNotEmpty,
+                  ok: match,
+                ),
                 onToggle: () => setState(() => _obscure2 = !_obscure2),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return tr("auth.confirm_password_required");
+                  if (v == null || v.isEmpty) {
+                    return tr("auth.confirm_password_required");
+                  }
                   if (v != _newPassword.text) return tr("auth.passwords_mismatch");
                   return null;
                 },
@@ -203,6 +253,169 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
   }
 }
 
+class _InfoPill extends StatelessWidget {
+  final dynamic icon;
+  final String text;
+
+  const _InfoPill({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: scheme.surface.withOpacity(0.55),
+            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HugeIcon(
+                icon: icon,
+                size: 14, // ✅ icon size 14
+                strokeWidth: 2,
+                color: scheme.primary.withOpacity(0.95),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  text,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurface.withOpacity(0.80),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StrengthRow extends StatelessWidget {
+  final int score; // 0..4
+  final String label;
+
+  const _StrengthRow({
+    required this.score,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                height: 10,
+                decoration: BoxDecoration(
+                  color: scheme.onSurface.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: scheme.onSurface.withOpacity(0.08)),
+                ),
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    final pct = (score / 4).clamp(0.0, 1.0);
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOut,
+                        width: c.maxWidth * pct,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          color: scheme.primary.withOpacity(0.85),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: scheme.onSurface.withOpacity(0.70),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MatchBadge extends StatelessWidget {
+  final bool visible;
+  final bool ok;
+
+  const _MatchBadge({required this.visible, required this.ok});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return AnimatedOpacity(
+      opacity: visible ? 1 : 0,
+      duration: const Duration(milliseconds: 160),
+      child: AnimatedScale(
+        scale: visible ? 1 : 0.95,
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: (ok ? scheme.primary : scheme.error).withOpacity(0.12),
+            border: Border.all(
+              color: (ok ? scheme.primary : scheme.error).withOpacity(0.25),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                ok ? Icons.check_circle_rounded : Icons.error_rounded,
+                size: 14,
+                color: ok ? scheme.primary : scheme.error,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                ok ? "Match" : "No match",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: ok ? scheme.primary : scheme.error,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GlassPasswordField extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
@@ -210,6 +423,7 @@ class _GlassPasswordField extends StatefulWidget {
   final VoidCallback onToggle;
   final bool enabled;
   final String? Function(String?) validator;
+  final Widget? trailingBadge;
 
   const _GlassPasswordField({
     required this.controller,
@@ -218,6 +432,7 @@ class _GlassPasswordField extends StatefulWidget {
     required this.onToggle,
     required this.enabled,
     required this.validator,
+    this.trailingBadge,
   });
 
   @override
@@ -249,36 +464,50 @@ class _GlassPasswordFieldState extends State<_GlassPasswordField> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor, width: 1),
             ),
-            child: TextFormField(
-              controller: widget.controller,
-              obscureText: widget.obscure,
-              enabled: widget.enabled,
-              style: TextStyle(
-                fontSize: 12,
-                color: scheme.onSurface.withOpacity(0.92),
-              ),
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                hintStyle: TextStyle(
-                  fontSize: 12,
-                  color: scheme.onSurface.withOpacity(0.45),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                border: InputBorder.none,
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 12, right: 8),
-                  child: Center(
-                    widthFactor: 1,
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedLockPassword,
-                      size: 14, // ✅ icon size 14
-                      strokeWidth: 2,
-                      color: scheme.primary.withOpacity(0.95),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: widget.controller,
+                    obscureText: widget.obscure,
+                    enabled: widget.enabled,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: scheme.onSurface.withOpacity(0.92),
                     ),
+                    decoration: InputDecoration(
+                      hintText: widget.hint,
+                      hintStyle: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurface.withOpacity(0.45),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      border: InputBorder.none,
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 12, right: 8),
+                        child: Center(
+                          widthFactor: 1,
+                          child: HugeIcon(
+                            icon: HugeIcons.strokeRoundedLockPassword,
+                            size: 14, // ✅ icon size 14
+                            strokeWidth: 2,
+                            color: scheme.primary.withOpacity(0.95),
+                          ),
+                        ),
+                      ),
+                    ),
+                    validator: widget.validator,
                   ),
                 ),
-                suffixIcon: IconButton(
+                if (widget.trailingBadge != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: widget.trailingBadge!,
+                  ),
+                IconButton(
                   onPressed: widget.enabled ? widget.onToggle : null,
                   icon: HugeIcon(
                     icon: widget.obscure
@@ -289,8 +518,7 @@ class _GlassPasswordFieldState extends State<_GlassPasswordField> {
                     color: scheme.onSurface.withOpacity(0.55),
                   ),
                 ),
-              ),
-              validator: widget.validator,
+              ],
             ),
           ),
         ),
@@ -378,7 +606,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
                         key: const ValueKey("label"),
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
-                          fontSize: 14, // ✅ title 14
+                          fontSize: 14,
                           color: Colors.white,
                         ),
                       ),
