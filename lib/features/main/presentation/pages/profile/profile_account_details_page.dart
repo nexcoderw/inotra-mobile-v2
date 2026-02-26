@@ -3,9 +3,11 @@ import "dart:typed_data";
 import "dart:ui";
 
 import "package:file_picker/file_picker.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 import "package:hugeicons/hugeicons.dart";
+import "package:intl_phone_field/intl_phone_field.dart";
 import "package:toastification/toastification.dart";
 
 import "../../../../../core/config/api.dart";
@@ -36,6 +38,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   Uint8List? _avatarBytes;
   String? _avatarName;
   bool _busy = false;
+  String _initialPhoneIso = "RW";
 
   @override
   void initState() {
@@ -43,8 +46,9 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     final user = AuthSession.instance.value.user ?? {};
     _name = TextEditingController(text: (user["name"] ?? "") as String);
     _username = TextEditingController(text: (user["username"] ?? "") as String);
-    _phone =
-        TextEditingController(text: (user["phone_number"] ?? "") as String);
+    final phoneRaw = (user["phone_number"] ?? "") as String;
+    _phone = TextEditingController(text: phoneRaw);
+    _initialPhoneIso = _guessIso(phoneRaw);
     _email = TextEditingController(text: (user["email"] ?? "") as String);
   }
 
@@ -99,7 +103,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Update your personal information",
+                    t(lang, "profile.account_details_sub"),
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.2,
@@ -123,6 +127,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     requiredMessage: t(lang, "auth.required_field"),
                     icon: HugeIcons.strokeRoundedUser,
                     enabled: !_busy,
+                    badge: _FieldBadge.required,
                   ),
                   const SizedBox(height: 12),
                   _Input(
@@ -131,15 +136,16 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     requiredMessage: t(lang, "auth.required_field"),
                     icon: HugeIcons.strokeRoundedUserIdVerification,
                     enabled: !_busy,
+                    badge: _FieldBadge.required,
                   ),
                   const SizedBox(height: 12),
-                  _Input(
+                  _PhoneField(
                     label: t(lang, "auth.phone"),
                     controller: _phone,
-                    keyboard: TextInputType.phone,
                     requiredMessage: t(lang, "auth.required_field"),
-                    icon: HugeIcons.strokeRoundedCall,
                     enabled: !_busy,
+                    badge: _FieldBadge.required,
+                    initialIso: _initialPhoneIso,
                   ),
                   const SizedBox(height: 12),
                   _Input(
@@ -149,6 +155,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     requiredMessage: t(lang, "auth.required_field"),
                     icon: HugeIcons.strokeRoundedMail01,
                     enabled: false,
+                    badge: _FieldBadge.readonly,
                   ),
                 ],
               ),
@@ -299,6 +306,17 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
     return "Update failed (${response.statusCode})";
   }
+
+  String _guessIso(String phone) {
+    final p = phone.trim();
+    if (p.startsWith("+250")) return "RW";
+    if (p.startsWith("+33")) return "FR";
+    if (p.startsWith("+49")) return "DE";
+    if (p.startsWith("+34")) return "ES";
+    if (p.startsWith("+44")) return "GB";
+    if (p.startsWith("+1")) return "US";
+    return "RW";
+  }
 }
 
 class _AvatarPicker extends StatefulWidget {
@@ -400,6 +418,8 @@ class _AvatarPickerState extends State<_AvatarPicker> {
   }
 }
 
+enum _FieldBadge { required, optional, readonly }
+
 class _Input extends StatelessWidget {
   final String label;
   final TextEditingController controller;
@@ -408,6 +428,7 @@ class _Input extends StatelessWidget {
   final bool readOnly;
   final dynamic icon;
   final bool enabled;
+  final _FieldBadge badge;
 
   const _Input({
     required this.label,
@@ -417,6 +438,7 @@ class _Input extends StatelessWidget {
     this.readOnly = false,
     required this.icon,
     this.enabled = true,
+    this.badge = _FieldBadge.required,
   });
 
   @override
@@ -426,14 +448,7 @@ class _Input extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            color: scheme.onSurface.withOpacity(0.92),
-          ),
-        ),
+        _LabelRow(label: label, badge: badge),
         const SizedBox(height: 8),
         _GlassTextField(
           controller: controller,
@@ -447,6 +462,160 @@ class _Input extends StatelessWidget {
               : (v == null || v.trim().isEmpty)
                   ? requiredMessage
                   : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _LabelRow extends StatelessWidget {
+  final String label;
+  final _FieldBadge badge;
+
+  const _LabelRow({required this.label, required this.badge});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
+    final badgeText = switch (badge) {
+      _FieldBadge.required => t(lang, "form.required"),
+      _FieldBadge.optional => t(lang, "form.optional"),
+      _FieldBadge.readonly => t(lang, "form.readonly"),
+    };
+    final badgeColor = switch (badge) {
+      _FieldBadge.required => scheme.primary.withOpacity(0.12),
+      _FieldBadge.optional => scheme.onSurface.withOpacity(0.08),
+      _FieldBadge.readonly => scheme.onSurface.withOpacity(0.06),
+    };
+    final badgeTextColor = switch (badge) {
+      _FieldBadge.required => scheme.primary.withOpacity(0.95),
+      _FieldBadge.optional => scheme.onSurface.withOpacity(0.70),
+      _FieldBadge.readonly => scheme.onSurface.withOpacity(0.70),
+    };
+
+    return Row(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: scheme.onSurface.withOpacity(0.92),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _Badge(
+          text: badgeText,
+          background: badgeColor,
+          foreground: badgeTextColor,
+        ),
+      ],
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final String text;
+  final Color background;
+  final Color foreground;
+
+  const _Badge({
+    required this.text,
+    required this.background,
+    required this.foreground,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: foreground,
+        ),
+      ),
+    );
+  }
+}
+
+class _PhoneField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final String requiredMessage;
+  final bool enabled;
+  final _FieldBadge badge;
+  final String initialIso;
+
+  const _PhoneField({
+    required this.label,
+    required this.controller,
+    required this.requiredMessage,
+    required this.enabled,
+    required this.badge,
+    required this.initialIso,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _LabelRow(label: label, badge: badge),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: scheme.surface.withOpacity(0.55),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: scheme.onSurface.withOpacity(0.10),
+                  width: 1,
+                ),
+              ),
+              child: IntlPhoneField(
+                controller: controller,
+                enabled: enabled,
+                initialCountryCode: initialIso,
+                showCountryFlag: !kIsWeb,
+                dropdownIcon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: scheme.onSurface.withOpacity(0.55),
+                  size: 18,
+                ),
+                dropdownIconPosition: IconPosition.trailing,
+                flagsButtonPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurface.withOpacity(0.92),
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                ),
+                onChanged: (phone) =>
+                    controller.text = phone.completeNumber,
+                validator: (phone) => (phone == null ||
+                        phone.number.trim().isEmpty)
+                    ? requiredMessage
+                    : null,
+              ),
+            ),
+          ),
         ),
       ],
     );
