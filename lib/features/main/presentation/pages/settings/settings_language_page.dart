@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -27,7 +28,8 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
   @override
   void initState() {
     super.initState();
-    final current = AuthSession.instance.value.user?["preferred_language"] as String?;
+    final current =
+        AuthSession.instance.value.user?["preferred_language"] as String?;
     _selected = current?.isNotEmpty == true ? _normalizeToCode(current!) : "en";
   }
 
@@ -65,9 +67,7 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
           "Content-Type": "application/json",
           "Authorization": "Bearer $tokens",
         },
-        body: jsonEncode({
-          "preferred_language": _codeToBackendLabel(code),
-        }),
+        body: jsonEncode({"preferred_language": _codeToBackendLabel(code)}),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -93,7 +93,7 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
             type: ToastificationType.success,
             style: ToastificationStyle.fillColored,
             title: Text(t(_selected, "settings.language")),
-            description: Text("Language updated"),
+            description: const Text("Language updated"),
             alignment: Alignment.topCenter,
             autoCloseDuration: const Duration(seconds: 3),
           );
@@ -120,6 +120,8 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return MainScaffold(
       title: "Language",
       showAppBar: false,
@@ -133,65 +135,286 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
             style: TextStyle(
               fontSize: 12,
               height: 1.25,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.68),
+              color: scheme.onSurface.withOpacity(0.68),
             ),
           ),
           const SizedBox(height: 14),
-          ...supportedLanguages.map((code) => _LanguageTile(
-                code: code,
-                selected: _selected == code,
-                onTap: () => _select(code),
-              )),
+
+          // Glass list container
+          _GlassCard(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              children: _withDividers(
+                context,
+                supportedLanguages
+                    .map(
+                      (code) => _LanguageTile(
+                        code: code,
+                        selected: _selected == code,
+                        isBusy: _busy,
+                        onTap: () => _select(code),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
+  List<Widget> _withDividers(BuildContext context, List<Widget> tiles) {
+    final scheme = Theme.of(context).colorScheme;
+
+    final out = <Widget>[];
+    for (var i = 0; i < tiles.length; i++) {
+      out.add(tiles[i]);
+      if (i != tiles.length - 1) {
+        out.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 44, right: 6),
+            child: Divider(
+              height: 14,
+              thickness: 1,
+              color: scheme.onSurface.withOpacity(0.06),
+            ),
+          ),
+        );
+      }
+    }
+    return out;
+  }
 }
 
-class _LanguageTile extends StatelessWidget {
+class _LanguageTile extends StatefulWidget {
   final String code;
   final bool selected;
+  final bool isBusy;
   final VoidCallback onTap;
 
   const _LanguageTile({
     required this.code,
     required this.selected,
+    required this.isBusy,
     required this.onTap,
   });
 
-  String get _label => switch (code) {
+  @override
+  State<_LanguageTile> createState() => _LanguageTileState();
+}
+
+class _LanguageTileState extends State<_LanguageTile> {
+  bool _pressed = false;
+  bool _hovered = false;
+
+  void _setPressed(bool v) => setState(() => _pressed = v);
+  void _setHovered(bool v) => setState(() => _hovered = v);
+
+  String get _label => switch (widget.code) {
         "en" => "English",
         "rw" => "Kinyarwanda",
         "fr" => "French",
         "es" => "Spanish",
         "de" => "German",
-        _ => code,
+        _ => widget.code,
+      };
+
+  String get _subtitle => switch (widget.code) {
+        "en" => "Default experience",
+        "rw" => "Ururimi rw’iwacu",
+        "fr" => "Expérience en français",
+        "es" => "Experiencia en español",
+        "de" => "Erlebnis auf Deutsch",
+        _ => "",
       };
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      child: ListTile(
-        leading: CircleAvatar(
-          radius: 16,
-          backgroundColor: scheme.primary.withOpacity(0.12),
-          child: HugeIcon(
-            icon: HugeIcons.strokeRoundedLanguageSkill,
-            size: 18,
-            strokeWidth: 2,
-            color: scheme.primary,
+
+    final isActive = _pressed || _hovered;
+    final disabled = widget.isBusy && !widget.selected;
+
+    return MouseRegion(
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: disabled ? null : (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        onTap: disabled ? null : widget.onTap,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 140),
+          opacity: disabled ? 0.55 : 1,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: isActive
+                  ? scheme.onSurface.withOpacity(0.06)
+                  : Colors.transparent,
+            ),
+            child: AnimatedScale(
+              duration: const Duration(milliseconds: 140),
+              curve: Curves.easeOut,
+              scale: _pressed ? 0.985 : 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                child: Row(
+                  children: [
+                    _IconBadge(
+                      icon: HugeIcons.strokeRoundedLanguageSkill,
+                      selected: widget.selected,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _label,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14, // ✅ title 14
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _subtitle,
+                            style: TextStyle(
+                              fontSize: 12, // ✅ subtitle 12
+                              height: 1.2,
+                              color: scheme.onSurface.withOpacity(0.68),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      transitionBuilder: (child, anim) => ScaleTransition(
+                        scale: anim,
+                        child: FadeTransition(opacity: anim, child: child),
+                      ),
+                      child: widget.isBusy && widget.selected
+                          ? SizedBox(
+                              key: const ValueKey("spinner"),
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation(scheme.primary),
+                              ),
+                            )
+                          : Icon(
+                              widget.selected
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded,
+                              key: ValueKey(widget.selected ? "on" : "off"),
+                              size: 18,
+                              color: widget.selected
+                                  ? scheme.primary
+                                  : scheme.onSurface.withOpacity(0.4),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
-        title: Text(
-          _label,
-          style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+class _IconBadge extends StatelessWidget {
+  final dynamic icon;
+  final bool selected;
+
+  const _IconBadge({
+    required this.icon,
+    required this.selected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      height: 30,
+      width: 30,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary.withOpacity(selected ? 0.26 : 0.20),
+            scheme.primary.withOpacity(selected ? 0.14 : 0.10),
+          ],
         ),
-        trailing: selected
-            ? Icon(Icons.check_circle, color: scheme.primary)
-            : Icon(Icons.radio_button_unchecked, color: scheme.onSurface.withOpacity(0.4)),
-        onTap: onTap,
+        border: Border.all(
+          color: scheme.onSurface.withOpacity(selected ? 0.14 : 0.10),
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: HugeIcon(
+          icon: icon,
+          color: scheme.primary.withOpacity(selected ? 1 : 0.95),
+          size: 14, // ✅ all icons 14
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _GlassCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(0),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: scheme.surface.withOpacity(0.55),
+            border: Border.all(
+              color: scheme.onSurface.withOpacity(0.10),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: child,
+        ),
       ),
     );
   }

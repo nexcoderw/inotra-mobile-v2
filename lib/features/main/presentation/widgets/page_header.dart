@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
+import "../../../../i18n/lang.dart";
+
 /// Reusable page header with a back icon and dynamic title.
 class PageHeader extends StatelessWidget {
   final String title;
@@ -29,7 +31,7 @@ class PageHeader extends StatelessWidget {
               color: scheme.onSurface,
             ),
             onPressed: onBack ?? () => Navigator.maybePop(context),
-            tooltip: "Back",
+            tooltip: tr("nav.back"),
           ),
           const SizedBox(width: 4),
           Text(
