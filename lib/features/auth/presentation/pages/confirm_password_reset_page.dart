@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
@@ -663,8 +664,8 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final t = _c.value; // 0..1
         double bump(double phase) {
           // smooth pulse 0..1
-          final x = (t - phase) * 2 * 3.141592653589793;
-          return (0.5 + 0.5 * (-(x).cos())).clamp(0.0, 1.0);
+          final x = (t - phase) * 2 * math.pi;
+          return (0.5 + 0.5 * (-math.cos(x))).clamp(0.0, 1.0);
         }
 
         final b1 = bump(0.0);
