@@ -41,6 +41,7 @@ dependencies:
   http: ^1.2.0
   shared_preferences: ^2.2.2
   google_sign_in: ^6.1.5
+  provider: ^6.1.2
   intl_phone_field: ^3.2.0
   shadcn_ui: ^0.46.1
   world_countries: ^3.9.4
