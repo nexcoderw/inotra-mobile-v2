@@ -38,6 +38,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   hugeicons: ^1.1.5
   toastification: ^3.0.3
+  http: ^1.2.0
   intl_phone_field: ^3.2.0
   shadcn_ui: ^0.46.1
   world_countries: ^3.9.4
