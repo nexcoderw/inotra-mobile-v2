@@ -264,6 +264,19 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                 busy: _isBusy,
                 onTap: _isBusy ? null : _onSave,
               ),
+
+              const SizedBox(height: 14),
+
+              Center(
+                child: TextButton.icon(
+                  onPressed: _isBusy ? null : _onResendOtp,
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: Text(
+                    tr("auth.resend_code"),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -514,6 +527,68 @@ class _PrimaryButton extends StatefulWidget {
 class _PrimaryButtonState extends State<_PrimaryButton> {
   bool _pressed = false;
   void _setPressed(bool v) => setState(() => _pressed = v);
+
+  Future<void> _onResendOtp() async {
+    if (_isBusy) return;
+    setState(() => _isBusy = true);
+    try {
+      final uri = Api.url(AuthEndpoints.passwordResetRequest);
+      final resp = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": _email}),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        ResetPasswordCache.instance
+          ..setEmail(_email)
+          ..setOtp("");
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: Text(tr("auth.reset_email_sent")),
+          description: Text(tr("auth.reset_email_desc")),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.resetPassword,
+          (_) => false,
+          arguments: _email,
+        );
+        return;
+      }
+
+      final detail = _extractError(resp);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(tr("auth.reset_failed")),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: Text(tr("auth.network_error")),
+          description: Text(tr("auth.network_retry")),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
