@@ -11,6 +11,7 @@ import "package:world_countries/world_countries.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
+import "../../../../core/services/registration_cache.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -82,6 +83,8 @@ class _RegisterPageState extends State<RegisterPage> {
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
         );
+
+        RegistrationCache.instance.setEmail(_email.text.trim());
 
         Navigator.pushNamed(
           context,
