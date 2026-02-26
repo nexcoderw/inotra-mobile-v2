@@ -314,6 +314,39 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     return "Update failed (${response.statusCode})";
   }
 
+  (String, String) _splitPhone(String raw) {
+    if (raw.isEmpty) return ("RW", "");
+    var p = raw.trim();
+    if (p.startsWith("+")) p = p.substring(1);
+    // Extract leading country code digits (up to 3)
+    String code = "250";
+    String number = p;
+    if (p.startsWith("250")) {
+      code = "250";
+      number = p.substring(3);
+    } else if (p.startsWith("33")) {
+      code = "33";
+      number = p.substring(2);
+    } else if (p.startsWith("49")) {
+      code = "49";
+      number = p.substring(2);
+    } else if (p.startsWith("34")) {
+      code = "34";
+      number = p.substring(2);
+    } else if (p.startsWith("44")) {
+      code = "44";
+      number = p.substring(2);
+    } else if (p.startsWith("1")) {
+      code = "1";
+      number = p.substring(1);
+    } else if (p.startsWith("0")) {
+      code = "250";
+      number = p.substring(1);
+    }
+    final iso = _guessIso("+$code");
+    return (iso, number);
+  }
+
   String _normalizePhone(String raw, String iso) {
     if (raw.isEmpty) return raw;
     if (raw.startsWith("+")) return raw;
