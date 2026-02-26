@@ -4,6 +4,8 @@ import "package:hugeicons/hugeicons.dart";
 import "../../widgets/main_scaffold.dart";
 import "../../widgets/page_header.dart";
 import "../../../../../core/config/app_routes.dart";
+import "../../../../../i18n/translations.dart";
+import "../../../../../core/services/auth_session.dart";
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
