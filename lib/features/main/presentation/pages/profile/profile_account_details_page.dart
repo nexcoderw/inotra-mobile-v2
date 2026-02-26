@@ -749,27 +749,13 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: widget.busy
-                    ? const SizedBox(
-                        key: ValueKey("spinner"),
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        widget.label,
-                        key: const ValueKey("label"),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
+              child: Text(
+                widget.busy ? t(currentLangSync(), "auth.wait") : widget.label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
