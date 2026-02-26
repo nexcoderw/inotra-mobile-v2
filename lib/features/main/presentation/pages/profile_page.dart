@@ -127,6 +127,17 @@ class ProfilePage extends StatelessWidget {
                     onTap: () => Navigator.pushNamed(
                         context, AppRoutes.profileDanger),
                   ),
+                  _ProfileNavTile(
+                    icon: HugeIcons.strokeRoundedLogout02,
+                    color: scheme.error,
+                    title: t(lang, "nav.logout"),
+                    subtitle: t(lang, "nav.logout_sub"),
+                    onTap: () {
+                      AuthSession.instance.signOut();
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, AppRoutes.login, (_) => false);
+                    },
+                  ),
                 ],
               ),
             ),
