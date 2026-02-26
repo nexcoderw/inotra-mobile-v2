@@ -1,8 +1,14 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:http/http.dart" as http;
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/config/api.dart";
 import "../../../../core/constants/app_colors.dart";
+import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
@@ -22,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _rememberMe = false;
   bool _obscure = true;
   bool _isBusy = false;
+  String? _error;
 
   @override
   void dispose() {
@@ -33,16 +40,92 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isBusy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    setState(() {
+      _isBusy = true;
+      _error = null;
+    });
 
-    if (!mounted) return;
-    setState(() => _isBusy = false);
+    try {
+      final uri = Api.url(AuthEndpoints.login);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "identifier": _identifier.text.trim(),
+          "password": _password.text,
+        }),
+      );
 
-    AuthSession.instance.signIn(displayName: _identifier.text.trim());
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = _safeJson(response.body);
+        final displayName =
+            body?["user"]?["name"] as String? ?? _identifier.text.trim();
 
-    // static navigation for now
-    Navigator.pushReplacementNamed(context, AppRoutes.home);
+        AuthSession.instance.signIn(displayName: displayName);
+
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Signed in"),
+          description: const Text("Welcome back to Inotra."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+        return;
+      }
+
+      final detail = _extractError(response);
+      _error = detail;
+
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Sign in failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      final message = "Unable to sign in. Please check your connection and try again.";
+      _error = message;
+
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Network error"),
+          description: Text(message),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Map<String, dynamic>? _safeJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractError(http.Response response) {
+    final body = _safeJson(response.body);
+    final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
+    if (detail is String && detail.trim().isNotEmpty) return detail.trim();
+    return "Incorrect credentials. Please try again.";
   }
 
   @override
@@ -155,6 +238,26 @@ class _LoginPageState extends State<LoginPage> {
             ),
 
             const SizedBox(height: 16),
+
+            if (_error != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withOpacity(0.18)),
+                ),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
 
             Row(
               children: [
