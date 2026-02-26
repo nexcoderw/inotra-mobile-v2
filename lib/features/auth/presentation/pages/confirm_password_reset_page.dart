@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -19,7 +20,8 @@ class ConfirmPasswordResetPage extends StatefulWidget {
   const ConfirmPasswordResetPage({super.key, this.email});
 
   @override
-  State<ConfirmPasswordResetPage> createState() => _ConfirmPasswordResetPageState();
+  State<ConfirmPasswordResetPage> createState() =>
+      _ConfirmPasswordResetPageState();
 }
 
 class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
@@ -115,8 +117,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
   Map<String, dynamic>? _safeJson(String raw) {
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return null;
+      return decoded is Map<String, dynamic> ? decoded : null;
     } catch (_) {
       return null;
     }
@@ -131,80 +132,300 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return AuthScaffold(
       child: Form(
         key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AuthUI.heading(tr("auth.set_new_password")),
-            const SizedBox(height: 6),
-            AuthUI.subheading(tr("auth.set_new_password_sub")),
-            const SizedBox(height: 26),
+        child: _GlassCard(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AuthUI.heading(tr("auth.set_new_password")),
+              const SizedBox(height: 6),
+              AuthUI.subheading(tr("auth.set_new_password_sub")),
+              const SizedBox(height: 18),
 
-            AuthUI.label(tr("auth.new_password")),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: _newPassword,
-              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
-              obscureText: _obscure1,
-              decoration: AuthUI.fieldDecoration(
+              // Small premium hint
+              Text(
+                "Use a strong password (8+ characters).",
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.2,
+                  color: scheme.onSurface.withOpacity(0.65),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              AuthUI.label(tr("auth.new_password")),
+              const SizedBox(height: 10),
+              _GlassPasswordField(
+                controller: _newPassword,
                 hint: tr("auth.new_password_hint"),
-                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
-                suffix: IconButton(
-                  onPressed: () => setState(() => _obscure1 = !_obscure1),
-                  icon: HugeIcon(
-                    icon: _obscure1
-                        ? HugeIcons.strokeRoundedViewOff
-                        : HugeIcons.strokeRoundedView,
-                    size: 22,
-                    strokeWidth: 2,
-                    color: Colors.black.withOpacity(0.55),
-                  ),
-                ),
+                obscure: _obscure1,
+                enabled: !_isBusy,
+                onToggle: () => setState(() => _obscure1 = !_obscure1),
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? tr("auth.password_required") : null,
               ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? tr("auth.password_required") : null,
-            ),
 
-            const SizedBox(height: 18),
+              const SizedBox(height: 16),
 
-            AuthUI.label(tr("auth.confirm_new_password")),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: _confirmPassword,
-              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
-              obscureText: _obscure2,
-              decoration: AuthUI.fieldDecoration(
+              AuthUI.label(tr("auth.confirm_new_password")),
+              const SizedBox(height: 10),
+              _GlassPasswordField(
+                controller: _confirmPassword,
                 hint: tr("auth.confirm_new_password_hint"),
-                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
-                suffix: IconButton(
-                  onPressed: () => setState(() => _obscure2 = !_obscure2),
+                obscure: _obscure2,
+                enabled: !_isBusy,
+                onToggle: () => setState(() => _obscure2 = !_obscure2),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return tr("auth.confirm_password_required");
+                  if (v != _newPassword.text) return tr("auth.passwords_mismatch");
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 18),
+
+              _PrimaryButton(
+                label: tr("auth.save_changes"),
+                busy: _isBusy,
+                onTap: _isBusy ? null : _onSave,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassPasswordField extends StatefulWidget {
+  final TextEditingController controller;
+  final String hint;
+  final bool obscure;
+  final VoidCallback onToggle;
+  final bool enabled;
+  final String? Function(String?) validator;
+
+  const _GlassPasswordField({
+    required this.controller,
+    required this.hint,
+    required this.obscure,
+    required this.onToggle,
+    required this.enabled,
+    required this.validator,
+  });
+
+  @override
+  State<_GlassPasswordField> createState() => _GlassPasswordFieldState();
+}
+
+class _GlassPasswordFieldState extends State<_GlassPasswordField> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    final borderColor = _focused
+        ? scheme.primary.withOpacity(0.35)
+        : scheme.onSurface.withOpacity(0.10);
+
+    return Focus(
+      onFocusChange: (v) => setState(() => _focused = v),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            decoration: BoxDecoration(
+              color: scheme.surface.withOpacity(0.55),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: TextFormField(
+              controller: widget.controller,
+              obscureText: widget.obscure,
+              enabled: widget.enabled,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface.withOpacity(0.92),
+              ),
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurface.withOpacity(0.45),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: InputBorder.none,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: Center(
+                    widthFactor: 1,
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedLockPassword,
+                      size: 14, // ✅ icon size 14
+                      strokeWidth: 2,
+                      color: scheme.primary.withOpacity(0.95),
+                    ),
+                  ),
+                ),
+                suffixIcon: IconButton(
+                  onPressed: widget.enabled ? widget.onToggle : null,
                   icon: HugeIcon(
-                    icon: _obscure2
+                    icon: widget.obscure
                         ? HugeIcons.strokeRoundedViewOff
                         : HugeIcons.strokeRoundedView,
-                    size: 22,
+                    size: 14, // ✅ icon size 14
                     strokeWidth: 2,
-                    color: Colors.black.withOpacity(0.55),
+                    color: scheme.onSurface.withOpacity(0.55),
                   ),
                 ),
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return tr("auth.confirm_password_required");
-                if (v != _newPassword.text) return tr("auth.passwords_mismatch");
-                return null;
-              },
+              validator: widget.validator,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 22),
+class _PrimaryButton extends StatefulWidget {
+  final String label;
+  final bool busy;
+  final VoidCallback? onTap;
 
-            AuthUI.primaryPillButton(
-              text: tr("auth.save_changes"),
-              busy: _isBusy,
-              onPressed: _isBusy ? null : _onSave,
+  const _PrimaryButton({
+    required this.label,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  State<_PrimaryButton> createState() => _PrimaryButtonState();
+}
+
+class _PrimaryButtonState extends State<_PrimaryButton> {
+  bool _pressed = false;
+  bool _hovered = false;
+
+  void _setPressed(bool v) => setState(() => _pressed = v);
+  void _setHovered(bool v) => setState(() => _hovered = v);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return MouseRegion(
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
+      child: GestureDetector(
+        onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          scale: _pressed ? 0.99 : 1,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  scheme.primary,
+                  scheme.primary.withOpacity(0.85),
+                ],
+              ),
+              boxShadow: [
+                if (_hovered || _pressed)
+                  BoxShadow(
+                    color: scheme.primary.withOpacity(0.35),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+              ],
             ),
-          ],
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: widget.busy
+                    ? const SizedBox(
+                        key: ValueKey("spinner"),
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        widget.label,
+                        key: const ValueKey("label"),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14, // ✅ title 14
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _GlassCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(0),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: scheme.surface.withOpacity(0.55),
+            border: Border.all(
+              color: scheme.onSurface.withOpacity(0.10),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: child,
         ),
       ),
     );
