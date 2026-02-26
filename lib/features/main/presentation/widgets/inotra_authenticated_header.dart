@@ -135,8 +135,8 @@ String _shortName(String full) {
   if (parts.isEmpty || parts.first.isEmpty) return full;
   final firstInitial = parts.first[0];
   final second = parts.length > 1 ? parts[1] : "";
-  if (second.isEmpty) return firstInitial;
-  return "$firstInitial $second";
+  if (second.isEmpty) return "$firstInitial.";
+  return "$firstInitial. $second";
 }
 
 class _IconPillButton extends StatefulWidget {
