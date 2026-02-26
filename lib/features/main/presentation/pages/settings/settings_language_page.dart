@@ -73,6 +73,14 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
         body: jsonEncode({"preferred_language": _codeToBackendLabel(code)}),
       );
 
+      if (response.statusCode == 401) {
+        await AuthSession.instance.expireSession();
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        }
+        return;
+      }
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         _selected = code;
         await LanguageService.save(code);
