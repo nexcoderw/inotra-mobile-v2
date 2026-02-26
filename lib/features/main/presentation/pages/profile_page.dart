@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 import "../../../../core/config/app_routes.dart";
 import "../widgets/main_scaffold.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -13,23 +15,24 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = currentLangSync();
     return MainScaffold(
-      title: "Profile",
+      title: t(lang, "profile.title"),
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const CircleAvatar(radius: 32, child: Icon(Icons.person)),
           const SizedBox(height: 12),
-          const Text(
-            "User Profile",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          Text(
+            t(lang, "profile.user_profile"),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 18),
           Card(
             child: ListTile(
               leading: const Icon(Icons.notifications_outlined),
-              title: const Text("Notifications"),
+              title: Text(t(lang, "profile.notifications")),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
             ),
@@ -38,7 +41,7 @@ class ProfilePage extends StatelessWidget {
           Card(
             child: ListTile(
               leading: const Icon(Icons.logout),
-              title: const Text("Logout"),
+              title: Text(t(lang, "nav.logout")),
               onTap: () => _logout(context),
             ),
           ),
