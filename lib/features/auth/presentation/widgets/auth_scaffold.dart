@@ -1,3 +1,4 @@
+import "dart:async";
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import "package:http/http.dart" as http;
@@ -150,7 +151,7 @@ class _LangSelector extends StatelessWidget {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: Image.asset(
-                      "assets/icons/language/$c.png",
+                      "icons/language/$c.png",
                       width: 20,
                       height: 14,
                       fit: BoxFit.cover,
@@ -180,7 +181,7 @@ class _LangSelector extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: Image.asset(
-                "assets/icons/language/$current.png",
+                "icons/language/$current.png",
                 width: 20,
                 height: 14,
                 fit: BoxFit.cover,
