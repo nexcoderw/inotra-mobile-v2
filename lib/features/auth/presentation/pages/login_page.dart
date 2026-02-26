@@ -13,6 +13,8 @@ import "../../../../core/constants/app_colors.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -88,8 +90,8 @@ class _LoginPageState extends State<LoginPage> {
           context: context,
           type: ToastificationType.success,
           style: ToastificationStyle.fillColored,
-          title: const Text("Signed in"),
-          description: const Text("Welcome back to Inotra."),
+          title: Text(tr("auth.signed_in")),
+          description: Text(tr("auth.welcome_back")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 3),
         );
@@ -106,13 +108,13 @@ class _LoginPageState extends State<LoginPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Sign in failed"),
+        title: Text(tr("auth.login_failed")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
     } catch (e) {
-      final message = "Unable to sign in. Please check your connection and try again.";
+      final message = tr("auth.network_retry");
       _error = message;
 
       if (mounted) {
@@ -120,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Network error"),
+          title: Text(tr("auth.network_error")),
           description: Text(message),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
@@ -145,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
     final body = _safeJson(response.body);
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
-    return "Incorrect credentials. Please try again.";
+    return tr("auth.incorrect_credentials");
   }
 
   Future<void> _onGoogleLogin() async {
@@ -192,8 +194,8 @@ class _LoginPageState extends State<LoginPage> {
             context: context,
             type: ToastificationType.success,
             style: ToastificationStyle.fillColored,
-            title: const Text("Signed in with Google"),
-            description: const Text("Welcome to Inotra."),
+            title: Text(tr("auth.google_success")),
+            description: Text(tr("auth.welcome")),
             alignment: Alignment.topCenter,
             autoCloseDuration: const Duration(seconds: 3),
           );
@@ -208,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Google sign in failed"),
+        title: Text(tr("auth.google_error")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -219,7 +221,7 @@ class _LoginPageState extends State<LoginPage> {
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Google sign in error"),
+          title: Text(tr("auth.google_error")),
           description: Text(e.toString()),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
@@ -238,12 +240,12 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthUI.heading("Sign in"),
+            AuthUI.heading(tr("auth.sign_in")),
             const SizedBox(height: 6),
-            AuthUI.subheading("Please enter your information to proceed"),
+            AuthUI.subheading(tr("auth.sign_in_title")),
             const SizedBox(height: 26),
 
-            AuthUI.label("Email / Phone / Username"),
+            AuthUI.label(tr("auth.identifier")),
             const SizedBox(height: 10),
 
             TextFormField(
@@ -251,16 +253,16 @@ class _LoginPageState extends State<LoginPage> {
               style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter email, phone number, or username",
+                hint: tr("auth.identifier"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedUser),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "Identifier is required" : null,
+                  (v == null || v.trim().isEmpty) ? tr("auth.identifier_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Password"),
+            AuthUI.label(tr("auth.password")),
             const SizedBox(height: 10),
 
             TextFormField(
@@ -268,7 +270,7 @@ class _LoginPageState extends State<LoginPage> {
               obscureText: _obscure,
               style: AuthUI.fieldTextStyle,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter password",
+                hint: tr("auth.password"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure = !_obscure),
@@ -283,7 +285,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               validator: (v) =>
-                  (v == null || v.isEmpty) ? "Password is required" : null,
+                  (v == null || v.isEmpty) ? tr("auth.password_required") : null,
             ),
 
             const SizedBox(height: 16),
@@ -312,7 +314,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(width: 10),
                       Text(
-                        "Remember me",
+                        tr("auth.remember_me"),
                         style: TextStyle(
                           color: Colors.black.withOpacity(0.60),
                           fontWeight: FontWeight.w600,
@@ -326,7 +328,7 @@ class _LoginPageState extends State<LoginPage> {
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
                   child: Text(
-                    "Forgot password?",
+                    tr("auth.forgot_password"),
                     style: TextStyle(
                       color: Colors.black.withOpacity(0.55),
                       fontWeight: FontWeight.w700,
@@ -347,8 +349,8 @@ class _LoginPageState extends State<LoginPage> {
                 Expanded(
                   child: SizedBox(
                     height: 48,
-                    child: ElevatedButton(
-                      onPressed: _isBusy ? null : _onLogin,
+                      child: ElevatedButton(
+                        onPressed: _isBusy ? null : _onLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -358,7 +360,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: Text(
-                        _isBusy ? "Signing In..." : "Sign In",
+                        _isBusy ? tr("auth.wait") : tr("auth.sign_in"),
                         style: AuthUI.buttonTextStyle,
                       ),
                     ),
@@ -373,8 +375,8 @@ class _LoginPageState extends State<LoginPage> {
                   child: ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Biometric sign-in coming soon"),
+                    SnackBar(
+                      content: Text(tr("auth.biometric_soon")),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -403,6 +405,7 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 18),
 
             SizedBox(
+            SizedBox(
               height: 56,
               child: OutlinedButton(
                 onPressed: _isBusy ? null : _onGoogleLogin,
@@ -419,7 +422,7 @@ class _LoginPageState extends State<LoginPage> {
                     const _GoogleMark(),
                     const SizedBox(width: 12),
                     Text(
-                      "Continue with Google",
+                      tr("auth.sign_in_google"),
                       style: TextStyle(
                         color: Colors.black.withOpacity(0.70),
                         fontWeight: FontWeight.w800,
@@ -437,7 +440,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Don't have an account? ",
+                  "${tr("auth.no_account")} ",
                   style: TextStyle(
                     color: Colors.black.withOpacity(0.35),
                     fontWeight: FontWeight.w700,
@@ -447,7 +450,7 @@ class _LoginPageState extends State<LoginPage> {
                 InkWell(
                   onTap: () => Navigator.pushNamed(context, AppRoutes.register),
                   child: Text(
-                    "Sign Up",
+                    tr("auth.sign_up"),
                     style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w900,
