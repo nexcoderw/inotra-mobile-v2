@@ -1,15 +1,18 @@
 import "dart:convert";
 
 import "package:flutter/material.dart";
+import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
+import "../../../../core/config/env.dart";
 import "../../../../core/constants/app_colors.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/auth_storage.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -29,6 +32,16 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscure = true;
   bool _isBusy = false;
   String? _error;
+  late final GoogleSignIn _googleSignIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleSignIn = GoogleSignIn(
+      clientId: Env.googleClientId,
+      scopes: ["email", "profile", "openid"],
+    );
+  }
 
   @override
   void dispose() {
@@ -58,10 +71,16 @@ class _LoginPageState extends State<LoginPage> {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = _safeJson(response.body);
-        final displayName =
-            body?["user"]?["name"] as String? ?? _identifier.text.trim();
+        final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
+        final user = body?["user"] as Map<String, dynamic>? ?? {};
 
-        AuthSession.instance.signIn(displayName: displayName);
+        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        AuthSession.instance.signIn(
+          user: user,
+          accessToken: tokens["access"] as String? ?? "",
+          refreshToken: tokens["refresh"] as String? ?? "",
+          theme: "light",
+        );
 
         if (!mounted) return;
         toastification.show(
@@ -126,6 +145,88 @@ class _LoginPageState extends State<LoginPage> {
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
     return "Incorrect credentials. Please try again.";
+  }
+
+  Future<void> _onGoogleLogin() async {
+    setState(() {
+      _isBusy = true;
+      _error = null;
+    });
+
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        if (mounted) setState(() => _isBusy = false);
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        throw Exception("Missing Google ID token");
+      }
+
+      final uri = Api.url(AuthEndpoints.googleLogin);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"token": idToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = _safeJson(response.body);
+        final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
+        final user = body?["user"] as Map<String, dynamic>? ?? {};
+
+        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        AuthSession.instance.signIn(
+          user: user,
+          accessToken: tokens["access"] as String? ?? "",
+          refreshToken: tokens["refresh"] as String? ?? "",
+          theme: "light",
+        );
+
+        if (mounted) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.fillColored,
+            title: const Text("Signed in with Google"),
+            description: const Text("Welcome to Inotra."),
+            alignment: Alignment.topCenter,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.home);
+        }
+        return;
+      }
+
+      final detail = _extractError(response);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Google sign in failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Google sign in error"),
+          description: Text(e.toString()),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
   }
 
   @override
@@ -303,14 +404,7 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(
               height: 56,
               child: OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Google login coming soon"),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onPressed: _isBusy ? null : _onGoogleLogin,
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   side: BorderSide(color: Colors.black.withOpacity(0.08)),
