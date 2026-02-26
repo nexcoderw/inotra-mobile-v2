@@ -1,7 +1,14 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:http/http.dart" as http;
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/config/api.dart";
+import "../../../../core/constants/api/auth_endpoints.dart";
+import "../../../../core/services/reset_password_cache.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -17,10 +24,20 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
   final _formKey = GlobalKey<FormState>();
   final _newPassword = TextEditingController();
   final _confirmPassword = TextEditingController();
+  late final String _email;
+  late final String _otp;
 
   bool _obscure1 = true;
   bool _obscure2 = true;
   bool _isBusy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final cache = ResetPasswordCache.instance;
+    _email = widget.email ?? cache.email ?? "";
+    _otp = cache.otp ?? "";
+  }
 
   @override
   void dispose() {
@@ -33,11 +50,81 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isBusy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() => _isBusy = false);
 
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+    try {
+      final uri = Api.url(AuthEndpoints.passwordResetConfirm);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": _email,
+          "otp": _otp,
+          "password": _newPassword.text,
+          "confirm_password": _confirmPassword.text,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        ResetPasswordCache.instance.clear();
+
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Password updated"),
+          description: const Text("You can now sign in with your new password."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+        return;
+      }
+
+      final detail = _extractError(response);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Reset failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Network error"),
+          description: const Text("Unable to save password. Try again shortly."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Map<String, dynamic>? _safeJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractError(http.Response response) {
+    final body = _safeJson(response.body);
+    final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
+    if (detail is String && detail.trim().isNotEmpty) return detail.trim();
+    return "We couldn't reset your password. Please double-check the code and try again.";
   }
 
   @override
