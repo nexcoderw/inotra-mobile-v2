@@ -6,17 +6,16 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../widgets/main_scaffold.dart";
 import "../../widgets/page_header.dart";
-import "../../../../core/services/theme_notifier.dart";
+import "../../../../../core/services/theme_notifier.dart";
 
 class SettingsThemePage extends StatelessWidget {
   const SettingsThemePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     final notifier = context.watch<ThemeNotifier>();
     final current = notifier.mode;
+    final scheme = Theme.of(context).colorScheme;
 
     return MainScaffold(
       title: "Theme",
