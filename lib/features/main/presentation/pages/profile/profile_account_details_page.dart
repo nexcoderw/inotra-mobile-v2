@@ -1,9 +1,11 @@
 import "dart:convert";
 import "dart:typed_data";
+import "dart:ui";
 
 import "package:file_picker/file_picker.dart";
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
+import "package:hugeicons/hugeicons.dart";
 import "package:toastification/toastification.dart";
 
 import "../../../../../core/config/api.dart";
@@ -20,7 +22,8 @@ class ProfileAccountDetailsPage extends StatefulWidget {
   const ProfileAccountDetailsPage({super.key});
 
   @override
-  State<ProfileAccountDetailsPage> createState() => _ProfileAccountDetailsPageState();
+  State<ProfileAccountDetailsPage> createState() =>
+      _ProfileAccountDetailsPageState();
 }
 
 class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
@@ -29,6 +32,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   late final TextEditingController _username;
   late final TextEditingController _phone;
   late final TextEditingController _email;
+
   Uint8List? _avatarBytes;
   String? _avatarName;
   bool _busy = false;
@@ -39,8 +43,9 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     final user = AuthSession.instance.value.user ?? {};
     _name = TextEditingController(text: (user["name"] ?? "") as String);
     _username = TextEditingController(text: (user["username"] ?? "") as String);
-    _phone = TextEditingController(text: (user["phone_number"] ?? "") as String);
-    _email = TextEditingController(text: (user["email"] ?? "") as String)..text;
+    _phone =
+        TextEditingController(text: (user["phone_number"] ?? "") as String);
+    _email = TextEditingController(text: (user["email"] ?? "") as String);
   }
 
   @override
@@ -60,81 +65,116 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     return MainScaffold(
       title: t(lang, "profile.account_details"),
       showAppBar: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        children: [
-          PageHeader(
-            title: t(lang, "profile.account_details"),
-            onBack: () => Navigator.of(context).pop(),
-          ),
-          _AvatarPicker(
-            bytes: _avatarBytes,
-            imageUrl: AuthSession.instance.value.user?["image"] as String?,
-            onPick: _pickAvatar,
-            busy: _busy,
-          ),
-          const SizedBox(height: 16),
-          _Input(
-            label: t(lang, "auth.name"),
-            controller: _name,
-            requiredMessage: t(lang, "auth.required_field"),
-          ),
-          const SizedBox(height: 12),
-          _Input(
-            label: t(lang, "auth.username"),
-            controller: _username,
-            requiredMessage: t(lang, "auth.required_field"),
-          ),
-          const SizedBox(height: 12),
-          _Input(
-            label: t(lang, "auth.phone"),
-            controller: _phone,
-            keyboard: TextInputType.phone,
-            requiredMessage: t(lang, "auth.required_field"),
-          ),
-          const SizedBox(height: 12),
-          _Input(
-            label: t(lang, "auth.email"),
-            controller: _email,
-            readOnly: true,
-            requiredMessage: t(lang, "auth.required_field"),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _busy ? null : _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: scheme.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: _busy
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      t(lang, "auth.save_changes"),
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                    ),
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            PageHeader(
+              title: t(lang, "profile.account_details"),
+              onBack: () => Navigator.of(context).pop(),
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+
+            // ✅ Premium glass header (avatar + hint)
+            _GlassCard(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _AvatarPicker(
+                    bytes: _avatarBytes,
+                    imageUrl:
+                        AuthSession.instance.value.user?["image"] as String?,
+                    onPick: _pickAvatar,
+                    busy: _busy,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    t(lang, "profile.user_profile"),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Update your personal information",
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.2,
+                      color: scheme.onSurface.withOpacity(0.65),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ✅ Glass form container
+            _GlassCard(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              child: Column(
+                children: [
+                  _Input(
+                    label: t(lang, "auth.name"),
+                    controller: _name,
+                    requiredMessage: t(lang, "auth.required_field"),
+                    icon: HugeIcons.strokeRoundedUser,
+                    enabled: !_busy,
+                  ),
+                  const SizedBox(height: 12),
+                  _Input(
+                    label: t(lang, "auth.username"),
+                    controller: _username,
+                    requiredMessage: t(lang, "auth.required_field"),
+                    icon: HugeIcons.strokeRoundedUserIdVerification,
+                    enabled: !_busy,
+                  ),
+                  const SizedBox(height: 12),
+                  _Input(
+                    label: t(lang, "auth.phone"),
+                    controller: _phone,
+                    keyboard: TextInputType.phone,
+                    requiredMessage: t(lang, "auth.required_field"),
+                    icon: HugeIcons.strokeRoundedCall,
+                    enabled: !_busy,
+                  ),
+                  const SizedBox(height: 12),
+                  _Input(
+                    label: t(lang, "auth.email"),
+                    controller: _email,
+                    readOnly: true,
+                    requiredMessage: t(lang, "auth.required_field"),
+                    icon: HugeIcons.strokeRoundedMail01,
+                    enabled: false,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ✅ Premium primary CTA
+            _PrimaryButton(
+              label: t(lang, "auth.save_changes"),
+              busy: _busy,
+              onTap: _busy ? null : _save,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Future<void> _pickAvatar() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+    final result = await FilePicker.platform
+        .pickFiles(type: FileType.image, withData: true);
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
     if (file.bytes == null) return;
+
     setState(() {
       _avatarBytes = file.bytes;
       _avatarName = file.name;
@@ -144,11 +184,14 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
+
     final session = AuthSession.instance.value;
     final token = session.accessToken ?? "";
     if (token.isEmpty) {
       await AuthSession.instance.signOut();
-      if (mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+      }
       return;
     }
 
@@ -161,11 +204,13 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
       req.fields["phone_number"] = _phone.text.trim();
 
       if (_avatarBytes != null && _avatarName != null) {
-        req.files.add(http.MultipartFile.fromBytes(
-          "image",
-          _avatarBytes!,
-          filename: _avatarName!,
-        ));
+        req.files.add(
+          http.MultipartFile.fromBytes(
+            "image",
+            _avatarBytes!,
+            filename: _avatarName!,
+          ),
+        );
       }
 
       final streamed = await req.send();
@@ -173,7 +218,9 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
 
       if (resp.statusCode == 401) {
         await AuthSession.instance.signOut();
-        if (mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        if (mounted) {
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        }
         return;
       }
 
@@ -192,6 +239,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
           user: nextUser,
           theme: session.theme,
         );
+
         AuthSession.instance.signIn(
           user: nextUser,
           accessToken: session.accessToken ?? "",
@@ -224,6 +272,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   void _showError(http.Response? resp, {String? fallback}) {
     final detail = resp != null ? _extractError(resp) : (fallback ?? "Update failed");
     if (!mounted) return;
+
     toastification.show(
       context: context,
       type: ToastificationType.error,
@@ -252,7 +301,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   }
 }
 
-class _AvatarPicker extends StatelessWidget {
+class _AvatarPicker extends StatefulWidget {
   final Uint8List? bytes;
   final String? imageUrl;
   final VoidCallback onPick;
@@ -266,36 +315,86 @@ class _AvatarPicker extends StatelessWidget {
   });
 
   @override
+  State<_AvatarPicker> createState() => _AvatarPickerState();
+}
+
+class _AvatarPickerState extends State<_AvatarPicker> {
+  bool _pressed = false;
+  bool _hovered = false;
+
+  void _setPressed(bool v) => setState(() => _pressed = v);
+  void _setHovered(bool v) => setState(() => _hovered = v);
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final ImageProvider<Object>? image = bytes != null
-        ? MemoryImage(bytes!)
-        : (imageUrl != null && imageUrl!.isNotEmpty ? NetworkImage(imageUrl!) : null);
 
-    return GestureDetector(
-      onTap: busy ? null : onPick,
-      child: Stack(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: scheme.primary.withOpacity(0.12),
-            backgroundImage: image,
-            child: image == null ? Icon(Icons.person, size: 40, color: scheme.primary) : null,
-          ),
-          Positioned(
-            bottom: 0,
-            right: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: scheme.primary,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: scheme.surface, width: 2),
+    final ImageProvider<Object>? image = widget.bytes != null
+        ? MemoryImage(widget.bytes!)
+        : (widget.imageUrl != null && widget.imageUrl!.isNotEmpty
+            ? NetworkImage(widget.imageUrl!)
+            : null);
+
+    final isActive = _pressed || _hovered;
+
+    return MouseRegion(
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
+      child: GestureDetector(
+        onTap: widget.busy ? null : widget.onPick,
+        onTapDown: widget.busy ? null : (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          scale: _pressed ? 0.98 : 1,
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 16,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 44,
+                  backgroundColor: scheme.primary.withOpacity(0.12),
+                  backgroundImage: image,
+                  child: image == null
+                      ? Icon(Icons.person, size: 40, color: scheme.primary)
+                      : null,
+                ),
               ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-            ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOut,
+                decoration: BoxDecoration(
+                  color: scheme.primary,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: scheme.surface, width: 2),
+                  boxShadow: [
+                    if (isActive)
+                      BoxShadow(
+                        color: scheme.primary.withOpacity(0.35),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(6),
+                child: const Icon(Icons.camera_alt_rounded,
+                    size: 14, color: Colors.white),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -307,6 +406,8 @@ class _Input extends StatelessWidget {
   final TextInputType keyboard;
   final String requiredMessage;
   final bool readOnly;
+  final dynamic icon;
+  final bool enabled;
 
   const _Input({
     required this.label,
@@ -314,11 +415,14 @@ class _Input extends StatelessWidget {
     this.keyboard = TextInputType.text,
     required this.requiredMessage,
     this.readOnly = false,
+    required this.icon,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -327,29 +431,251 @@ class _Input extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w800,
-            color: scheme.onSurface,
+            color: scheme.onSurface.withOpacity(0.92),
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
+        _GlassTextField(
           controller: controller,
-          keyboardType: keyboard,
+          keyboard: keyboard,
           readOnly: readOnly,
-          style: const TextStyle(color: Colors.black, fontSize: 12),
-          decoration: InputDecoration(
-            hintText: label,
-            filled: true,
-            fillColor: const Color(0xFFF3F4F6),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
-          ),
-          validator: (v) =>
-              readOnly ? null : (v == null || v.trim().isEmpty) ? requiredMessage : null,
+          enabled: enabled,
+          hintText: label,
+          prefixIcon: icon,
+          validator: (v) => readOnly
+              ? null
+              : (v == null || v.trim().isEmpty)
+                  ? requiredMessage
+                  : null,
         ),
       ],
+    );
+  }
+}
+
+class _GlassTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final TextInputType keyboard;
+  final bool readOnly;
+  final bool enabled;
+  final String hintText;
+  final dynamic prefixIcon;
+  final String? Function(String?)? validator;
+
+  const _GlassTextField({
+    required this.controller,
+    required this.keyboard,
+    required this.readOnly,
+    required this.enabled,
+    required this.hintText,
+    required this.prefixIcon,
+    required this.validator,
+  });
+
+  @override
+  State<_GlassTextField> createState() => _GlassTextFieldState();
+}
+
+class _GlassTextFieldState extends State<_GlassTextField> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    final borderColor = _focused
+        ? scheme.primary.withOpacity(0.35)
+        : scheme.onSurface.withOpacity(0.10);
+
+    return Focus(
+      onFocusChange: (v) => setState(() => _focused = v),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            decoration: BoxDecoration(
+              color: scheme.surface.withOpacity(0.55),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: TextFormField(
+              controller: widget.controller,
+              keyboardType: widget.keyboard,
+              readOnly: widget.readOnly,
+              enabled: widget.enabled,
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface.withOpacity(0.92),
+              ),
+              decoration: InputDecoration(
+                hintText: widget.hintText,
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurface.withOpacity(0.45),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: InputBorder.none,
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: Center(
+                    widthFactor: 1,
+                    child: widget.prefixIcon is IconData
+                        ? Icon(
+                            widget.prefixIcon as IconData,
+                            size: 14,
+                            color: scheme.primary.withOpacity(0.95),
+                          )
+                        : HugeIcon(
+                            icon: widget.prefixIcon,
+                            size: 14,
+                            strokeWidth: 2,
+                            color: scheme.primary.withOpacity(0.95),
+                          ),
+                  ),
+                ),
+              ),
+              validator: widget.validator,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatefulWidget {
+  final String label;
+  final bool busy;
+  final VoidCallback? onTap;
+
+  const _PrimaryButton({
+    required this.label,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  State<_PrimaryButton> createState() => _PrimaryButtonState();
+}
+
+class _PrimaryButtonState extends State<_PrimaryButton> {
+  bool _pressed = false;
+  bool _hovered = false;
+
+  void _setPressed(bool v) => setState(() => _pressed = v);
+  void _setHovered(bool v) => setState(() => _hovered = v);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return MouseRegion(
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
+      child: GestureDetector(
+        onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          scale: _pressed ? 0.99 : 1,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  scheme.primary,
+                  scheme.primary.withOpacity(0.85),
+                ],
+              ),
+              boxShadow: [
+                if (_hovered || _pressed)
+                  BoxShadow(
+                    color: scheme.primary.withOpacity(0.35),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+              ],
+            ),
+            child: Center(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: widget.busy
+                    ? const SizedBox(
+                        key: ValueKey("spinner"),
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        widget.label,
+                        key: const ValueKey("label"),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _GlassCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(0),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: scheme.surface.withOpacity(0.55),
+            border: Border.all(
+              color: scheme.onSurface.withOpacity(0.10),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
     );
   }
 }
