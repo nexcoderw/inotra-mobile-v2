@@ -149,9 +149,9 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     enabled: !_busy,
                     badge: _FieldBadge.required,
                     initialIso: _initialPhoneIso,
-                    onChanged: (iso, number) {
+                    onChanged: (iso, fullNumber) {
                       _currentPhoneIso = iso;
-                      _phone.text = number;
+                      _phone.text = fullNumber;
                     },
                   ),
                   const SizedBox(height: 12),
@@ -614,7 +614,7 @@ class _PhoneField extends StatelessWidget {
   final bool enabled;
   final _FieldBadge badge;
   final String initialIso;
-  final void Function(String iso, String number) onChanged;
+  final void Function(String iso, String fullNumber) onChanged;
 
   const _PhoneField({
     required this.label,
@@ -672,8 +672,10 @@ class _PhoneField extends StatelessWidget {
                 ),
                 onChanged: (phone) {
                   final iso = phone.countryISOCode ?? initialIso;
-                  controller.text = phone.number;
-                  onChanged(iso, phone.number);
+                  final dial = _isoToDial(iso);
+                  final full = "+$dial${phone.number}";
+                  controller.text = full;
+                  onChanged(iso, full);
                 },
                 validator: (phone) => (phone == null ||
                         phone.number.trim().isEmpty)
