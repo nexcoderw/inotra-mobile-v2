@@ -51,6 +51,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   }
 
   Future<void> _onContinue() async {
+    _ensureOtpFields();
     if (!_formKey.currentState!.validate()) return;
 
     final otp = _otp.map((e) => e.text).join().trim();
