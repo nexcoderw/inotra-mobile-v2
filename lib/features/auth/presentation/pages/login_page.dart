@@ -273,7 +273,7 @@ class _LoginPageState extends State<LoginPage> {
             TextFormField(
               controller: _identifier,
               style: AuthUI.fieldTextStyle.copyWith(
-                color: textColor,
+                color: Colors.black, // always black for readability
               ),
               keyboardType: TextInputType.emailAddress,
               cursorColor: scheme.primary,
@@ -313,7 +313,7 @@ class _LoginPageState extends State<LoginPage> {
               controller: _password,
               obscureText: _obscure,
               style: AuthUI.fieldTextStyle.copyWith(
-                color: textColor,
+                color: Colors.black, // always black for readability
               ),
               cursorColor: scheme.primary,
               decoration: AuthUI.fieldDecoration(
