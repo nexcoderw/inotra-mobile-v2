@@ -405,7 +405,6 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 18),
 
             SizedBox(
-            SizedBox(
               height: 56,
               child: OutlinedButton(
                 onPressed: _isBusy ? null : _onGoogleLogin,
