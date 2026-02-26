@@ -2,12 +2,13 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
+import "../../../../i18n/lang.dart";
 
 final class AuthUI {
   AuthUI._();
 
-  static Text heading(String text) => Text(
-        text,
+  static Text heading(String key, {String? lang}) => Text(
+        tr(key),
         style: const TextStyle(
           fontSize: 40,
           fontWeight: FontWeight.w900,
@@ -15,8 +16,8 @@ final class AuthUI {
         ),
       );
 
-  static Text subheading(String text) => Text(
-        text,
+  static Text subheading(String key, {String? lang}) => Text(
+        tr(key),
         style: TextStyle(
           fontSize: 12,
           color: Colors.black.withOpacity(0.45),
@@ -91,18 +92,18 @@ final class AuthUI {
   }) {
     return SizedBox(
       height: 48,
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),
           ),
         ),
         child: Text(
-          busy ? "Please wait..." : text,
+          busy ? tr("auth.wait") : text,
           style: buttonTextStyle,
         ),
       ),
@@ -114,7 +115,7 @@ final class AuthUI {
           Expanded(child: Divider(color: Colors.black.withOpacity(0.10))),
           const SizedBox(width: 12),
           Text(
-            "Or",
+            tr("auth.or"),
             style: TextStyle(
               color: Colors.black.withOpacity(0.35),
               fontWeight: FontWeight.w700,
