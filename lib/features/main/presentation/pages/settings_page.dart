@@ -5,6 +5,7 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../widgets/main_scaffold.dart";
 import "../widgets/page_header.dart";
+import "../../../../core/config/app_routes.dart";
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -27,9 +28,9 @@ class SettingsPage extends StatelessWidget {
               _GlassTile(
                 icon: HugeIcons.strokeRoundedMoon02,
                 title: "Theme",
-                subtitle: "Light / Dark / System",
+                subtitle: "Light / Dark",
                 onTap: () {
-                  _toast(context, "Theme picker coming soon");
+                  Navigator.pushNamed(context, AppRoutes.settingsTheme);
                 },
               ),
               _GlassTile(
