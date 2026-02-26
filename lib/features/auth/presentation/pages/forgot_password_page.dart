@@ -9,6 +9,8 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/reset_password_cache.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -52,8 +54,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           context: context,
           type: ToastificationType.success,
           style: ToastificationStyle.fillColored,
-          title: const Text("Reset email sent"),
-          description: const Text("Check your email for the 6-digit code."),
+          title: Text(tr("auth.reset_email_sent")),
+          description: Text(tr("auth.reset_email_desc")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
         );
@@ -72,7 +74,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Reset failed"),
+        title: Text(tr("auth.reset_failed")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -83,8 +85,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Network error"),
-          description: const Text("Unable to request reset. Try again shortly."),
+          title: Text(tr("auth.network_error")),
+          description: Text(tr("auth.reset_retry")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
         );
@@ -108,7 +110,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final body = _safeJson(response.body);
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
-    return "Could not start password reset. Please try again.";
+    return tr("auth.reset_retry");
   }
 
   @override
@@ -119,29 +121,29 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthUI.heading("Forget Password"),
+            AuthUI.heading(tr("auth.reset_heading")),
             const SizedBox(height: 6),
-            AuthUI.subheading("Please enter your information to proceed"),
+            AuthUI.subheading(tr("auth.reset_sub")),
             const SizedBox(height: 26),
 
-            AuthUI.label("Email"),
+            AuthUI.label(tr("auth.email_label")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
               style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter your email",
+                hint: tr("auth.email_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMail01),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "Email is required" : null,
+                  (v == null || v.trim().isEmpty) ? tr("auth.email_required") : null,
             ),
 
             const SizedBox(height: 18),
 
             AuthUI.primaryPillButton(
-              text: "Reset Password",
+              text: tr("auth.reset_action"),
               busy: _isBusy,
               onPressed: _isBusy ? null : _onReset,
             ),
@@ -154,7 +156,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Back to ",
+                  "${tr("auth.back_to")} ",
                   style: TextStyle(
                     color: Colors.black.withOpacity(0.35),
                     fontWeight: FontWeight.w700,
@@ -163,7 +165,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 InkWell(
                   onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                   child: Text(
-                    "Sign In",
+                    tr("auth.sign_in"),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w900,
