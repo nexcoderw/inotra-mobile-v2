@@ -39,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     _googleSignIn = GoogleSignIn(
       clientId: Env.googleClientId,
+      serverClientId: Env.googleClientId, // request ID token usable by backend
       scopes: ["email", "profile", "openid"],
     );
   }
