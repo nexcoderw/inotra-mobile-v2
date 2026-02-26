@@ -23,6 +23,9 @@ final class AppRoutes {
   static const eventDetails = "/event-details";
   static const aiChatConversations = "/ai-chat-conversations";
   static const profile = "/profile";
+  static const profileAccount = "/profile/account";
+  static const profilePassword = "/profile/password";
+  static const profileDanger = "/profile/danger";
   static const notifications = "/notifications";
   static const settings = "/settings";
   static const settingsTheme = "/settings/theme";
