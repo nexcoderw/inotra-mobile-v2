@@ -12,6 +12,7 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
   final VoidCallback onNotificationsTap;
   final VoidCallback onProfileTap;
   final double height;
+  final String? imageUrl;
 
   const InotraAuthenticatedHeader({
     super.key,
@@ -20,6 +21,7 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
     required this.onMenuTap,
     required this.onNotificationsTap,
     required this.onProfileTap,
+    this.imageUrl,
     this.height = defaultHeight,
   });
 
@@ -29,6 +31,8 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final _avatar =
+        (imageUrl != null && imageUrl!.isNotEmpty) ? NetworkImage(imageUrl!) : null;
 
     return AppBar(
       elevation: 0,
@@ -74,12 +78,15 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.primary.withOpacity(0.12),
-                  child: const HugeIcon(
-                    icon: HugeIcons.strokeRoundedUser,
-                    size: 16,
-                    strokeWidth: 2.0,
-                    color: AppColors.primary,
-                  ),
+                  backgroundImage: _avatar,
+                  child: _avatar == null
+                      ? const HugeIcon(
+                          icon: HugeIcons.strokeRoundedUser,
+                          size: 16,
+                          strokeWidth: 2.0,
+                          color: AppColors.primary,
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 10),
                 ConstrainedBox(
