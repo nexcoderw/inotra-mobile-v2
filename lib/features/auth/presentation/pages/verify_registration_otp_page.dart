@@ -1,7 +1,13 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:http/http.dart" as http;
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/config/api.dart";
+import "../../../../core/constants/api/auth_endpoints.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -13,12 +19,13 @@ class ConfirmRegistrationOtpPage extends StatefulWidget {
 }
 
 class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage> {
-  final _email = TextEditingController(text: "example@email.com");
+  final _email = TextEditingController();
 
   final _c = List.generate(5, (_) => TextEditingController());
   final _f = List.generate(5, (_) => FocusNode());
 
   bool _isBusy = false;
+  String? _initialEmail;
 
   @override
   void dispose() {
@@ -36,25 +43,98 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
 
   Future<void> _verify() async {
     if (_otp.trim().length != 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Enter the 5-digit code"),
-          behavior: SnackBarBehavior.floating,
-        ),
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Invalid code"),
+        description: const Text("Enter the 5-digit code we sent to your email."),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
       );
       return;
     }
 
     setState(() => _isBusy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() => _isBusy = false);
+    try {
+      final uri = Api.url(AuthEndpoints.registerVerify);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "email": _email.text.trim(),
+          "otp": _otp.trim(),
+        }),
+      );
 
-    Navigator.pushReplacementNamed(context, AppRoutes.login);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Account verified"),
+          description: const Text("You can now sign in to your account."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+        return;
+      }
+
+      final detail = _extractError(response);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Verification failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Network error"),
+          description: const Text("Unable to verify account. Try again in a moment."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Map<String, dynamic>? _safeJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractError(http.Response response) {
+    final body = _safeJson(response.body);
+    final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
+    if (detail is String && detail.trim().isNotEmpty) return detail.trim();
+    return "Invalid or expired code. Please try again.";
   }
 
   @override
   Widget build(BuildContext context) {
+    // pick up email from navigation args once
+    _initialEmail ??= ModalRoute.of(context)?.settings.arguments as String?;
+    if ((_initialEmail ?? "").isNotEmpty && _email.text.isEmpty) {
+      _email.text = _initialEmail!;
+    }
+
     return AuthScaffold(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
