@@ -1,8 +1,5 @@
-import "dart:ui";
-
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
-
 import "../../widgets/main_scaffold.dart";
 import "../../widgets/page_header.dart";
 import "../../../../../core/config/app_routes.dart";
@@ -38,7 +35,7 @@ class SettingsPage extends StatelessWidget {
                 title: "Language",
                 subtitle: "Change display language",
                 onTap: () {
-                  _toast(context, "Language selector coming soon");
+                  Navigator.pushNamed(context, AppRoutes.settingsLanguage);
                 },
               ),
             ],
