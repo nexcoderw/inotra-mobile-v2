@@ -1,7 +1,14 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:http/http.dart" as http;
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/config/api.dart";
+import "../../../../core/constants/api/auth_endpoints.dart";
+import "../../../../core/services/reset_password_cache.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -27,11 +34,81 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isBusy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() => _isBusy = false);
+    try {
+      final uri = Api.url(AuthEndpoints.passwordResetRequest);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": _email.text.trim()}),
+      );
 
-    Navigator.pushNamed(context, AppRoutes.resetPassword);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        ResetPasswordCache.instance
+          ..setEmail(_email.text.trim())
+          ..setOtp(null);
+
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Reset email sent"),
+          description: const Text("Check your email for the 6-digit code."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+
+        Navigator.pushNamed(
+          context,
+          AppRoutes.resetPassword,
+          arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
+        );
+        return;
+      }
+
+      final detail = _extractError(response);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Reset failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Network error"),
+          description: const Text("Unable to request reset. Try again shortly."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Map<String, dynamic>? _safeJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractError(http.Response response) {
+    final body = _safeJson(response.body);
+    final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
+    if (detail is String && detail.trim().isNotEmpty) return detail.trim();
+    return "Could not start password reset. Please try again.";
   }
 
   @override
