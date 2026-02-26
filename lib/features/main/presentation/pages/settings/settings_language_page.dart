@@ -9,6 +9,7 @@ import "package:http/http.dart" as http;
 import "../../widgets/main_scaffold.dart";
 import "../../widgets/page_header.dart";
 import "../../../../../core/config/api.dart";
+import "../../../../../core/config/app_routes.dart";
 import "../../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
 import "../../../../../core/services/language_service.dart";
@@ -100,13 +101,13 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
             autoCloseDuration: const Duration(seconds: 3),
           );
 
-          // Reload navigation stack so every screen rebuilds with the new locale.
+          // Reload navigation stack so every screen rebuilds with the new locale,
+          // landing back on this language page.
           Future.microtask(() {
             Navigator.pushNamedAndRemoveUntil(
               context,
-              "/",
-              (route) => false,
-              arguments: null,
+              AppRoutes.settingsLanguage,
+              (_) => false,
             );
           });
         }
@@ -233,7 +234,7 @@ class _LanguageTileState extends State<_LanguageTile> {
         _ => widget.code,
       };
 
-  String get _flagAsset => "assets/icons/language/${widget.code}.png";
+  String get _flagAsset => "icons/language/${widget.code}.png";
 
   String get _subtitle => switch (widget.code) {
         "en" => "Default experience",
