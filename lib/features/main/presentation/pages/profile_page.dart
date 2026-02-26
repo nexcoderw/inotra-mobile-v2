@@ -185,6 +185,11 @@ class _ProfilePageState extends State<ProfilePage> {
     return "Update failed (${response.statusCode})";
   }
 
+  ImageProvider? _networkOrNull(String? url) {
+    if (url == null || url.isEmpty) return null;
+    return NetworkImage(url);
+  }
+
   String _codeToBackendLabel(String code) => switch (code) {
         "rw" => "Kinyarwanda",
         "fr" => "French",
@@ -215,9 +220,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         CircleAvatar(
                           radius: 38,
                           backgroundColor: scheme.primary.withOpacity(0.12),
-                          backgroundImage:
-                              _avatarBytes != null ? MemoryImage(_avatarBytes!) : null,
-                          child: _avatarBytes == null
+                          backgroundImage: _avatarBytes != null
+                              ? MemoryImage(_avatarBytes!)
+                              : _networkOrNull(AuthSession.instance.value.user?["image"] as String?),
+                          child: _avatarBytes == null &&
+                                  (AuthSession.instance.value.user?["image"] == null ||
+                                      (AuthSession.instance.value.user?["image"] as String).isEmpty)
                               ? Icon(Icons.person, size: 38, color: scheme.primary)
                               : null,
                         ),
@@ -254,38 +262,6 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 14),
             _Input(label: t(lang, "auth.phone"), controller: _phone, keyboard: TextInputType.phone),
             const SizedBox(height: 14),
-
-            Text(
-              t(lang, "auth.preferred_language"),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: _preferredLanguage,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF3F4F6),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              ),
-              items: const [
-                DropdownMenuItem(value: "en", child: Text("English")),
-                DropdownMenuItem(value: "rw", child: Text("Kinyarwanda")),
-                DropdownMenuItem(value: "fr", child: Text("French")),
-                DropdownMenuItem(value: "es", child: Text("Spanish")),
-                DropdownMenuItem(value: "de", child: Text("German")),
-              ],
-              onChanged: (v) => setState(() => _preferredLanguage = v ?? "en"),
-            ),
-
             const SizedBox(height: 20),
 
             SizedBox(
