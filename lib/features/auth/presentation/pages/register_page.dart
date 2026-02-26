@@ -16,6 +16,8 @@ import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/registration_cache.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -92,9 +94,8 @@ class _RegisterPageState extends State<RegisterPage> {
           context: context,
           type: ToastificationType.success,
           style: ToastificationStyle.fillColored,
-          title: const Text("Account created"),
-          description:
-              const Text("We sent a verification code to your email. Please verify to continue."),
+          title: Text(tr("auth.account_created")),
+          description: Text(tr("auth.check_email_code")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
         );
@@ -115,7 +116,7 @@ class _RegisterPageState extends State<RegisterPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Sign up failed"),
+        title: Text(tr("auth.signup_failed")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -126,8 +127,8 @@ class _RegisterPageState extends State<RegisterPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Network error"),
-        description: const Text("Unable to create account. Check connection and try again."),
+        title: Text(tr("auth.network_error")),
+        description: Text(tr("auth.signup_retry")),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
@@ -150,7 +151,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final body = _safeJson(response.body);
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
-    return "Unable to create account. Please review your details and try again.";
+    return tr("auth.signup_retry");
   }
 
   Future<void> _onGoogleSignUp() async {
@@ -191,8 +192,8 @@ class _RegisterPageState extends State<RegisterPage> {
             context: context,
             type: ToastificationType.success,
             style: ToastificationStyle.fillColored,
-            title: const Text("Signed up with Google"),
-            description: const Text("Welcome to Inotra."),
+            title: Text(tr("auth.google_success")),
+            description: Text(tr("auth.welcome")),
             alignment: Alignment.topCenter,
             autoCloseDuration: const Duration(seconds: 3),
           );
@@ -207,7 +208,7 @@ class _RegisterPageState extends State<RegisterPage> {
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Google sign up failed"),
+        title: Text(tr("auth.google_error")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -218,7 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Google sign up error"),
+          title: Text(tr("auth.google_error")),
           description: Text(e.toString()),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
@@ -260,47 +261,47 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthUI.heading("Sign Up"),
+            AuthUI.heading(tr("auth.sign_up")),
             const SizedBox(height: 6),
-            AuthUI.subheading("Please enter your information to proceed"),
+            AuthUI.subheading(tr("auth.sign_up_title")),
             const SizedBox(height: 26),
 
-            AuthUI.label("Name"),
+            AuthUI.label(tr("auth.name")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _name,
               style: AuthUI.fieldTextStyle,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter your name",
+                hint: tr("auth.name_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedUser),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? "Name is required" : null,
+              validator: (v) => (v == null || v.trim().isEmpty) ? tr("auth.name_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Email"),
+            AuthUI.label(tr("auth.email")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
               style: AuthUI.fieldTextStyle,
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter your email",
+                hint: tr("auth.email_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMail01),
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? "Email is required" : null,
+              validator: (v) => (v == null || v.trim().isEmpty) ? tr("auth.email_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Phone number"),
+            AuthUI.label(tr("auth.phone")),
             const SizedBox(height: 10),
             IntlPhoneField(
               controller: _phone,
               style: AuthUI.fieldTextStyle,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter phone number",
+                hint: tr("auth.phone_hint"),
               ).copyWith(
                 // widen prefix area to avoid overflow with flag + dial code row
                 prefixIconConstraints: const BoxConstraints(minWidth: 0, maxWidth: 120),
@@ -315,12 +316,12 @@ class _RegisterPageState extends State<RegisterPage> {
               flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               keyboardType: TextInputType.phone,
               validator: (phone) =>
-                  (phone == null || phone.number.trim().isEmpty) ? "Phone is required" : null,
+                  (phone == null || phone.number.trim().isEmpty) ? tr("auth.phone_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Nationality"),
+            AuthUI.label(tr("auth.nationality")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _nationality,
@@ -328,7 +329,7 @@ class _RegisterPageState extends State<RegisterPage> {
               readOnly: true,
               onTap: _chooseCountry,
               decoration: AuthUI.fieldDecoration(
-                hint: "Select your country",
+                hint: tr("auth.nationality_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedGlobe),
                 suffix: Icon(
                   Icons.keyboard_arrow_down_rounded,
@@ -336,12 +337,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "Nationality is required" : null,
+                  (v == null || v.trim().isEmpty) ? tr("auth.nationality_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Preferred Language"),
+            AuthUI.label(tr("auth.preferred_language")),
             const SizedBox(height: 10),
             SizedBox(
               height: 56,
@@ -350,7 +351,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 icon: const SizedBox.shrink(), // using custom suffix icon
                 dropdownColor: Colors.white,
                 decoration: AuthUI.fieldDecoration(
-                  hint: "Choose Language",
+                  hint: tr("auth.preferred_language_hint"),
                   prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedMic01),
                   suffix: Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -371,14 +372,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Password"),
+            AuthUI.label(tr("auth.password")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _password,
               style: AuthUI.fieldTextStyle,
               obscureText: _obscure1,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter password",
+                hint: tr("auth.password_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure1 = !_obscure1),
@@ -391,19 +392,19 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               validator: (v) =>
-                  (v == null || v.isEmpty) ? "Password is required" : null,
+                  (v == null || v.isEmpty) ? tr("auth.password_required") : null,
             ),
 
             const SizedBox(height: 18),
 
-            AuthUI.label("Confirm Password"),
+            AuthUI.label(tr("auth.confirm_password")),
             const SizedBox(height: 10),
             TextFormField(
               controller: _confirmPassword,
               style: AuthUI.fieldTextStyle,
               obscureText: _obscure2,
               decoration: AuthUI.fieldDecoration(
-                hint: "Enter Confirm Password",
+                hint: tr("auth.confirm_password_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure2 = !_obscure2),
@@ -416,8 +417,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return "Confirm password is required";
-                if (v != _password.text) return "Passwords do not match";
+                if (v == null || v.isEmpty) return tr("auth.confirm_password_required");
+                if (v != _password.text) return tr("auth.passwords_mismatch");
                 return null;
               },
             ),
@@ -425,7 +426,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 22),
 
             AuthUI.primaryPillButton(
-              text: "Create Account",
+              text: tr("auth.create_account"),
               busy: _isBusy,
               onPressed: _isBusy ? null : _onCreate,
             ),
@@ -452,7 +453,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     const _GoogleMark(),
                     const SizedBox(width: 12),
                     Text(
-                      "Continue with Google",
+                      tr("auth.sign_in_google"),
                       style: TextStyle(
                         color: Colors.black.withOpacity(0.70),
                         fontWeight: FontWeight.w800,
@@ -470,7 +471,7 @@ class _RegisterPageState extends State<RegisterPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "Already have an account ",
+                  "${tr("auth.have_account")} ",
                   style: TextStyle(
                     color: Colors.black.withOpacity(0.35),
                     fontWeight: FontWeight.w700,
@@ -480,7 +481,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 InkWell(
                   onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                   child: Text(
-                    "Sign In",
+                    tr("auth.sign_in"),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w900,
