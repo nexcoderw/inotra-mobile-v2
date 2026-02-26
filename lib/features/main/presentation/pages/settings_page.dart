@@ -20,7 +20,7 @@ class SettingsPage extends StatelessWidget {
             tiles: [
               _tile(
                 context,
-                icon: HugeIcons.strokeRoundedMoon,
+                icon: HugeIcons.strokeRoundedMoon02,
                 title: "Theme",
                 subtitle: "Light / Dark / System",
                 onTap: () {
@@ -68,7 +68,7 @@ class SettingsPage extends StatelessWidget {
               ),
               _tile(
                 context,
-                icon: HugeIcons.strokeRoundedFileLock,
+                icon: HugeIcons.strokeRoundedFileUnlocked,
                 title: "Terms of Service",
                 subtitle: "Review the terms",
                 onTap: () {
@@ -101,7 +101,7 @@ class SettingsPage extends StatelessWidget {
               ),
               _tile(
                 context,
-                icon: HugeIcons.strokeRoundedHeadphone,
+                icon: HugeIcons.strokeRoundedCallRinging03,
                 title: "Contact Support",
                 subtitle: "Chat or email us",
                 onTap: () {
@@ -123,8 +123,8 @@ class SettingsPage extends StatelessWidget {
               leading: CircleAvatar(
                 radius: 18,
                 backgroundColor: scheme.primary.withOpacity(0.12),
-                child: Icon(
-                  HugeIcons.strokeRoundedInfoCircle,
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedDiscoverCircle,
                   color: scheme.primary,
                   size: 20,
                 ),
@@ -146,7 +146,7 @@ class SettingsPage extends StatelessWidget {
 
   Widget _tile(
     BuildContext context, {
-    required IconData icon,
+    required dynamic icon, // HugeIcons.* uses custom IconData type
     required String title,
     required String subtitle,
     required VoidCallback onTap,
@@ -158,7 +158,7 @@ class SettingsPage extends StatelessWidget {
         leading: CircleAvatar(
           radius: 18,
           backgroundColor: scheme.primary.withOpacity(0.12),
-          child: Icon(icon, color: scheme.primary, size: 20),
+          child: HugeIcon(icon: icon, color: scheme.primary, size: 20, strokeWidth: 2),
         ),
         title: Text(
           title,
