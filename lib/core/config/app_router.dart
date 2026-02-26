@@ -18,6 +18,9 @@ import "../../features/main/presentation/pages/listing_details_page.dart";
 import "../../features/main/presentation/pages/event_details_page.dart";
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
 import "../../features/main/presentation/pages/profile_page.dart";
+import "../../features/main/presentation/pages/profile/profile_account_details_page.dart";
+import "../../features/main/presentation/pages/profile/profile_change_password_page.dart";
+import "../../features/main/presentation/pages/profile/profile_danger_zone_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
 import "../../features/main/presentation/pages/settings/settings_page.dart";
 import "../../features/main/presentation/pages/settings/settings_theme_page.dart";
@@ -113,6 +116,21 @@ final class AppRouter {
         description:
             "Sign in to view and manage your Inotra profile, preferences, and account settings.",
         builder: (_) => const ProfilePage(),
+      );
+    case AppRoutes.profileAccount:
+      return AuthGuard.protect(
+        featureLabel: "Profile",
+        builder: (_) => const ProfileAccountDetailsPage(),
+      );
+    case AppRoutes.profilePassword:
+      return AuthGuard.protect(
+        featureLabel: "Profile",
+        builder: (_) => const ProfileChangePasswordPage(),
+      );
+    case AppRoutes.profileDanger:
+      return AuthGuard.protect(
+        featureLabel: "Profile",
+        builder: (_) => const ProfileDangerZonePage(),
       );
 
     case AppRoutes.notifications:
