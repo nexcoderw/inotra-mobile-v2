@@ -201,7 +201,10 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
               // ✅ Secure context pill
               _InfoPill(
                 icon: HugeIcons.strokeRoundedMail01,
-                text: "Reset for: ${_maskEmail(_email)}",
+                text: t(
+                  currentLangSync(),
+                  "auth.reset_for",
+                ).replaceFirst("{email}", _maskEmail(_email)),
               ),
 
               const SizedBox(height: 14),
