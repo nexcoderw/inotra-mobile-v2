@@ -244,30 +244,15 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              tr("auth.sign_in"),
-              style: const TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.8,
-              ).copyWith(color: textColor),
-            ),
+            AuthUI.heading(tr("auth.sign_in"), color: textColor),
             const SizedBox(height: 6),
-            Text(
+            AuthUI.subheading(
               tr("auth.sign_in_title"),
-              style: TextStyle(
-                fontSize: 12,
-                color: textColor.withOpacity(0.65),
-                fontWeight: FontWeight.w500,
-              ),
+              color: textColor.withOpacity(0.65),
             ),
             const SizedBox(height: 26),
 
-            Text(
-              tr("auth.identifier"),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: null)
-                  .copyWith(color: textColor),
-            ),
+            AuthUI.label(tr("auth.identifier"), color: textColor),
             const SizedBox(height: 10),
 
             TextFormField(
@@ -301,12 +286,7 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 18),
 
-            Text(
-              tr("auth.password"),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800).copyWith(
-                color: textColor,
-              ),
-            ),
+            AuthUI.label(tr("auth.password"), color: textColor),
             const SizedBox(height: 10),
 
             TextFormField(
