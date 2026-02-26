@@ -21,8 +21,8 @@ class ConfirmRegistrationOtpPage extends StatefulWidget {
 class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage> {
   final _email = TextEditingController();
 
-  final _c = List.generate(5, (_) => TextEditingController());
-  final _f = List.generate(5, (_) => FocusNode());
+  final _c = List.generate(6, (_) => TextEditingController());
+  final _f = List.generate(6, (_) => FocusNode());
 
   bool _isBusy = false;
   String? _initialEmail;
@@ -42,13 +42,13 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
   String get _otp => _c.map((e) => e.text).join();
 
   Future<void> _verify() async {
-    if (_otp.trim().length != 5) {
+    if (_otp.trim().length != 6) {
       toastification.show(
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
         title: const Text("Invalid code"),
-        description: const Text("Enter the 5-digit code we sent to your email."),
+        description: const Text("Enter the 6-digit code we sent to your email."),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 3),
       );
@@ -139,9 +139,9 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AuthUI.heading("Verify Account"),
-          const SizedBox(height: 6),
-          AuthUI.subheading("We just sent 5-digit code to your email, enter it bellow:"),
+      AuthUI.heading("Verify Account"),
+      const SizedBox(height: 6),
+      AuthUI.subheading("We just sent a 6-digit code to your email, enter it below:"),
           const SizedBox(height: 26),
 
           AuthUI.label("Email"),
@@ -163,10 +163,10 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(5, (i) {
+            children: List.generate(6, (i) {
               return SizedBox(
-                width: 58,
-                height: 58,
+                width: 54,
+                height: 54,
                 child: TextField(
                   controller: _c[i],
                   focusNode: _f[i],
@@ -182,12 +182,12 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
                     filled: true,
                     fillColor: const Color(0xFFF3F4F6),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(14),
                       borderSide: BorderSide.none,
                     ),
                   ),
                   onChanged: (v) {
-                    if (v.isNotEmpty && i < 4) {
+                    if (v.isNotEmpty && i < 5) {
                       _f[i + 1].requestFocus();
                     }
                     if (v.isEmpty && i > 0) {
