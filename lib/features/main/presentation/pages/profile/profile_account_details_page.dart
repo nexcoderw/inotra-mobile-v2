@@ -39,6 +39,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   String? _avatarName;
   bool _busy = false;
   String _initialPhoneIso = "RW";
+  String _currentPhoneIso = "RW";
 
   @override
   void initState() {
@@ -47,9 +48,10 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     _name = TextEditingController(text: (user["name"] ?? "") as String);
     _username = TextEditingController(text: (user["username"] ?? "") as String);
     final phoneRaw = (user["phone_number"] ?? "") as String;
-    final normalizedPhone = _normalizePhone(phoneRaw);
-    _phone = TextEditingController(text: normalizedPhone);
-    _initialPhoneIso = _guessIso(normalizedPhone);
+    final split = _splitPhone(phoneRaw);
+    _phone = TextEditingController(text: split.$2);
+    _initialPhoneIso = split.$1;
+    _currentPhoneIso = split.$1;
     _email = TextEditingController(text: (user["email"] ?? "") as String);
   }
 
@@ -147,6 +149,10 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     enabled: !_busy,
                     badge: _FieldBadge.required,
                     initialIso: _initialPhoneIso,
+                    onChanged: (iso, number) {
+                      _currentPhoneIso = iso;
+                      _phone.text = number;
+                    },
                   ),
                   const SizedBox(height: 12),
                   _Input(
@@ -209,7 +215,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
       req.headers["Authorization"] = "Bearer $token";
       req.fields["name"] = _name.text.trim();
       req.fields["username"] = _username.text.trim();
-      req.fields["phone_number"] = _normalizePhone(_phone.text.trim());
+      req.fields["phone_number"] = _normalizePhone(_phone.text.trim(), _currentPhoneIso);
 
       if (_avatarBytes != null && _avatarName != null) {
         req.files.add(
@@ -308,13 +314,14 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     return "Update failed (${response.statusCode})";
   }
 
-  String _normalizePhone(String raw) {
+  String _normalizePhone(String raw, String iso) {
     if (raw.isEmpty) return raw;
     if (raw.startsWith("+")) return raw;
     final digits = raw.replaceAll(RegExp(r"[^0-9]"), "");
-    if (digits.startsWith("250")) return "+$digits";
-    if (digits.startsWith("0")) return "+250${digits.substring(1)}";
-    return "+250$digits";
+    final dial = _isoToDial(iso);
+    if (digits.startsWith(dial)) return "+$digits";
+    if (digits.startsWith("0")) return "+$dial${digits.substring(1)}";
+    return "+$dial$digits";
   }
 
   String _guessIso(String phone) {
@@ -325,8 +332,19 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     if (p.startsWith("+34")) return "ES";
     if (p.startsWith("+44")) return "GB";
     if (p.startsWith("+1")) return "US";
+    if (p.startsWith("250")) return "RW";
     return "RW";
   }
+
+  String _isoToDial(String iso) => switch (iso.toUpperCase()) {
+        "RW" => "250",
+        "FR" => "33",
+        "DE" => "49",
+        "ES" => "34",
+        "GB" => "44",
+        "US" => "1",
+        _ => "250",
+      };
 }
 
 class _AvatarPicker extends StatefulWidget {
@@ -563,6 +581,7 @@ class _PhoneField extends StatelessWidget {
   final bool enabled;
   final _FieldBadge badge;
   final String initialIso;
+  final void Function(String iso, String number) onChanged;
 
   const _PhoneField({
     required this.label,
@@ -571,6 +590,7 @@ class _PhoneField extends StatelessWidget {
     required this.enabled,
     required this.badge,
     required this.initialIso,
+    required this.onChanged,
   });
 
   @override
@@ -617,8 +637,11 @@ class _PhoneField extends StatelessWidget {
                   contentPadding:
                       EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 ),
-                onChanged: (phone) =>
-                    controller.text = phone.completeNumber,
+                onChanged: (phone) {
+                  final iso = phone.countryISOCode ?? initialIso;
+                  controller.text = phone.number;
+                  onChanged(iso, phone.number);
+                },
                 validator: (phone) => (phone == null ||
                         phone.number.trim().isEmpty)
                     ? requiredMessage
