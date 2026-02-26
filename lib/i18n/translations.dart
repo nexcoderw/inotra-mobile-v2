@@ -127,6 +127,9 @@ const translations = {
     "auth.set_new_password": "Set New Password",
     "auth.set_new_password_sub": "Create a new password to secure your account",
     "auth.save_changes": "Save Changes",
+    "auth.member_only": "{feature} is for members",
+    "auth.member_body":
+        "Sign in or create an account to access {feature} and keep your experience in sync across devices.",
     "auth.account_created": "Account created",
     "auth.check_email_code": "We sent a verification code to your email. Please verify to continue.",
     "auth.reset_email_sent": "Reset email sent",
@@ -252,6 +255,9 @@ const translations = {
     "auth.set_new_password": "Shyiraho ijambo rishya",
     "auth.set_new_password_sub": "Himba ijambo rishya ririnda konti yawe",
     "auth.save_changes": "Bika impinduka",
+    "auth.member_only": "{feature} ni iy'abanyamuryango",
+    "auth.member_body":
+        "Injira cyangwa kora konti kugira ngo ubone {feature} no kubika uburambe bwawe.",
     "auth.account_created": "Konti yakozwe",
     "auth.check_email_code": "Twakohereje kode yo kwemeza kuri imeli yawe. Emeza kugira ngo ukomeze.",
     "auth.reset_email_sent": "Ubutumwa bwo gusubiza bwoherejwe",
@@ -377,6 +383,9 @@ const translations = {
     "auth.set_new_password": "Définir un nouveau mot de passe",
     "auth.set_new_password_sub": "Créez un nouveau mot de passe pour sécuriser votre compte",
     "auth.save_changes": "Enregistrer",
+    "auth.member_only": "{feature} est réservé aux membres",
+    "auth.member_body":
+        "Connectez-vous ou créez un compte pour accéder à {feature} et garder votre expérience synchronisée.",
     "auth.account_created": "Compte créé",
     "auth.check_email_code": "Nous avons envoyé un code de vérification à votre email. Veuillez vérifier pour continuer.",
     "auth.reset_email_sent": "Email de réinitialisation envoyé",
@@ -502,6 +511,9 @@ const translations = {
     "auth.set_new_password": "Configura una nueva contraseña",
     "auth.set_new_password_sub": "Crea una nueva contraseña para proteger tu cuenta",
     "auth.save_changes": "Guardar cambios",
+    "auth.member_only": "{feature} es para miembros",
+    "auth.member_body":
+        "Inicia sesión o crea una cuenta para acceder a {feature} y mantener tu experiencia sincronizada.",
     "auth.account_created": "Cuenta creada",
     "auth.check_email_code": "Enviamos un código de verificación a tu correo. Verifica para continuar.",
     "auth.reset_email_sent": "Correo de restablecimiento enviado",
@@ -627,6 +639,9 @@ const translations = {
     "auth.set_new_password": "Neues Passwort festlegen",
     "auth.set_new_password_sub": "Erstelle ein neues Passwort für dein Konto",
     "auth.save_changes": "Änderungen speichern",
+    "auth.member_only": "{feature} ist nur für Mitglieder",
+    "auth.member_body":
+        "Melde dich an oder erstelle ein Konto, um auf {feature} zuzugreifen und dein Erlebnis zu synchronisieren.",
     "auth.account_created": "Konto erstellt",
     "auth.check_email_code": "Wir haben einen Bestätigungscode an deine E-Mail gesendet. Bitte prüfen.",
     "auth.reset_email_sent": "Reset-E-Mail gesendet",
