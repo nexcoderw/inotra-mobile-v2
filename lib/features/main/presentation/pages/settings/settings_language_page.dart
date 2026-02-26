@@ -99,6 +99,16 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
             alignment: Alignment.topCenter,
             autoCloseDuration: const Duration(seconds: 3),
           );
+
+          // Reload navigation stack so every screen rebuilds with the new locale.
+          Future.microtask(() {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              "/",
+              (route) => false,
+              arguments: null,
+            );
+          });
         }
       } else {
         throw Exception("Status ${response.statusCode}");
@@ -223,6 +233,8 @@ class _LanguageTileState extends State<_LanguageTile> {
         _ => widget.code,
       };
 
+  String get _flagAsset => "assets/icons/language/${widget.code}.png";
+
   String get _subtitle => switch (widget.code) {
         "en" => "Default experience",
         "rw" => "Ururimi rw’iwacu",
@@ -271,6 +283,7 @@ class _LanguageTileState extends State<_LanguageTile> {
                     _IconBadge(
                       icon: HugeIcons.strokeRoundedLanguageSkill,
                       selected: widget.selected,
+                      asset: _flagAsset,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -342,10 +355,12 @@ class _LanguageTileState extends State<_LanguageTile> {
 class _IconBadge extends StatelessWidget {
   final dynamic icon;
   final bool selected;
+  final String? asset;
 
   const _IconBadge({
     required this.icon,
     required this.selected,
+    this.asset,
   });
 
   @override
@@ -371,12 +386,28 @@ class _IconBadge extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: HugeIcon(
-          icon: icon,
-          color: scheme.primary.withOpacity(selected ? 1 : 0.95),
-          size: 14, // ✅ all icons 14
-          strokeWidth: 2,
-        ),
+        child: asset != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.asset(
+                  asset!,
+                  width: 18,
+                  height: 18,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => HugeIcon(
+                    icon: icon,
+                    color: scheme.primary.withOpacity(selected ? 1 : 0.95),
+                    size: 14,
+                    strokeWidth: 2,
+                  ),
+                ),
+              )
+            : HugeIcon(
+                icon: icon,
+                color: scheme.primary.withOpacity(selected ? 1 : 0.95),
+                size: 14, // ✅ all icons 14
+                strokeWidth: 2,
+              ),
       ),
     );
   }
