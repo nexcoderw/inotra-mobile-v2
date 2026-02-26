@@ -11,6 +11,8 @@ class AuthScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset = isDark ? "assets/branding/logo_color.png" : "assets/branding/logo_black.png";
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -28,7 +30,7 @@ class AuthScaffold extends StatelessWidget {
                   // ✅ Logo exactly like the design: centered, no container
                   Center(
                     child: Image.asset(
-                      "assets/branding/logo_black.png",
+                      logoAsset,
                       height: 82,
                       fit: BoxFit.contain,
                     ),
