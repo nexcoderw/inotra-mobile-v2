@@ -672,7 +672,7 @@ class _PhoneField extends StatelessWidget {
                 ),
                 onChanged: (phone) {
                   final iso = phone.countryISOCode ?? initialIso;
-                  final dial = _isoToDial(iso);
+                  final dial = _isoToDialLocal(iso);
                   final full = "+$dial${phone.number}";
                   controller.text = full;
                   onChanged(iso, full);
@@ -689,6 +689,16 @@ class _PhoneField extends StatelessWidget {
     );
   }
 }
+
+String _isoToDialLocal(String iso) => switch (iso.toUpperCase()) {
+      "RW" => "250",
+      "FR" => "33",
+      "DE" => "49",
+      "ES" => "34",
+      "GB" => "44",
+      "US" => "1",
+      _ => "250",
+    };
 
 class _GlassTextField extends StatefulWidget {
   final TextEditingController controller;
