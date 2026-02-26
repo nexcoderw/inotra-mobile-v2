@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
 
 class HomePage extends StatelessWidget {
@@ -7,8 +9,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = currentLangSync();
     return MainScaffold(
-      title: "Home",
+      title: t(lang, "nav.dashboard"),
       actions: [
         IconButton(
           onPressed: () => Navigator.pushNamed(context, AppRoutes.notifications),
@@ -18,40 +21,46 @@ class HomePage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            "Welcome to INOTRA",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          Text(
+            t(lang, "home.welcome"),
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 14),
           _NavCard(
-            title: "Trip Packages",
-            subtitle: "Browse recommended packages",
+            title: t(lang, "home.trip_packages"),
+            subtitle: t(lang, "home.trip_packages_sub"),
             icon: Icons.card_travel,
             onTap: () => Navigator.pushNamed(context, AppRoutes.tripPackages),
           ),
           _NavCard(
-            title: "Listings",
-            subtitle: "Explore places & properties",
+            title: t(lang, "home.listings"),
+            subtitle: t(lang, "home.listings_sub"),
             icon: Icons.place_outlined,
             onTap: () => Navigator.pushNamed(context, AppRoutes.listings),
           ),
           _NavCard(
-            title: "Events",
-            subtitle: "Discover upcoming events",
+            title: t(lang, "home.events"),
+            subtitle: t(lang, "home.events_sub"),
             icon: Icons.celebration_outlined,
             onTap: () => Navigator.pushNamed(context, AppRoutes.events),
           ),
           _NavCard(
-            title: "AI Chat",
-            subtitle: "Ask the INOTRA assistant",
+            title: t(lang, "home.ai_chat"),
+            subtitle: t(lang, "home.ai_chat_sub"),
             icon: Icons.auto_awesome_outlined,
             onTap: () => Navigator.pushNamed(context, AppRoutes.aiChat),
           ),
           _NavCard(
-            title: "Profile",
-            subtitle: "Account settings",
+            title: t(lang, "home.profile"),
+            subtitle: t(lang, "home.profile_sub"),
             icon: Icons.person_outline,
             onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+          ),
+          _NavCard(
+            title: t(lang, "home.notifications"),
+            subtitle: t(lang, "home.notifications_sub"),
+            icon: Icons.notifications_outlined,
+            onTap: () => Navigator.pushNamed(context, AppRoutes.notifications),
           ),
         ],
       ),
