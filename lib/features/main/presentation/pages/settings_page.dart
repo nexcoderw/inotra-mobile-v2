@@ -15,6 +15,7 @@ class SettingsPage extends StatelessWidget {
 
     return MainScaffold(
       title: "Settings",
+      showAppBar: false,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
