@@ -62,11 +62,11 @@ class _RegisterPageState extends State<RegisterPage> {
         body: jsonEncode({
           "name": _name.text.trim(),
           "email": _email.text.trim(),
-          "phone": _phone.text.trim(),
+          "phone_number": _phone.text.trim(),
           "nationality": _nationality.text.trim(),
-          "preferred_language": _preferredLanguage,
+          "preferred_languages": [_preferredLanguage],
           "password": _password.text,
-          "password_confirm": _confirmPassword.text,
+          "confirm_password": _confirmPassword.text,
         }),
       );
 
