@@ -6,6 +6,7 @@ import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
+import "../widgets/page_header.dart";
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -22,6 +23,11 @@ class ProfilePage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          PageHeader(
+            title: t(lang, "profile.title"),
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
+          const SizedBox(height: 6),
           Center(
             child: Column(
               children: [
