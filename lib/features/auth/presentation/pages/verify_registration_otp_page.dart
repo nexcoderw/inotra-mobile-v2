@@ -9,6 +9,8 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/registration_cache.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -57,8 +59,8 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Invalid code"),
-        description: const Text("Enter the 6-digit code we sent to your email."),
+        title: Text(tr("auth.invalid_code")),
+        description: Text(tr("auth.invalid_code_desc")),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 3),
       );
@@ -83,8 +85,8 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
           context: context,
           type: ToastificationType.success,
           style: ToastificationStyle.fillColored,
-          title: const Text("Account verified"),
-          description: const Text("You can now sign in to your account."),
+          title: Text(tr("auth.account_verified")),
+          description: Text(tr("auth.account_verified_desc")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 3),
         );
@@ -98,7 +100,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("Verification failed"),
+        title: Text(tr("auth.verification_failed")),
         description: Text(detail),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -109,8 +111,8 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
           context: context,
           type: ToastificationType.error,
           style: ToastificationStyle.fillColored,
-          title: const Text("Network error"),
-          description: const Text("Unable to verify account. Try again in a moment."),
+          title: Text(tr("auth.network_error")),
+          description: Text(tr("auth.verify_retry")),
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 4),
         );
@@ -134,7 +136,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
     final body = _safeJson(response.body);
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
-    return "Invalid or expired code. Please try again.";
+    return tr("auth.invalid_code_desc");
   }
 
   @override
@@ -151,12 +153,12 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-      AuthUI.heading("Verify Account"),
+      AuthUI.heading(tr("auth.verify_heading")),
       const SizedBox(height: 6),
-      AuthUI.subheading("We just sent a 6-digit code to your email, enter it below:"),
+      AuthUI.subheading(tr("auth.verify_desc")),
           const SizedBox(height: 26),
 
-          AuthUI.label("Email"),
+          AuthUI.label(tr("auth.email_label")),
           const SizedBox(height: 10),
           TextFormField(
             controller: _email,
@@ -170,7 +172,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
 
           const SizedBox(height: 18),
 
-          AuthUI.label("OTP Code"),
+          AuthUI.label(tr("auth.otp_code")),
           const SizedBox(height: 12),
 
           Row(
@@ -215,7 +217,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
           const SizedBox(height: 22),
 
           AuthUI.primaryPillButton(
-            text: "Verify Account",
+            text: tr("auth.verify_heading"),
             busy: _isBusy,
             onPressed: _isBusy ? null : _verify,
           ),
@@ -226,7 +228,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Back to? ",
+                "${tr("auth.have_account")} ",
                 style: TextStyle(
                   color: Colors.black.withOpacity(0.35),
                   fontWeight: FontWeight.w700,
@@ -235,7 +237,7 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
               InkWell(
                 onTap: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
                 child: Text(
-                  "Sign In",
+                  tr("auth.sign_in"),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w900,
