@@ -11,6 +11,7 @@ import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
+import "../widgets/info_pill.dart";
 
 class ResetPasswordPage extends StatefulWidget {
   final String? email;
@@ -112,7 +113,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
               const SizedBox(height: 16),
 
-              _InfoPill(
+              InfoPill(
                 icon: HugeIcons.strokeRoundedMail01,
                 text: t(currentLangSync(), "auth.reset_for")
                     .replaceFirst("{email}", _maskEmail(_email.text)),
