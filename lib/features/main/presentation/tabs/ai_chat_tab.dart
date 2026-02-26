@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 
 class AiChatTab extends StatelessWidget {
   const AiChatTab({super.key});
@@ -13,22 +15,22 @@ class AiChatTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "AI Chat",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            Text(
+              t(currentLangSync(), "nav.ai_chat"),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text("Chat UI will be implemented next (static page for now)."),
+                padding: const EdgeInsets.all(16),
+                child: Text(t(currentLangSync(), "ai.placeholder")),
               ),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.aiChatConversations),
               icon: const Icon(Icons.chat_bubble_outline),
-              label: const Text("Open Conversations"),
+              label: Text(t(currentLangSync(), "ai.open_conversations")),
             ),
           ],
         ),
