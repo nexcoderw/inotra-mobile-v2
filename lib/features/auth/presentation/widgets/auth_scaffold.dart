@@ -149,6 +149,11 @@ class _AuthScaffoldState extends State<AuthScaffold> {
         body: '{"preferred_language": "${_codeToBackendLabel(code)}"}',
       ));
     }
+
+    // Refresh current page so text updates, keeping user on same auth screen.
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? AppRoutes.login;
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, currentRoute, (_) => false);
   }
 
   String _codeToBackendLabel(String code) => switch (code) {
@@ -204,10 +209,10 @@ class _LangSelectorState extends State<_LangSelector> {
                   value: c,
                   child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.asset(
-                          "icons/language/$c.png",
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.asset(
+                      "assets/icons/language/$c.png",
                           width: 20,
                           height: 14,
                           fit: BoxFit.cover,
@@ -254,8 +259,8 @@ class _LangSelectorState extends State<_LangSelector> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    "icons/language/${widget.current}.png",
+              child: Image.asset(
+                "assets/icons/language/${widget.current}.png",
                     width: 20,
                     height: 14,
                     fit: BoxFit.cover,
