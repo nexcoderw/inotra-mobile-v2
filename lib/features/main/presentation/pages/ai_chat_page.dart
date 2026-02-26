@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
 
 class AiChatPage extends StatelessWidget {
@@ -8,20 +10,21 @@ class AiChatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = currentLangSync();
     return MainScaffold(
-      title: "AI Chat",
+      title: t(lang, "nav.ai_chat"),
       actions: [
         IconButton(
           onPressed: () => Navigator.pushNamed(context, AppRoutes.aiChatConversations),
           icon: const Icon(Icons.chat_bubble_outline),
-          tooltip: "Conversations",
+          tooltip: t(lang, "ai.conversations"),
         ),
       ],
-      child: const Center(
+      child: Center(
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Text(
-            "AI Chat Page\n\nTODO: Build chat UI and connect AI endpoints.",
+            t(lang, "ai.todo"),
             textAlign: TextAlign.center,
           ),
         ),
