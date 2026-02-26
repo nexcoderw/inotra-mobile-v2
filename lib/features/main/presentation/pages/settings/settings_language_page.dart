@@ -81,6 +81,12 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
         return;
       }
 
+      if (response.statusCode == 401) {
+        await AuthSession.instance.signOut();
+        if (mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        return;
+      }
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         _selected = code;
         await LanguageService.save(code);
@@ -109,12 +115,11 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
             autoCloseDuration: const Duration(seconds: 3),
           );
 
-          // Reload navigation stack so every screen rebuilds with the new locale,
-          // landing back on this language page.
+          // Reload app to apply translations and return to main page.
           Future.microtask(() {
             Navigator.pushNamedAndRemoveUntil(
               context,
-              AppRoutes.settingsLanguage,
+              AppRoutes.home,
               (_) => false,
             );
           });
