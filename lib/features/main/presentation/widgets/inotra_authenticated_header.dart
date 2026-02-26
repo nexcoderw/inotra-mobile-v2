@@ -62,16 +62,6 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
           ],
         ),
       ),
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          fontWeight: FontWeight.w800,
-          fontSize: 16.5,
-          letterSpacing: 0.1,
-        ),
-      ),
       actions: [
         InkWell(
           key: const ValueKey("profile"),
@@ -86,7 +76,7 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
                   backgroundColor: AppColors.primary.withOpacity(0.12),
                   child: const HugeIcon(
                     icon: HugeIcons.strokeRoundedUser,
-                    size: 18,
+                    size: 16,
                     strokeWidth: 2.0,
                     color: AppColors.primary,
                   ),
@@ -97,7 +87,7 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
                   child: Text(
                     displayName,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11),
                   ),
                 ),
               ],
