@@ -49,6 +49,7 @@ class _RegisterPageState extends State<RegisterPage> {
     super.initState();
     _googleSignIn = GoogleSignIn(
       clientId: Env.googleClientId,
+      serverClientId: Env.googleClientId,
       scopes: ["email", "profile", "openid"],
     );
   }
