@@ -159,7 +159,7 @@ class _MainShellState extends State<MainShell> {
 
         onTripReservationsTap: () => _comingSoon("Trip Reservations"),
 
-        onSettingsTap: () => _comingSoon("Settings"),
+        onSettingsTap: () => Navigator.pushNamed(context, AppRoutes.settings),
       ),
 
       body: IndexedStack(index: _index, children: _tabs),
