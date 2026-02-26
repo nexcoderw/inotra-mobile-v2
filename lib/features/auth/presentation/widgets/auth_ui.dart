@@ -7,27 +7,32 @@ import "../../../../i18n/lang.dart";
 final class AuthUI {
   AuthUI._();
 
-  static Text heading(String key, {String? lang}) => Text(
+  static Text heading(String key, {String? lang, Color? color}) => Text(
         tr(key),
-        style: const TextStyle(
-          fontSize: 32,
+        style: TextStyle(
+          fontSize: 20,
           fontWeight: FontWeight.w900,
           letterSpacing: -0.8,
+          color: color ?? Colors.black,
         ),
       );
 
-  static Text subheading(String key, {String? lang}) => Text(
+  static Text subheading(String key, {String? lang, Color? color}) => Text(
         tr(key),
         style: TextStyle(
           fontSize: 12,
-          color: Colors.black.withOpacity(0.45),
+          color: color ?? Colors.black.withOpacity(0.45),
           fontWeight: FontWeight.w500,
         ),
       );
 
-  static Text label(String text) => Text(
+  static Text label(String text, {Color? color}) => Text(
         text,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+          color: color ?? Colors.black,
+        ),
       );
 
   static const TextStyle fieldTextStyle = TextStyle(
