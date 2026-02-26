@@ -46,7 +46,6 @@ dependencies:
   shadcn_ui: ^0.46.1
   world_countries: ^3.9.4
   file_picker: ^6.1.1
-  file_picker: ^6.1.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.13.1
