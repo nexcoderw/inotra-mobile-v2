@@ -270,7 +270,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _name,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.name_hint"),
                 prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedUser),
@@ -284,7 +284,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _email,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               keyboardType: TextInputType.emailAddress,
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.email_hint"),
@@ -299,7 +299,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             IntlPhoneField(
               controller: _phone,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.phone_hint"),
               ).copyWith(
@@ -325,7 +325,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _nationality,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               readOnly: true,
               onTap: _chooseCountry,
               decoration: AuthUI.fieldDecoration(
@@ -358,7 +358,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: Colors.black.withOpacity(0.55),
                   ),
                 ),
-                style: AuthUI.fieldTextStyle.copyWith(fontWeight: FontWeight.w700),
+                style: AuthUI.fieldTextStyle
+                    .copyWith(fontWeight: FontWeight.w700, color: Colors.black),
                 items: const [
                   DropdownMenuItem(value: "Kinyarwanda", child: Text("Kinyarwanda")),
                   DropdownMenuItem(value: "English", child: Text("English")),
@@ -376,7 +377,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _password,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               obscureText: _obscure1,
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.password_hint"),
@@ -401,7 +402,7 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 10),
             TextFormField(
               controller: _confirmPassword,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(color: Colors.black),
               obscureText: _obscure2,
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.confirm_password_hint"),
