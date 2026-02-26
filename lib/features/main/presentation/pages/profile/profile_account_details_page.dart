@@ -47,8 +47,9 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     _name = TextEditingController(text: (user["name"] ?? "") as String);
     _username = TextEditingController(text: (user["username"] ?? "") as String);
     final phoneRaw = (user["phone_number"] ?? "") as String;
-    _phone = TextEditingController(text: phoneRaw);
-    _initialPhoneIso = _guessIso(phoneRaw);
+    final normalizedPhone = _normalizePhone(phoneRaw);
+    _phone = TextEditingController(text: normalizedPhone);
+    _initialPhoneIso = _guessIso(normalizedPhone);
     _email = TextEditingController(text: (user["email"] ?? "") as String);
   }
 
@@ -208,7 +209,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
       req.headers["Authorization"] = "Bearer $token";
       req.fields["name"] = _name.text.trim();
       req.fields["username"] = _username.text.trim();
-      req.fields["phone_number"] = _phone.text.trim();
+      req.fields["phone_number"] = _normalizePhone(_phone.text.trim());
 
       if (_avatarBytes != null && _avatarName != null) {
         req.files.add(
@@ -305,6 +306,15 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
     return "Update failed (${response.statusCode})";
+  }
+
+  String _normalizePhone(String raw) {
+    if (raw.isEmpty) return raw;
+    if (raw.startsWith("+")) return raw;
+    final digits = raw.replaceAll(RegExp(r"[^0-9]"), "");
+    if (digits.startsWith("250")) return "+$digits";
+    if (digits.startsWith("0")) return "+250${digits.substring(1)}";
+    return "+250$digits";
   }
 
   String _guessIso(String phone) {
