@@ -20,6 +20,7 @@ import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
 import "../../features/main/presentation/pages/profile_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
 import "../../features/main/presentation/pages/settings_page.dart";
+import "../../features/main/presentation/pages/settings_theme_page.dart";
 import "../guards/auth_guard.dart";
 
 final class AppRouter {
@@ -125,6 +126,13 @@ final class AppRouter {
         featureLabel: "Settings",
         description: "Sign in to manage preferences, language, and policies.",
         builder: (_) => const SettingsPage(),
+      );
+
+    case AppRoutes.settingsTheme:
+      return AuthGuard.protect(
+        featureLabel: "Theme",
+        description: "Sign in to change your app appearance.",
+        builder: (_) => const SettingsThemePage(),
       );
 
       // -------------------
