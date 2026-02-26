@@ -234,27 +234,66 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textColor = scheme.onSurface;
+    final hintColor = scheme.onSurface.withOpacity(0.55);
+    final iconColor = scheme.onSurface.withOpacity(0.65);
     return AuthScaffold(
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthUI.heading(tr("auth.sign_in")),
+            Text(
+              tr("auth.sign_in"),
+              style: const TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.8,
+              ).copyWith(color: textColor),
+            ),
             const SizedBox(height: 6),
-            AuthUI.subheading(tr("auth.sign_in_title")),
+            Text(
+              tr("auth.sign_in_title"),
+              style: TextStyle(
+                fontSize: 12,
+                color: textColor.withOpacity(0.65),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 26),
 
-            AuthUI.label(tr("auth.identifier")),
+            Text(
+              tr("auth.identifier"),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: null)
+                  .copyWith(color: textColor),
+            ),
             const SizedBox(height: 10),
 
             TextFormField(
               controller: _identifier,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(
+                color: textColor,
+              ),
               keyboardType: TextInputType.emailAddress,
+              cursorColor: scheme.primary,
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.identifier"),
-                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedUser),
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: 14, right: 10),
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedUser,
+                    size: 22,
+                    strokeWidth: 2,
+                    color: iconColor,
+                  ),
+                ),
+              ).copyWith(
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: hintColor,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? tr("auth.identifier_required") : null,
@@ -262,26 +301,46 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 18),
 
-            AuthUI.label(tr("auth.password")),
+            Text(
+              tr("auth.password"),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800).copyWith(
+                color: textColor,
+              ),
+            ),
             const SizedBox(height: 10),
 
             TextFormField(
               controller: _password,
               obscureText: _obscure,
-              style: AuthUI.fieldTextStyle,
+              style: AuthUI.fieldTextStyle.copyWith(
+                color: textColor,
+              ),
+              cursorColor: scheme.primary,
               decoration: AuthUI.fieldDecoration(
                 hint: tr("auth.password"),
-                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedLockPassword),
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: 14, right: 10),
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedLockPassword,
+                    size: 22,
+                    strokeWidth: 2,
+                    color: iconColor,
+                  ),
+                ),
                 suffix: IconButton(
                   onPressed: () => setState(() => _obscure = !_obscure),
                   icon: HugeIcon(
-                    icon: _obscure
-                        ? HugeIcons.strokeRoundedViewOff
-                        : HugeIcons.strokeRoundedView,
+                    icon: _obscure ? HugeIcons.strokeRoundedViewOff : HugeIcons.strokeRoundedView,
                     size: 18,
                     strokeWidth: 2,
-                    color: Colors.black.withOpacity(0.55),
+                    color: iconColor,
                   ),
+                ),
+              ).copyWith(
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: hintColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               validator: (v) =>
@@ -303,7 +362,7 @@ class _LoginPageState extends State<LoginPage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.black.withOpacity(0.30),
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.35),
                             width: 1.4,
                           ),
                           color: _rememberMe ? AppColors.primary : Colors.transparent,
@@ -316,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         tr("auth.remember_me"),
                         style: TextStyle(
-                          color: Colors.black.withOpacity(0.60),
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.70),
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -330,11 +389,11 @@ class _LoginPageState extends State<LoginPage> {
                   child: Text(
                     tr("auth.forgot_password"),
                     style: TextStyle(
-                      color: Colors.black.withOpacity(0.55),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.70),
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                       decoration: TextDecoration.underline,
-                      decorationColor: Colors.black.withOpacity(0.55),
+                      decorationColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.70),
                     ),
                   ),
                 ),
@@ -415,23 +474,23 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const _GoogleMark(),
-                    const SizedBox(width: 12),
-                    Text(
-                      tr("auth.sign_in_google"),
-                      style: TextStyle(
-                        color: Colors.black.withOpacity(0.70),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const _GoogleMark(),
+                          const SizedBox(width: 12),
+                          Text(
+                            tr("auth.sign_in_google"),
+                            style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.80),
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                       ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
 
             const SizedBox(height: 18),
 
@@ -441,7 +500,7 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   "${tr("auth.no_account")} ",
                   style: TextStyle(
-                    color: Colors.black.withOpacity(0.35),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
