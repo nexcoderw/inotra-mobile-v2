@@ -19,6 +19,7 @@ import "../../features/main/presentation/pages/event_details_page.dart";
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
 import "../../features/main/presentation/pages/profile_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
+import "../../features/main/presentation/pages/settings_page.dart";
 import "../guards/auth_guard.dart";
 
 final class AppRouter {
@@ -117,6 +118,13 @@ final class AppRouter {
         featureLabel: "Notifications",
         description: "Sign in to view your personalized notifications and alerts.",
         builder: (_) => const NotificationsPage(),
+      );
+
+    case AppRoutes.settings:
+      return AuthGuard.protect(
+        featureLabel: "Settings",
+        description: "Sign in to manage preferences, language, and policies.",
+        builder: (_) => const SettingsPage(),
       );
 
       // -------------------
