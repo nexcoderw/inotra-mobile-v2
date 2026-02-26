@@ -7,6 +7,7 @@ import "package:flutter/material.dart";
 import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:intl_phone_field/intl_phone_field.dart";
+import "package:intl_phone_field/phone_number.dart";
 import "package:toastification/toastification.dart";
 import "package:http/http.dart" as http;
 import "package:world_countries/world_countries.dart";
