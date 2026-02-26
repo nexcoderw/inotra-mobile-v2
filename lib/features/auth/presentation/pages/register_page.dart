@@ -719,50 +719,51 @@ class _GlassPhoneFieldState extends State<_GlassPhoneField> {
         ? scheme.primary.withOpacity(0.32)
         : scheme.onSurface.withOpacity(0.10);
 
-    return Focus(
-      onFocusChange: (v) => setState(() => _focused = v),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            decoration: BoxDecoration(
-              color: scheme.surface.withOpacity(0.55),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor, width: 1),
-            ),
-            child: IntlPhoneField(
-              controller: widget.controller,
-              enabled: widget.enabled,
-              initialCountryCode: widget.initialCountryCode,
-              dropdownIconPosition: IconPosition.trailing,
-              dropdownIcon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: scheme.onSurface.withOpacity(0.55),
+    return SizedBox(
+      height: 56,
+      child: Focus(
+        onFocusChange: (v) => setState(() => _focused = v),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+              decoration: BoxDecoration(
+                color: scheme.surface.withOpacity(0.55),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderColor, width: 1),
               ),
-              showCountryFlag: !kIsWeb,
-              flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-              keyboardType: TextInputType.phone,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurface.withOpacity(0.92),
-              ),
-              decoration: InputDecoration(
-                hintText: tr("auth.phone_hint"),
-                hintStyle: TextStyle(
+              child: IntlPhoneField(
+                controller: widget.controller,
+                enabled: widget.enabled,
+                initialCountryCode: widget.initialCountryCode,
+                dropdownIconPosition: IconPosition.trailing,
+                dropdownIcon: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 18,
+                  color: scheme.onSurface.withOpacity(0.55),
+                ),
+                showCountryFlag: !kIsWeb,
+                flagsButtonPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                keyboardType: TextInputType.phone,
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: scheme.onSurface.withOpacity(0.45),
+                  color: scheme.onSurface.withOpacity(0.92),
                 ),
-                border: InputBorder.none,
-                filled: false,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                prefixIconConstraints: const BoxConstraints(minWidth: 0, maxWidth: 140),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  filled: false,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  prefixIconConstraints:
+                      BoxConstraints(minWidth: 0, maxWidth: 120),
+                ),
+                validator: widget.validator,
               ),
-              validator: widget.validator,
             ),
           ),
         ),
