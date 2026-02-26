@@ -3,10 +3,8 @@ import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:flutter/foundation.dart";
 import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:intl_phone_field/intl_phone_field.dart";
 import "package:toastification/toastification.dart";
 import "package:http/http.dart" as http;
 import "package:world_countries/world_countries.dart";
@@ -36,7 +34,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
-  String _phoneIso = "RW";
   final _nationality = TextEditingController();
 
   String _preferredLanguage = "English";
@@ -161,12 +158,12 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   String _normalizedPhone(String raw) {
-    if (raw.isEmpty) return raw;
-    if (raw.startsWith("+")) return raw;
-    final digits = raw.replaceAll(RegExp(r"[^0-9]"), "");
-    if (digits.startsWith("250")) return "+$digits";
-    if (digits.startsWith("0")) return "+250${digits.substring(1)}";
-    return "+250$digits";
+    final value = raw.trim();
+    if (value.isEmpty) return value;
+    if (value.startsWith("00")) return "+${value.substring(2)}";
+    if (value.startsWith("+")) return value;
+    final digits = value.replaceAll(RegExp(r"[^0-9]"), "");
+    return "+$digits";
   }
 
   Future<void> _onGoogleSignUp() async {
@@ -343,24 +340,21 @@ class _RegisterPageState extends State<RegisterPage> {
 
               const SizedBox(height: 14),
 
-              // Phone (keep logic, only styling wrapper)
+              // Phone (simple input; ask for country code in placeholder)
               AuthUI.label(tr("auth.phone"), color: onSurface.withOpacity(0.92)),
               const SizedBox(height: 10),
               _GlassWrap(
-                child: IntlPhoneField(
+                child: TextFormField(
                   controller: _phone,
-                  onChanged: (phone) {
-                    _phoneIso = phone.countryISOCode ?? _phoneIso;
-                    _phone.text = phone.completeNumber;
-                  },
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: scheme.onSurface.withOpacity(0.92),
                   ),
+                  keyboardType: TextInputType.phone,
                   decoration: _glassInputDecoration(
                     context,
-                    hint: tr("auth.phone_hint"),
+                    hint: "${tr("auth.phone_hint")} (+ country code)",
                   ).copyWith(
                     prefixIconConstraints: const BoxConstraints(minWidth: 0, maxWidth: 120),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -368,18 +362,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                   ),
-                  initialCountryCode: "RW",
-                  dropdownIconPosition: IconPosition.trailing,
-                  dropdownIcon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: scheme.onSurface.withOpacity(0.55),
-                  ),
-                  showCountryFlag: !kIsWeb,
-                  flagsButtonPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                  keyboardType: TextInputType.phone,
-                  validator: (phone) => (phone == null || phone.number.trim().isEmpty)
-                      ? tr("auth.phone_required")
-                      : null,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? tr("auth.phone_required") : null,
                 ),
               ),
 
