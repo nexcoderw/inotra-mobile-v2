@@ -18,36 +18,26 @@ class ResetPasswordPage extends StatefulWidget {
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _email;
-  late final List<TextEditingController> _otp;
-  late final List<FocusNode> _f;
+  final _otp = TextEditingController();
   bool _isBusy = false;
 
   @override
   void initState() {
     super.initState();
-    final cachedEmail = ResetPasswordCache.instance.email;
-    _email = TextEditingController(text: widget.email ?? cachedEmail ?? "");
-    _otp = List.generate(6, (_) => TextEditingController());
-    _f = List.generate(6, (_) => FocusNode());
+    _email = TextEditingController(text: widget.email ?? "");
   }
 
   @override
   void dispose() {
     _email.dispose();
-    for (final c in _otp) {
-      c.dispose();
-    }
-    for (final f in _f) {
-      f.dispose();
-    }
+    _otp.dispose();
     super.dispose();
   }
 
   Future<void> _onContinue() async {
     if (!_formKey.currentState!.validate()) return;
-
-    final otp = _otp.map((e) => e.text).join().trim();
-    if (otp.length != 6) {
+    final code = _otp.text.trim();
+    if (code.length != 6) {
       toastification.show(
         context: context,
         type: ToastificationType.error,
@@ -64,15 +54,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
     ResetPasswordCache.instance
       ..setEmail(_email.text.trim())
-      ..setOtp(otp);
+      ..setOtp(code);
 
-    if (mounted) {
-      Navigator.pushNamed(
-        context,
-        AppRoutes.confirmPasswordReset,
-        arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
-      );
-    }
+    Navigator.pushNamed(
+      context,
+      AppRoutes.confirmPasswordReset,
+      arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
+    );
 
     if (mounted) setState(() => _isBusy = false);
   }
@@ -107,44 +95,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             const SizedBox(height: 18),
 
             AuthUI.label("OTP Code"),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(6, (i) {
-                return SizedBox(
-                  width: 48,
-                  height: 52,
-                  child: TextField(
-                    controller: _otp[i],
-                    focusNode: _f[i],
-                    style: AuthUI.fieldTextStyle.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0,
-                    ),
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    maxLength: 1,
-                    decoration: InputDecoration(
-                      counterText: "",
-                      filled: true,
-                      fillColor: const Color(0xFFF3F4F6),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onChanged: (v) {
-                      if (v.isNotEmpty && i < 5) {
-                        _f[i + 1].requestFocus();
-                      }
-                      if (v.isEmpty && i > 0) {
-                        _f[i - 1].requestFocus();
-                      }
-                    },
-                  ),
-                );
-              }),
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _otp,
+              style: AuthUI.fieldTextStyle,
+              keyboardType: TextInputType.number,
+              decoration: AuthUI.fieldDecoration(
+                hint: "Enter OTP",
+                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedKey01),
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "OTP is required" : null,
             ),
 
             const SizedBox(height: 18),
