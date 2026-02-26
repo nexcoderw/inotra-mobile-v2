@@ -574,42 +574,40 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
         child: AnimatedScale(
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
-          scale: _pressed ? 0.99 : 1,
+          scale: _pressed ? 0.992 : 1,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
-            height: 48,
+            height: 50,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              // ✅ Rounded circle / pill
+              borderRadius: BorderRadius.circular(999),
+
+              // ✅ Keep your premium gradient (button only), but NO shadows.
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
                   scheme.primary,
-                  scheme.primary.withOpacity(0.85),
+                  scheme.primary.withOpacity(0.88),
                 ],
               ),
-              boxShadow: [
-                if (_hovered || _pressed)
-                  BoxShadow(
-                    color: scheme.primary.withOpacity(0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
-              ],
+
+              // ✅ remove hover/click shadows completely
+              boxShadow: const [],
             ),
             child: Center(
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
+                duration: const Duration(milliseconds: 180),
+                switchInCurve: Curves.easeOut,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, anim) => FadeTransition(
+                  opacity: anim,
+                  child: ScaleTransition(scale: anim, child: child),
+                ),
                 child: widget.busy
-                    ? const SizedBox(
-                        key: ValueKey("spinner"),
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
+                    ? const _PremiumDotsLoader(
+                        key: ValueKey("dots"),
                       )
                     : Text(
                         widget.label,
@@ -625,6 +623,75 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ✅ Premium loading: animated 3 dots (smooth, modern, no spinner)
+class _PremiumDotsLoader extends StatefulWidget {
+  const _PremiumDotsLoader({super.key});
+
+  @override
+  State<_PremiumDotsLoader> createState() => _PremiumDotsLoaderState();
+}
+
+class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // White dots on the gradient button
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value; // 0..1
+        double bump(double phase) {
+          // smooth pulse 0..1
+          final x = (t - phase) * 2 * 3.141592653589793;
+          return (0.5 + 0.5 * (-(x).cos())).clamp(0.0, 1.0);
+        }
+
+        final b1 = bump(0.0);
+        final b2 = bump(0.18);
+        final b3 = bump(0.36);
+
+        Widget dot(double b) => AnimatedContainer(
+              duration: const Duration(milliseconds: 90),
+              height: 6 + (b * 4), // 6..10
+              width: 6 + (b * 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.75 + b * 0.25),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            dot(b1),
+            const SizedBox(width: 7),
+            dot(b2),
+            const SizedBox(width: 7),
+            dot(b3),
+          ],
+        );
+      },
     );
   }
 }
