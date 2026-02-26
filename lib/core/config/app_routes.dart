@@ -24,4 +24,5 @@ final class AppRoutes {
   static const aiChatConversations = "/ai-chat-conversations";
   static const profile = "/profile";
   static const notifications = "/notifications";
+  static const settings = "/settings";
 }
