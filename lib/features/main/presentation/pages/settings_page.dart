@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 import "../widgets/main_scaffold.dart";
+import "../widgets/page_header.dart";
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -17,6 +18,8 @@ class SettingsPage extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
+          PageHeader(title: "Settings"),
+
           _GlassSection(
             title: "Personalization",
             children: [
