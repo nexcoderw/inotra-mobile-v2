@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:math" as math;
 import "dart:typed_data";
 import "dart:ui";
 
@@ -699,6 +700,9 @@ class _GlassTextFieldState extends State<_GlassTextField> {
   }
 }
 
+// ✅ Replace ONLY this _PrimaryButton in your file with the exact same button + loader
+// (same rounded pill, no shadows, same premium dots loader)
+
 class _PrimaryButton extends StatefulWidget {
   final String label;
   final bool busy;
@@ -716,51 +720,128 @@ class _PrimaryButton extends StatefulWidget {
 
 class _PrimaryButtonState extends State<_PrimaryButton> {
   bool _pressed = false;
-  bool _hovered = false;
 
   void _setPressed(bool v) => setState(() => _pressed = v);
-  void _setHovered(bool v) => setState(() => _hovered = v);
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return MouseRegion(
-      onEnter: (_) => _setHovered(true),
-      onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
-        onTapCancel: () => _setPressed(false),
-        onTapUp: (_) => _setPressed(false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOut,
-          scale: _pressed ? 0.99 : 1,
-          child: SizedBox(
-            height: 48,
-            child: ElevatedButton(
-              onPressed: widget.onTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: scheme.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
+    return GestureDetector(
+      onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        scale: _pressed ? 0.992 : 1,
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.primary,
+                scheme.primary.withOpacity(0.88),
+              ],
+            ),
+            boxShadow: const [], // ✅ no shadow on hover/click
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: ScaleTransition(scale: anim, child: child),
               ),
-              child: Text(
-                widget.busy ? t(currentLangSync(), "auth.wait") : widget.label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
+              child: widget.busy
+                  ? const _PremiumDotsLoader(key: ValueKey("dots"))
+                  : Text(
+                      widget.label,
+                      key: const ValueKey("label"),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+// ✅ Premium loading: animated 3 dots (same as before)
+class _PremiumDotsLoader extends StatefulWidget {
+  const _PremiumDotsLoader({super.key});
+
+  @override
+  State<_PremiumDotsLoader> createState() => _PremiumDotsLoaderState();
+}
+
+class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value; // 0..1
+
+        double bump(double phase) {
+          final x = (t - phase) * 2 * math.pi;
+          return (0.5 + 0.5 * (-math.cos(x))).clamp(0.0, 1.0);
+        }
+
+        final b1 = bump(0.0);
+        final b2 = bump(0.18);
+        final b3 = bump(0.36);
+
+        Widget dot(double b) => AnimatedContainer(
+              duration: const Duration(milliseconds: 90),
+              height: 6 + (b * 4),
+              width: 6 + (b * 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.75 + b * 0.25),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            dot(b1),
+            const SizedBox(width: 7),
+            dot(b2),
+            const SizedBox(width: 7),
+            dot(b3),
+          ],
+        );
+      },
     );
   }
 }
