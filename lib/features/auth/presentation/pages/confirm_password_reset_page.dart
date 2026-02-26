@@ -59,8 +59,8 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
         body: jsonEncode({
           "email": _email,
           "otp": _otp,
-          "password": _newPassword.text,
-          "confirm_password": _confirmPassword.text,
+          "new_password": _newPassword.text,
+          "confirm_new_password": _confirmPassword.text,
         }),
       );
 
