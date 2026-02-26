@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 
 class EventsTab extends StatelessWidget {
   const EventsTab({super.key});
@@ -7,6 +9,7 @@ class EventsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final events = List.generate(8, (i) => "EVENT-${i + 1}");
+    final lang = currentLangSync();
 
     return SafeArea(
       child: ListView.separated(
@@ -15,17 +18,18 @@ class EventsTab extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           if (index == 0) {
-            return const Text(
-              "Events",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            return Text(
+              t(lang, "nav.events"),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             );
           }
           final id = events[index - 1];
           return Card(
             child: ListTile(
               leading: const Icon(Icons.celebration_outlined),
-              title: Text("Event $id", style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text("Tap to view details"),
+              title: Text("${t(lang, "nav.events")} $id",
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(t(lang, "common.tap_details")),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, AppRoutes.eventDetails, arguments: id),
             ),
