@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 
 class ListingsTab extends StatelessWidget {
   const ListingsTab({super.key});
@@ -7,6 +9,7 @@ class ListingsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final listings = List.generate(10, (i) => "PLACE-${i + 1}");
+    final lang = currentLangSync();
 
     return SafeArea(
       child: ListView.separated(
@@ -15,9 +18,9 @@ class ListingsTab extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           if (index == 0) {
-            return const Text(
-              "Listings",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            return Text(
+              t(lang, "nav.listings"),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
             );
           }
 
@@ -25,8 +28,9 @@ class ListingsTab extends StatelessWidget {
           return Card(
             child: ListTile(
               leading: const Icon(Icons.place_outlined),
-              title: Text("Listing $id", style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: const Text("Tap to view details"),
+              title: Text("${t(lang, "nav.listings")} $id",
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text(t(lang, "common.tap_details")),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.pushNamed(context, AppRoutes.listingDetails, arguments: id),
             ),
