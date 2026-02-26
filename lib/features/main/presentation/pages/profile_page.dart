@@ -20,6 +20,7 @@ class ProfilePage extends StatelessWidget {
 
     return MainScaffold(
       title: t(lang, "profile.title"),
+      showAppBar: false,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
