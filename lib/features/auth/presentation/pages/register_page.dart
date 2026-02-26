@@ -2,6 +2,7 @@ import "dart:convert";
 
 import "package:flutter/material.dart";
 import "package:flutter/foundation.dart";
+import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:intl_phone_field/intl_phone_field.dart";
 import "package:toastification/toastification.dart";
@@ -10,8 +11,11 @@ import "package:world_countries/world_countries.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
+import "../../../../core/config/env.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/registration_cache.dart";
+import "../../../../core/services/auth_storage.dart";
+import "../../../../core/services/auth_session.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -38,6 +42,16 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscure1 = true;
   bool _obscure2 = true;
   bool _isBusy = false;
+  late final GoogleSignIn _googleSignIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleSignIn = GoogleSignIn(
+      clientId: Env.googleClientId,
+      scopes: ["email", "profile", "openid"],
+    );
+  }
 
   @override
   void dispose() {
@@ -136,6 +150,82 @@ class _RegisterPageState extends State<RegisterPage> {
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
     return "Unable to create account. Please review your details and try again.";
+  }
+
+  Future<void> _onGoogleSignUp() async {
+    setState(() => _isBusy = true);
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        if (mounted) setState(() => _isBusy = false);
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) throw Exception("Missing Google ID token");
+
+      final uri = Api.url(AuthEndpoints.googleLogin);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"token": idToken}),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = _safeJson(response.body);
+        final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
+        final user = body?["user"] as Map<String, dynamic>? ?? {};
+
+        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        AuthSession.instance.signIn(
+          user: user,
+          accessToken: tokens["access"] as String? ?? "",
+          refreshToken: tokens["refresh"] as String? ?? "",
+          theme: "light",
+        );
+
+        if (mounted) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.success,
+            style: ToastificationStyle.fillColored,
+            title: const Text("Signed up with Google"),
+            description: const Text("Welcome to Inotra."),
+            alignment: Alignment.topCenter,
+            autoCloseDuration: const Duration(seconds: 3),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.home);
+        }
+        return;
+      }
+
+      final detail = _extractError(response);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Google sign up failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (mounted) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Google sign up error"),
+          description: Text(e.toString()),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
   }
 
   Future<void> _chooseCountry() async {
@@ -347,14 +437,7 @@ class _RegisterPageState extends State<RegisterPage> {
             SizedBox(
               height: 56,
               child: OutlinedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Google sign up coming soon"),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
+                onPressed: _isBusy ? null : _onGoogleSignUp,
                 style: OutlinedButton.styleFrom(
                   backgroundColor: Colors.white,
                   side: BorderSide(color: Colors.black.withOpacity(0.08)),
