@@ -103,7 +103,7 @@ class _AuthScaffoldState extends State<AuthScaffold> {
                       isDark
                           ? Icons.light_mode_rounded
                           : Icons.dark_mode_rounded,
-                      size: 18,
+                      size: 16,
                       color: scheme.onSurface.withOpacity(0.82),
                     ),
                   ),
@@ -212,13 +212,13 @@ class _LangSelectorState extends State<_LangSelector> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: Image.asset(
-                      "assets/icons/language/$c.png",
+                      "icons/language/$c.png",
                           width: 20,
                           height: 14,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Icon(
                             Icons.language,
-                            size: 18,
+                            size: 16,
                             color: scheme.onSurface,
                           ),
                         ),
@@ -260,13 +260,13 @@ class _LangSelectorState extends State<_LangSelector> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
               child: Image.asset(
-                "assets/icons/language/${widget.current}.png",
+                "icons/language/${widget.current}.png",
                     width: 20,
                     height: 14,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Icon(
                       Icons.language,
-                      size: 18,
+                      size: 16,
                       color: scheme.onSurface,
                     ),
                   ),
@@ -279,7 +279,7 @@ class _LangSelectorState extends State<_LangSelector> {
                 const SizedBox(width: 4),
                 Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  size: 18,
+                  size: 16,
                   color: scheme.onSurface.withOpacity(0.7),
                 ),
               ],
