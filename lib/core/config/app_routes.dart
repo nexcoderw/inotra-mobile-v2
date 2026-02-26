@@ -26,4 +26,5 @@ final class AppRoutes {
   static const notifications = "/notifications";
   static const settings = "/settings";
   static const settingsTheme = "/settings/theme";
+  static const settingsLanguage = "/settings/language";
 }
