@@ -59,44 +59,44 @@ class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _GlassSection(
-            title: "Account & Privacy",
+            title: t(lang, "settings.title"),
             children: [
               _GlassTile(
                 icon: HugeIcons.strokeRoundedShield02,
-                title: "Privacy Policy",
-                subtitle: "How we handle your data",
+                title: t(lang, "settings.privacy"),
+                subtitle: t(lang, "common.coming_soon"),
                 onTap: () {
-                  _toast(context, "Privacy policy view coming soon");
+                  _toast(context, t(lang, "common.coming_soon"));
                 },
               ),
               _GlassTile(
                 icon: HugeIcons.strokeRoundedFileUnlocked,
-                title: "Terms of Service",
-                subtitle: "Review the terms",
+                title: t(lang, "settings.terms"),
+                subtitle: t(lang, "common.coming_soon"),
                 onTap: () {
-                  _toast(context, "Terms of service view coming soon");
+                  _toast(context, t(lang, "common.coming_soon"));
                 },
               ),
             ],
           ),
           const SizedBox(height: 14),
           _GlassSection(
-            title: "Support",
+            title: t(lang, "settings.support"),
             children: [
               _GlassTile(
                 icon: HugeIcons.strokeRoundedMessageQuestion,
-                title: "Help Center",
-                subtitle: "FAQs and guides",
+                title: t(lang, "settings.help"),
+                subtitle: t(lang, "common.coming_soon"),
                 onTap: () {
-                  _toast(context, "Help Center coming soon");
+                  _toast(context, t(lang, "common.coming_soon"));
                 },
               ),
               _GlassTile(
                 icon: HugeIcons.strokeRoundedCallRinging03,
-                title: "Contact Support",
-                subtitle: "Chat or email us",
+                title: t(lang, "settings.support"),
+                subtitle: t(lang, "common.coming_soon"),
                 onTap: () {
-                  _toast(context, "Support contact coming soon");
+                  _toast(context, t(lang, "common.coming_soon"));
                 },
               ),
             ],
