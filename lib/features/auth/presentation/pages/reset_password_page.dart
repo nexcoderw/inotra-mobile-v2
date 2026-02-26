@@ -1,13 +1,8 @@
-import "dart:convert";
-
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:http/http.dart" as http;
 import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/config/api.dart";
-import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/reset_password_cache.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
@@ -23,7 +18,8 @@ class ResetPasswordPage extends StatefulWidget {
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _email;
-  final _otp = TextEditingController();
+  final List<TextEditingController> _otp = List.generate(6, (_) => TextEditingController());
+  final List<FocusNode> _f = List.generate(6, (_) => FocusNode());
   bool _isBusy = false;
 
   @override
@@ -36,92 +32,47 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   void dispose() {
     _email.dispose();
-    _otp.dispose();
+    for (final c in _otp) {
+      c.dispose();
+    }
+    for (final f in _f) {
+      f.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _onContinue() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isBusy = true);
-
-    try {
-      final uri = Api.url(AuthEndpoints.passwordResetResend);
-      final response = await http.post(
-        uri,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": _email.text.trim(),
-        }),
-      );
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        ResetPasswordCache.instance
-          ..setEmail(_email.text.trim())
-          ..setOtp(_otp.text.trim());
-
-        if (!mounted) return;
-        toastification.show(
-          context: context,
-          type: ToastificationType.success,
-          style: ToastificationStyle.fillColored,
-          title: const Text("Code accepted"),
-          description: const Text("Enter your new password on the next step."),
-          alignment: Alignment.topCenter,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
-
-        Navigator.pushNamed(
-          context,
-          AppRoutes.confirmPasswordReset,
-          arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
-        );
-        return;
-      }
-
-      final detail = _extractError(response);
-      if (!mounted) return;
+    final otp = _otp.map((e) => e.text).join().trim();
+    if (otp.length != 6) {
       toastification.show(
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
-        title: const Text("OTP check failed"),
-        description: Text(detail),
+        title: const Text("Invalid code"),
+        description: const Text("Enter the 6-digit code we emailed you."),
         alignment: Alignment.topCenter,
-        autoCloseDuration: const Duration(seconds: 4),
+        autoCloseDuration: const Duration(seconds: 3),
       );
-    } catch (e) {
-      if (mounted) {
-        toastification.show(
-          context: context,
-          type: ToastificationType.error,
-          style: ToastificationStyle.fillColored,
-          title: const Text("Network error"),
-          description: const Text("Unable to verify code. Try again shortly."),
-          alignment: Alignment.topCenter,
-          autoCloseDuration: const Duration(seconds: 4),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isBusy = false);
+      return;
     }
-  }
 
-  Map<String, dynamic>? _safeJson(String raw) {
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return null;
-    } catch (_) {
-      return null;
+    setState(() => _isBusy = true);
+
+    ResetPasswordCache.instance
+      ..setEmail(_email.text.trim())
+      ..setOtp(otp);
+
+    if (mounted) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.confirmPasswordReset,
+        arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
+      );
     }
-  }
 
-  String _extractError(http.Response response) {
-    final body = _safeJson(response.body);
-    final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
-    if (detail is String && detail.trim().isNotEmpty) return detail.trim();
-    return "The code could not be verified. Please try again.";
+    if (mounted) setState(() => _isBusy = false);
   }
 
   @override
@@ -154,17 +105,44 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             const SizedBox(height: 18),
 
             AuthUI.label("OTP Code"),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: _otp,
-              style: AuthUI.fieldTextStyle,
-              keyboardType: TextInputType.number,
-              decoration: AuthUI.fieldDecoration(
-                hint: "Enter OTP",
-                prefix: AuthUI.prefixIcon(HugeIcons.strokeRoundedKey01),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? "OTP is required" : null,
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(6, (i) {
+                return SizedBox(
+                  width: 48,
+                  height: 52,
+                  child: TextField(
+                    controller: _otp[i],
+                    focusNode: _f[i],
+                    style: AuthUI.fieldTextStyle.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    maxLength: 1,
+                    decoration: InputDecoration(
+                      counterText: "",
+                      filled: true,
+                      fillColor: const Color(0xFFF3F4F6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: (v) {
+                      if (v.isNotEmpty && i < 5) {
+                        _f[i + 1].requestFocus();
+                      }
+                      if (v.isEmpty && i > 0) {
+                        _f[i - 1].requestFocus();
+                      }
+                    },
+                  ),
+                );
+              }),
             ),
 
             const SizedBox(height: 18),
