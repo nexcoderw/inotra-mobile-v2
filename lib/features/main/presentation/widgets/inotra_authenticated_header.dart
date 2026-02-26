@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
+import "../../../../core/services/auth_session.dart";
 
 class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSizeWidget {
   static const double defaultHeight = kToolbarHeight + 6;
@@ -31,8 +32,11 @@ class InotraAuthenticatedHeader extends StatelessWidget implements PreferredSize
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final userImage = (imageUrl != null && imageUrl!.isNotEmpty)
+        ? imageUrl
+        : AuthSession.instance.value.user?["image"] as String?;
     final _avatar =
-        (imageUrl != null && imageUrl!.isNotEmpty) ? NetworkImage(imageUrl!) : null;
+        (userImage != null && userImage.isNotEmpty) ? NetworkImage(userImage) : null;
 
     return AppBar(
       elevation: 0,
