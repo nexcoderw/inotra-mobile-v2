@@ -186,7 +186,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
               AuthUI.heading(tr("auth.set_new_password")),
               const SizedBox(height: 6),
 
-              // ✅ make subtitle visible in both themes (same treatment as title)
+              // ✅ subtitle visible in both themes
               Text(
                 tr("auth.set_new_password_sub"),
                 style: TextStyle(
@@ -196,20 +196,17 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                   color: scheme.onSurface.withOpacity(0.92),
                 ),
               ),
+
               const SizedBox(height: 14),
 
-              // ✅ Secure context pill
               _InfoPill(
                 icon: HugeIcons.strokeRoundedMail01,
-                text: t(
-                  currentLangSync(),
-                  "auth.reset_for",
-                ).replaceFirst("{email}", _maskEmail(_email)),
+                text: t(currentLangSync(), "auth.reset_for")
+                    .replaceFirst("{email}", _maskEmail(_email)),
               ),
 
               const SizedBox(height: 14),
 
-              // ✅ Strength hint row
               _StrengthRow(
                 score: score,
                 label: _passwordLabel(score),
@@ -254,6 +251,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
 
               const SizedBox(height: 18),
 
+              // ✅ NOT const (important for hot reload scenarios)
               _PrimaryButton(
                 label: tr("auth.save_changes"),
                 busy: _isBusy,
@@ -293,7 +291,7 @@ class _InfoPill extends StatelessWidget {
             children: [
               HugeIcon(
                 icon: icon,
-                size: 14, // ✅ icon size 14
+                size: 14,
                 strokeWidth: 2,
                 color: scheme.primary.withOpacity(0.95),
               ),
@@ -506,7 +504,7 @@ class _GlassPasswordFieldState extends State<_GlassPasswordField> {
                           widthFactor: 1,
                           child: HugeIcon(
                             icon: HugeIcons.strokeRoundedLockPassword,
-                            size: 14, // ✅ icon size 14
+                            size: 14,
                             strokeWidth: 2,
                             color: scheme.primary.withOpacity(0.95),
                           ),
@@ -527,7 +525,7 @@ class _GlassPasswordFieldState extends State<_GlassPasswordField> {
                     icon: widget.obscure
                         ? HugeIcons.strokeRoundedViewOff
                         : HugeIcons.strokeRoundedView,
-                    size: 14, // ✅ icon size 14
+                    size: 14,
                     strokeWidth: 2,
                     color: scheme.onSurface.withOpacity(0.55),
                   ),
@@ -558,71 +556,56 @@ class _PrimaryButton extends StatefulWidget {
 
 class _PrimaryButtonState extends State<_PrimaryButton> {
   bool _pressed = false;
-  bool _hovered = false;
 
   void _setPressed(bool v) => setState(() => _pressed = v);
-  void _setHovered(bool v) => setState(() => _hovered = v);
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return MouseRegion(
-      onEnter: (_) => _setHovered(true),
-      onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
-        onTapCancel: () => _setPressed(false),
-        onTapUp: (_) => _setPressed(false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOut,
-          scale: _pressed ? 0.992 : 1,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            height: 50,
-            decoration: BoxDecoration(
-              // ✅ Rounded circle / pill
-              borderRadius: BorderRadius.circular(999),
-
-              // ✅ Keep your premium gradient (button only), but NO shadows.
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  scheme.primary,
-                  scheme.primary.withOpacity(0.88),
-                ],
-              ),
-
-              // ✅ remove hover/click shadows completely
-              boxShadow: const [],
+    return GestureDetector(
+      onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        scale: _pressed ? 0.992 : 1,
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.primary,
+                scheme.primary.withOpacity(0.88),
+              ],
             ),
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                switchInCurve: Curves.easeOut,
-                switchOutCurve: Curves.easeIn,
-                transitionBuilder: (child, anim) => FadeTransition(
-                  opacity: anim,
-                  child: ScaleTransition(scale: anim, child: child),
-                ),
-                child: widget.busy
-                    ? const _PremiumDotsLoader(
-                        key: ValueKey("dots"),
-                      )
-                    : Text(
-                        widget.label,
-                        key: const ValueKey("label"),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
+            boxShadow: const [], // ✅ no shadow on hover/click
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: ScaleTransition(scale: anim, child: child),
               ),
+              child: widget.busy
+                  ? const _PremiumDotsLoader(key: ValueKey("dots"))
+                  : Text(
+                      widget.label,
+                      key: const ValueKey("label"),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
@@ -631,7 +614,6 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
   }
 }
 
-// ✅ Premium loading: animated 3 dots (smooth, modern, no spinner)
 class _PremiumDotsLoader extends StatefulWidget {
   const _PremiumDotsLoader({super.key});
 
@@ -660,13 +642,12 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
 
   @override
   Widget build(BuildContext context) {
-    // White dots on the gradient button
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
         final t = _c.value; // 0..1
+
         double bump(double phase) {
-          // smooth pulse 0..1
           final x = (t - phase) * 2 * math.pi;
           return (0.5 + 0.5 * (-math.cos(x))).clamp(0.0, 1.0);
         }
@@ -677,7 +658,7 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
 
         Widget dot(double b) => AnimatedContainer(
               duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4), // 6..10
+              height: 6 + (b * 4),
               width: 6 + (b * 4),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.75 + b * 0.25),
@@ -721,9 +702,7 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-
-            // ✅ Main div: NO border, NO gradient, NO shadow
-            color: scheme.surface.withOpacity(0.55),
+            color: scheme.surface.withOpacity(0.55), // ✅ no border/gradient/shadow
           ),
           child: child,
         ),

@@ -10,7 +10,7 @@ final class AuthUI {
   static Text heading(String key, {String? lang}) => Text(
         tr(key),
         style: const TextStyle(
-          fontSize: 40,
+          fontSize: 32,
           fontWeight: FontWeight.w900,
           letterSpacing: -0.8,
         ),
