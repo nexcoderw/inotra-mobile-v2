@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "dart:ui";
 import "package:hugeicons/hugeicons.dart";
 import "../../widgets/main_scaffold.dart";
 import "../../widgets/page_header.dart";
@@ -7,24 +8,36 @@ import "../../../../../core/config/app_routes.dart";
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  String _lang() {
+    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    if (preferred == null || preferred.isEmpty) return 'en';
+    final lower = preferred.toLowerCase();
+    if (lower.startsWith('rw')) return 'rw';
+    if (lower.startsWith('fr')) return 'fr';
+    if (lower.startsWith('es')) return 'es';
+    if (lower.startsWith('de')) return 'de';
+    return 'en';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = _lang();
 
     return MainScaffold(
-      title: "Settings",
+      title: t(lang, "settings.title"),
       showAppBar: false,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          PageHeader(title: "Settings"),
+          PageHeader(title: t(lang, "settings.title")),
 
           _GlassSection(
-            title: "Personalization",
+            title: t(lang, "settings.title"),
             children: [
               _GlassTile(
                 icon: HugeIcons.strokeRoundedMoon02,
-                title: "Theme",
+                title: t(lang, "settings.theme"),
                 subtitle: "Light / Dark",
                 onTap: () {
                   Navigator.pushNamed(context, AppRoutes.settingsTheme);
@@ -32,8 +45,8 @@ class SettingsPage extends StatelessWidget {
               ),
               _GlassTile(
                 icon: HugeIcons.strokeRoundedLanguageSkill,
-                title: "Language",
-                subtitle: "Change display language",
+                title: t(lang, "settings.language"),
+                subtitle: t(lang, "language.choose"),
                 onTap: () {
                   Navigator.pushNamed(context, AppRoutes.settingsLanguage);
                 },
