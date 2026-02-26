@@ -36,6 +36,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
+  String _phoneIso = "RW";
   final _nationality = TextEditingController();
 
   String _preferredLanguage = "English";
@@ -86,7 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
         body: jsonEncode({
           "name": _name.text.trim(),
           "email": _email.text.trim(),
-          "phone_number": _phone.text.trim(),
+          "phone_number": _normalizedPhone(_phone.text.trim()),
           "nationality": _nationality.text.trim(),
           "preferred_languages": [_preferredLanguage],
           "password": _password.text,
@@ -157,6 +158,15 @@ class _RegisterPageState extends State<RegisterPage> {
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
     if (detail is String && detail.trim().isNotEmpty) return detail.trim();
     return tr("auth.signup_retry");
+  }
+
+  String _normalizedPhone(String raw) {
+    if (raw.isEmpty) return raw;
+    if (raw.startsWith("+")) return raw;
+    final digits = raw.replaceAll(RegExp(r"[^0-9]"), "");
+    if (digits.startsWith("250")) return "+$digits";
+    if (digits.startsWith("0")) return "+250${digits.substring(1)}";
+    return "+250$digits";
   }
 
   Future<void> _onGoogleSignUp() async {
@@ -339,6 +349,10 @@ class _RegisterPageState extends State<RegisterPage> {
               _GlassWrap(
                 child: IntlPhoneField(
                   controller: _phone,
+                  onChanged: (phone) {
+                    _phoneIso = phone.countryISOCode ?? _phoneIso;
+                    _phone.text = phone.completeNumber;
+                  },
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
