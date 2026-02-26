@@ -89,4 +89,9 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
     await AuthStorage.clearSession();
     value = const AuthSessionState(status: AuthStatus.signedOut, displayName: "Guest");
   }
+
+  /// Clears tokens and user data when the session is no longer valid (e.g., expired).
+  Future<void> expireSession() async {
+    await signOut();
+  }
 }
