@@ -150,7 +150,10 @@ class _SettingsLanguagePageState extends State<SettingsLanguagePage> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          PageHeader(title: t(lang, "settings.language")),
+          PageHeader(
+            title: t(lang, "settings.language"),
+            onBack: () => Navigator.of(context).pop(),
+          ),
           const SizedBox(height: 10),
           Text(
             t(lang, "language.choose"),
