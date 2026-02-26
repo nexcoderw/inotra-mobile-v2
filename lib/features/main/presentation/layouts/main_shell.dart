@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/inotra_bottom_nav.dart";
 import "../widgets/inotra_app_header.dart";
 import "../widgets/inotra_sidebar_drawer.dart";
@@ -42,12 +44,14 @@ class _MainShellState extends State<MainShell> {
     _index = widget.initialIndex.clamp(0, _tabs.length - 1);
   }
 
+  String get _lang => currentLangSync();
+
   String get _title => switch (_index) {
-        0 => "Explore",
-        1 => "Listings",
-        2 => "AI Chat",
-        3 => "Events",
-        _ => "Highlights",
+        0 => t(_lang, "nav.explore"),
+        1 => t(_lang, "nav.listings"),
+        2 => t(_lang, "nav.ai_chat"),
+        3 => t(_lang, "nav.events"),
+        _ => t(_lang, "nav.highlights"),
       };
 
   void _openDrawer() {
@@ -71,9 +75,10 @@ class _MainShellState extends State<MainShell> {
 
   void _comingSoon(String label) {
     _closeDrawer();
+    final lang = _lang;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("$label — coming soon"),
+        content: Text("$label — ${t(lang, "common.coming_soon")}"),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -119,8 +124,7 @@ class _MainShellState extends State<MainShell> {
     await AuthDialog.show(
       context,
       featureLabel: featureLabel,
-      description:
-          "Sign in or create an account to use $featureLabel and keep your progress saved.",
+      description: null,
     );
     return true;
   }
@@ -143,21 +147,21 @@ class _MainShellState extends State<MainShell> {
       ),
 
       drawer: InotraSidebarDrawer(
-        onDashboardTap: () => _comingSoon("Dashboard"),
+        onDashboardTap: () => _comingSoon(t(_lang, "nav.dashboard")),
 
         // EVENTS dropdown
-        onMyEventsTap: () => _comingSoon("My Events"),
-        onMyEventSubmissionsTap: () => _comingSoon("My Event Submissions"),
-        onEventReviewTap: () => _comingSoon("Event Review"),
-        onEventTicketsTap: () => _comingSoon("Event Tickets"),
+        onMyEventsTap: () => _comingSoon(t(_lang, "nav.my_events")),
+        onMyEventSubmissionsTap: () => _comingSoon(t(_lang, "nav.my_event_submissions")),
+        onEventReviewTap: () => _comingSoon(t(_lang, "nav.event_review")),
+        onEventTicketsTap: () => _comingSoon(t(_lang, "nav.event_tickets")),
 
         // LISTINGS dropdown
-        onMyListingsTap: () => _comingSoon("My Listings"),
-        onMyListingSubmissionsTap: () => _comingSoon("My Listing Submissions"),
-        onListingReviewsTap: () => _comingSoon("Listing Reviews"),
-        onListingBookingTap: () => _comingSoon("Listing Booking"),
+        onMyListingsTap: () => _comingSoon(t(_lang, "nav.my_listings")),
+        onMyListingSubmissionsTap: () => _comingSoon(t(_lang, "nav.my_listing_submissions")),
+        onListingReviewsTap: () => _comingSoon(t(_lang, "nav.listing_reviews")),
+        onListingBookingTap: () => _comingSoon(t(_lang, "nav.listing_booking")),
 
-        onTripReservationsTap: () => _comingSoon("Trip Reservations"),
+        onTripReservationsTap: () => _comingSoon(t(_lang, "nav.trip_reservations")),
 
         onSettingsTap: () => Navigator.pushNamed(context, AppRoutes.settings),
       ),
