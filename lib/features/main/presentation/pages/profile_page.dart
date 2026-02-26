@@ -71,7 +71,7 @@ class ProfilePage extends StatelessWidget {
 }
 
 class _ProfileNavTile extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -94,7 +94,9 @@ class _ProfileNavTile extends StatelessWidget {
         leading: CircleAvatar(
           radius: 16,
           backgroundColor: tone.withOpacity(0.12),
-          child: Icon(icon, size: 18, color: tone),
+          child: icon is IconData
+              ? Icon(icon as IconData, size: 18, color: tone)
+              : HugeIcon(icon: icon, size: 18, strokeWidth: 2, color: tone),
         ),
         title: Text(
           title,
