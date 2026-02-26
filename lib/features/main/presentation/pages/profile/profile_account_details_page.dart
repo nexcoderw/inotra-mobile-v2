@@ -484,6 +484,7 @@ class _Input extends StatelessWidget {
   final dynamic icon;
   final bool enabled;
   final _FieldBadge badge;
+  final String? hint;
 
   const _Input({
     required this.label,
@@ -494,6 +495,7 @@ class _Input extends StatelessWidget {
     required this.icon,
     this.enabled = true,
     this.badge = _FieldBadge.required,
+    this.hint,
   });
 
   @override
@@ -510,7 +512,7 @@ class _Input extends StatelessWidget {
           keyboard: keyboard,
           readOnly: readOnly,
           enabled: enabled,
-          hintText: label,
+          hintText: hint ?? label,
           prefixIcon: icon,
           validator: (v) => readOnly
               ? null
