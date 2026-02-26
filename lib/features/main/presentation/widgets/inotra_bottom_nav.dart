@@ -3,6 +3,8 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
+import "../../../../core/services/auth_session.dart";
+import "../../../../i18n/translations.dart";
 
 class InotraBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -14,8 +16,20 @@ class InotraBottomNav extends StatelessWidget {
     required this.onChanged,
   });
 
+  String _lang() {
+    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    if (preferred == null || preferred.isEmpty) return 'en';
+    final lower = preferred.toLowerCase();
+    if (lower.startsWith('rw')) return 'rw';
+    if (lower.startsWith('fr')) return 'fr';
+    if (lower.startsWith('es')) return 'es';
+    if (lower.startsWith('de')) return 'de';
+    return 'en';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final lang = _lang();
     return SafeArea(
       top: false,
       bottom: false,
@@ -48,31 +62,31 @@ class InotraBottomNav extends StatelessWidget {
                 children: [
                   _NavItem(
                     selected: currentIndex == 0,
-                    label: "Explore",
+                    label: t(lang, "nav.explore"),
                     icon: HugeIcons.strokeRoundedHome01,
                     onTap: () => onChanged(0),
                   ),
                   _NavItem(
                     selected: currentIndex == 1,
-                    label: "Listings",
+                    label: t(lang, "nav.listings"),
                     icon: HugeIcons.strokeRoundedHotelBell,
                     onTap: () => onChanged(1),
                   ),
                   _NavItem(
                     selected: currentIndex == 2,
-                    label: "AI Chat",
+                    label: t(lang, "nav.ai_chat"),
                     icon: HugeIcons.strokeRoundedSparkles,
                     onTap: () => onChanged(2),
                   ),
                   _NavItem(
                     selected: currentIndex == 3,
-                    label: "Events",
+                    label: t(lang, "nav.events"),
                     icon: HugeIcons.strokeRoundedFireworks,
                     onTap: () => onChanged(3),
                   ),
                   _NavItem(
                     selected: currentIndex == 4,
-                    label: "Highlights",
+                    label: t(lang, "nav.highlights"),
                     icon: HugeIcons.strokeRoundedPlay,
                     onTap: () => onChanged(4),
                   ),
