@@ -787,30 +787,18 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
           scale: _pressed ? 0.99 : 1,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
+          child: SizedBox(
             height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  scheme.primary,
-                  scheme.primary.withOpacity(0.85),
-                ],
+            child: ElevatedButton(
+              onPressed: widget.onTap,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
-              boxShadow: [
-                if (_hovered || _pressed)
-                  BoxShadow(
-                    color: scheme.primary.withOpacity(0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
-              ],
-            ),
-            child: Center(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 160),
                 child: widget.busy
