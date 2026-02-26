@@ -184,7 +184,17 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
             children: [
               AuthUI.heading(tr("auth.set_new_password")),
               const SizedBox(height: 6),
-              AuthUI.subheading(tr("auth.set_new_password_sub")),
+
+              // ✅ make subtitle visible in both themes (same treatment as title)
+              Text(
+                tr("auth.set_new_password_sub"),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
+                  color: scheme.onSurface.withOpacity(0.92),
+                ),
+              ),
               const SizedBox(height: 14),
 
               // ✅ Secure context pill
@@ -640,18 +650,9 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
+
+            // ✅ Main div: NO border, NO gradient, NO shadow
             color: scheme.surface.withOpacity(0.55),
-            border: Border.all(
-              color: scheme.onSurface.withOpacity(0.10),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
           ),
           child: child,
         ),
