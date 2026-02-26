@@ -5,6 +5,7 @@ import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
+import "../../../../core/services/auth_session.dart";
 
 const double _kDrawerTopTileHeight = 72; // same height for links + dropdown headers
 
@@ -58,6 +59,9 @@ class InotraSidebarDrawer extends StatelessWidget {
   void _logout(BuildContext context) {
     final navigator = Navigator.of(context);
     if (navigator.canPop()) navigator.pop(); // close drawer first
+
+    // Clear local session
+    AuthSession.instance.signOut();
 
     onLogoutTap?.call();
 
