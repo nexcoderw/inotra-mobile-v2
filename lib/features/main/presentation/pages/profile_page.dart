@@ -256,11 +256,24 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 18),
 
-            _Input(label: t(lang, "auth.name"), controller: _name),
+            _Input(
+              label: t(lang, "auth.name"),
+              controller: _name,
+              requiredMessage: t(lang, "auth.required_field"),
+            ),
             const SizedBox(height: 14),
-            _Input(label: "Username", controller: _username),
+            _Input(
+              label: t(lang, "auth.username"),
+              controller: _username,
+              requiredMessage: t(lang, "auth.required_field"),
+            ),
             const SizedBox(height: 14),
-            _Input(label: t(lang, "auth.phone"), controller: _phone, keyboard: TextInputType.phone),
+            _Input(
+              label: t(lang, "auth.phone"),
+              controller: _phone,
+              keyboard: TextInputType.phone,
+              requiredMessage: t(lang, "auth.required_field"),
+            ),
             const SizedBox(height: 14),
             const SizedBox(height: 20),
 
@@ -282,29 +295,11 @@ class _ProfilePageState extends State<ProfilePage> {
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation(Colors.white),
                         ),
-                      )
+                    )
                     : Text(
                         t(lang, "auth.save_changes"),
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                       ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () {
-                      AuthSession.instance.signOut();
-                      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
-                    },
-              child: Text(
-                t(lang, "nav.logout"),
-                style: TextStyle(
-                  color: scheme.error,
-                  fontWeight: FontWeight.w700,
-                ),
               ),
             ),
           ],
@@ -318,11 +313,13 @@ class _Input extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final TextInputType keyboard;
+  final String requiredMessage;
 
   const _Input({
     required this.label,
     required this.controller,
     this.keyboard = TextInputType.text,
+    required this.requiredMessage,
   });
 
   @override
@@ -343,7 +340,7 @@ class _Input extends StatelessWidget {
         TextFormField(
           controller: controller,
           keyboardType: keyboard,
-          style: const TextStyle(color: Colors.black),
+          style: const TextStyle(color: Colors.black, fontSize: 12),
           decoration: InputDecoration(
             hintText: label,
             filled: true,
@@ -354,7 +351,7 @@ class _Input extends StatelessWidget {
               borderSide: BorderSide.none,
             ),
           ),
-          validator: (v) => (v == null || v.trim().isEmpty) ? "$label is required" : null,
+          validator: (v) => (v == null || v.trim().isEmpty) ? requiredMessage : null,
         ),
       ],
     );
