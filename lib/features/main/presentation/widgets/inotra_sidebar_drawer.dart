@@ -49,6 +49,17 @@ class InotraSidebarDrawer extends StatelessWidget {
     this.onLogoutTap,
   });
 
+  String get _lang {
+    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    if (preferred == null || preferred.isEmpty) return 'en';
+    final lower = preferred.toLowerCase();
+    if (lower.startsWith('rw')) return 'rw';
+    if (lower.startsWith('fr')) return 'fr';
+    if (lower.startsWith('es')) return 'es';
+    if (lower.startsWith('de')) return 'de';
+    return 'en';
+  }
+
   void _openProfile(BuildContext context) {
     final navigator = Navigator.of(context);
     if (navigator.canPop()) navigator.pop(); // close drawer first
