@@ -4,6 +4,8 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 
 class AuthDialog extends StatelessWidget {
   final String featureLabel;
@@ -54,7 +56,7 @@ class AuthDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bodyText = description ??
-        "Sign in or create an account to access $featureLabel and keep your experience in sync across devices.";
+        tr("auth.member_body").replaceAll("{feature}", featureLabel);
 
     return Dialog(
       elevation: 0,
@@ -127,7 +129,7 @@ class AuthDialog extends StatelessWidget {
                   const SizedBox(height: 14),
 
                   Text(
-                    "$featureLabel is for members",
+                    tr("auth.member_only").replaceAll("{feature}", featureLabel),
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 18,
@@ -178,9 +180,9 @@ class AuthDialog extends StatelessWidget {
                             strokeWidth: 2.0,
                             color: AppColors.primary,
                           ),
-                          label: const Text(
-                            "Sign In",
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                          label: Text(
+                            tr("auth.sign_in"),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                           ),
                         ),
                       ),
@@ -207,9 +209,9 @@ class AuthDialog extends StatelessWidget {
                             strokeWidth: 2.0,
                             color: Colors.white,
                           ),
-                          label: const Text(
-                            "Create Account",
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                          label: Text(
+                            tr("auth.create_account"),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                           ),
                         ),
                       ),
