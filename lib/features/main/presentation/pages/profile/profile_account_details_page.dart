@@ -268,7 +268,7 @@ class _AvatarPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final image = bytes != null
+    final ImageProvider<Object>? image = bytes != null
         ? MemoryImage(bytes!)
         : (imageUrl != null && imageUrl!.isNotEmpty ? NetworkImage(imageUrl!) : null);
 
