@@ -1,10 +1,16 @@
+import "dart:convert";
+
 import "package:flutter/material.dart";
 import "package:flutter/foundation.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:intl_phone_field/intl_phone_field.dart";
+import "package:toastification/toastification.dart";
+import "package:http/http.dart" as http;
 import "package:world_countries/world_countries.dart";
 
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/config/api.dart";
+import "../../../../core/constants/api/auth_endpoints.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -47,15 +53,86 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isBusy = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    setState(() => _isBusy = false);
 
-    Navigator.pushNamed(
-      context,
-      AppRoutes.verifyRegistrationOtp,
-      arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
-    );
+    try {
+      final uri = Api.url(AuthEndpoints.register);
+      final response = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": _name.text.trim(),
+          "email": _email.text.trim(),
+          "phone": _phone.text.trim(),
+          "nationality": _nationality.text.trim(),
+          "preferred_language": _preferredLanguage,
+          "password": _password.text,
+          "password_confirm": _confirmPassword.text,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: const Text("Account created"),
+          description:
+              const Text("We sent a verification code to your email. Please verify to continue."),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+
+        Navigator.pushNamed(
+          context,
+          AppRoutes.verifyRegistrationOtp,
+          arguments: _email.text.trim().isEmpty ? null : _email.text.trim(),
+        );
+        return;
+      }
+
+      final detail = _extractError(response);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Sign up failed"),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: const Text("Network error"),
+        description: const Text("Unable to create account. Check connection and try again."),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Map<String, dynamic>? _safeJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractError(http.Response response) {
+    final body = _safeJson(response.body);
+    final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
+    if (detail is String && detail.trim().isNotEmpty) return detail.trim();
+    return "Unable to create account. Please review your details and try again.";
   }
 
   Future<void> _chooseCountry() async {
