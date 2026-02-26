@@ -8,6 +8,7 @@ import "package:toastification/toastification.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
+import "../../../../core/services/registration_cache.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -140,7 +141,8 @@ class _ConfirmRegistrationOtpPageState extends State<ConfirmRegistrationOtpPage>
   Widget build(BuildContext context) {
     _ensureOtpFields();
     // pick up email from navigation args once
-    _initialEmail ??= ModalRoute.of(context)?.settings.arguments as String?;
+    _initialEmail ??=
+        ModalRoute.of(context)?.settings.arguments as String? ?? RegistrationCache.instance.email;
     if ((_initialEmail ?? "").isNotEmpty && _email.text.isEmpty) {
       _email.text = _initialEmail!;
     }
