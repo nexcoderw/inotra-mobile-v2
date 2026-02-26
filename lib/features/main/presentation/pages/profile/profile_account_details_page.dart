@@ -3,11 +3,9 @@ import "dart:typed_data";
 import "dart:ui";
 
 import "package:file_picker/file_picker.dart";
-import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 import "package:hugeicons/hugeicons.dart";
-import "package:intl_phone_field/intl_phone_field.dart";
 import "package:toastification/toastification.dart";
 
 import "../../../../../core/config/api.dart";
@@ -38,7 +36,6 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   Uint8List? _avatarBytes;
   String? _avatarName;
   bool _busy = false;
-  String _initialPhoneIso = "RW";
   String _currentPhoneIso = "RW";
 
   @override
@@ -48,10 +45,8 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     _name = TextEditingController(text: (user["name"] ?? "") as String);
     _username = TextEditingController(text: (user["username"] ?? "") as String);
     final phoneRaw = (user["phone_number"] ?? "") as String;
-    final split = _splitPhone(phoneRaw);
-    _phone = TextEditingController(text: split.$2);
-    _initialPhoneIso = split.$1;
-    _currentPhoneIso = split.$1;
+    final normalized = _normalizePhone(phoneRaw, _currentPhoneIso);
+    _phone = TextEditingController(text: normalized);
     _email = TextEditingController(text: (user["email"] ?? "") as String);
   }
 
@@ -142,17 +137,16 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     badge: _FieldBadge.required,
                   ),
                   const SizedBox(height: 12),
-                  _PhoneField(
+                  _Input(
                     label: t(lang, "auth.phone"),
                     controller: _phone,
+                    keyboard: TextInputType.phone,
                     requiredMessage: t(lang, "auth.required_field"),
+                    icon: HugeIcons.strokeRoundedCall,
                     enabled: !_busy,
                     badge: _FieldBadge.required,
-                    initialIso: _initialPhoneIso,
-                    onChanged: (iso, fullNumber) {
-                      _currentPhoneIso = iso;
-                      _phone.text = fullNumber;
-                    },
+                    hint:
+                        "${t(lang, 'auth.phone_hint')} (+ country code)",
                   ),
                   const SizedBox(height: 12),
                   _Input(
@@ -607,98 +601,7 @@ class _Badge extends StatelessWidget {
   }
 }
 
-class _PhoneField extends StatelessWidget {
-  final String label;
-  final TextEditingController controller;
-  final String requiredMessage;
-  final bool enabled;
-  final _FieldBadge badge;
-  final String initialIso;
-  final void Function(String iso, String fullNumber) onChanged;
-
-  const _PhoneField({
-    required this.label,
-    required this.controller,
-    required this.requiredMessage,
-    required this.enabled,
-    required this.badge,
-    required this.initialIso,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _LabelRow(label: label, badge: badge),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: scheme.surface.withOpacity(0.55),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: scheme.onSurface.withOpacity(0.10),
-                  width: 1,
-                ),
-              ),
-              child: IntlPhoneField(
-                controller: controller,
-                enabled: enabled,
-                initialCountryCode: initialIso,
-                showCountryFlag: !kIsWeb,
-                dropdownIcon: Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: scheme.onSurface.withOpacity(0.55),
-                  size: 18,
-                ),
-                dropdownIconPosition: IconPosition.trailing,
-                flagsButtonPadding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: scheme.onSurface.withOpacity(0.92),
-                ),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                ),
-                onChanged: (phone) {
-                  final iso = phone.countryISOCode ?? initialIso;
-                  final dial = _isoToDialLocal(iso);
-                  final full = "+$dial${phone.number}";
-                  controller.text = full;
-                  onChanged(iso, full);
-                },
-                validator: (phone) => (phone == null ||
-                        phone.number.trim().isEmpty)
-                    ? requiredMessage
-                    : null,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-String _isoToDialLocal(String iso) => switch (iso.toUpperCase()) {
-      "RW" => "250",
-      "FR" => "33",
-      "DE" => "49",
-      "ES" => "34",
-      "GB" => "44",
-      "US" => "1",
-      _ => "250",
-    };
+// Phone field removed in favor of simpler text input (handled by _Input)
 
 class _GlassTextField extends StatefulWidget {
   final TextEditingController controller;
