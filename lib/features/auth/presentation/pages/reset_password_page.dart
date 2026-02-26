@@ -18,8 +18,8 @@ class ResetPasswordPage extends StatefulWidget {
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _email;
-  final List<TextEditingController> _otp = [];
-  final List<FocusNode> _f = [];
+  late final List<TextEditingController> _otp;
+  late final List<FocusNode> _f;
   bool _isBusy = false;
 
   @override
@@ -27,6 +27,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     super.initState();
     final cachedEmail = ResetPasswordCache.instance.email;
     _email = TextEditingController(text: widget.email ?? cachedEmail ?? "");
+    _otp = List.generate(6, (_) => TextEditingController());
+    _f = List.generate(6, (_) => FocusNode());
   }
 
   @override
@@ -41,17 +43,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     super.dispose();
   }
 
-  void _ensureOtpFields() {
-    while (_otp.length < 6) {
-      _otp.add(TextEditingController());
-    }
-    while (_f.length < 6) {
-      _f.add(FocusNode());
-    }
-  }
-
   Future<void> _onContinue() async {
-    _ensureOtpFields();
     if (!_formKey.currentState!.validate()) return;
 
     final otp = _otp.map((e) => e.text).join().trim();
@@ -87,7 +79,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    _ensureOtpFields();
     return AuthScaffold(
       child: Form(
         key: _formKey,
