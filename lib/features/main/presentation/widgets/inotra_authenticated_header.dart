@@ -7,7 +7,6 @@ import "../../../../core/constants/app_colors.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../../../../core/services/auth_session.dart";
 
 class InotraAuthenticatedHeader extends StatelessWidget
     implements PreferredSizeWidget {
@@ -131,11 +130,8 @@ class InotraAuthenticatedHeader extends StatelessWidget
 }
 
 String _shortName(String full) {
-  final parts = full
-      .trim()
-      .split(RegExp(r"\\s+"))
-      .where((p) => p.isNotEmpty)
-      .toList();
+  final parts =
+      full.trim().split(RegExp(r"\\s+")).where((p) => p.isNotEmpty).toList();
   if (parts.isEmpty || parts.first.isEmpty) return full;
   final firstInitial = "${parts.first[0]}.";
   if (parts.length == 1) return firstInitial;
@@ -258,15 +254,15 @@ class _ProfilePillState extends State<_ProfilePill> {
                   width: 1,
                 ),
               ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 13,
-                      backgroundColor: AppColors.primary.withOpacity(0.12),
-                      backgroundImage: widget.imageProvider,
-                      child: widget.imageProvider == null
-                          ? const HugeIcon(
-                              icon: HugeIcons.strokeRoundedUser,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 13,
+                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                    backgroundImage: widget.imageProvider,
+                    child: widget.imageProvider == null
+                        ? const HugeIcon(
+                            icon: HugeIcons.strokeRoundedUser,
                             size: 14,
                             strokeWidth: 2.0,
                             color: AppColors.primary,
