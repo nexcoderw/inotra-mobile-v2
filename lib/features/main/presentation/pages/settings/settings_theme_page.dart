@@ -7,6 +7,8 @@ import "package:hugeicons/hugeicons.dart";
 import "../../widgets/main_scaffold.dart";
 import "../../widgets/page_header.dart";
 import "../../../../../core/services/theme_notifier.dart";
+import "../../../../../i18n/lang.dart";
+import "../../../../../i18n/translations.dart";
 
 class SettingsThemePage extends StatelessWidget {
   const SettingsThemePage({super.key});
@@ -16,17 +18,18 @@ class SettingsThemePage extends StatelessWidget {
     final notifier = context.watch<ThemeNotifier>();
     final current = notifier.mode;
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
 
     return MainScaffold(
-      title: "Theme",
+      title: t(lang, "settings.theme"),
       showAppBar: false,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
-          const PageHeader(title: "Theme"),
+          PageHeader(title: t(lang, "settings.theme")),
           const SizedBox(height: 10),
           Text(
-            "Choose how the app looks on your device.",
+            t(lang, "theme.helper"),
             style: TextStyle(
               fontSize: 12,
               height: 1.25,
@@ -36,18 +39,18 @@ class SettingsThemePage extends StatelessWidget {
           const SizedBox(height: 14),
 
           _GlassGroup(
-            title: "Appearance",
+            title: t(lang, "settings.theme"),
             children: [
               _PremiumThemeOption(
-                label: "Light",
-                subtitle: "Bright and clean experience",
+                label: t(lang, "theme.light"),
+                subtitle: t(lang, "theme.light_sub"),
                 icon: HugeIcons.strokeRoundedSun01,
                 selected: current == ThemeMode.light,
                 onTap: () => notifier.setMode(ThemeMode.light),
               ),
               _PremiumThemeOption(
-                label: "Dark",
-                subtitle: "Comfortable in low light",
+                label: t(lang, "theme.dark"),
+                subtitle: t(lang, "theme.dark_sub"),
                 icon: HugeIcons.strokeRoundedMoon02,
                 selected: current == ThemeMode.dark,
                 onTap: () => notifier.setMode(ThemeMode.dark),
@@ -55,8 +58,8 @@ class SettingsThemePage extends StatelessWidget {
 
               // If you support system mode in ThemeNotifier, uncomment this:
               _PremiumThemeOption(
-                label: "System",
-                subtitle: "Match device settings",
+                label: t(lang, "theme.system"),
+                subtitle: t(lang, "theme.system_sub"),
                 icon: HugeIcons.strokeRoundedComputer,
                 selected: current == ThemeMode.system,
                 onTap: () => notifier.setMode(ThemeMode.system),
