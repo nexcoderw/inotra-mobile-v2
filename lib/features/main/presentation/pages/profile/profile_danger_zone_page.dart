@@ -1,6 +1,7 @@
 import "dart:convert";
 
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:toastification/toastification.dart";
 
@@ -36,7 +37,7 @@ class _ProfileDangerZonePageState extends State<ProfileDangerZonePage> {
           PageHeader(
             title: t(lang, "profile.danger_zone"),
             onBack: () => Navigator.of(context).pop(),
-            icon: Icons.arrow_back_rounded,
+            icon: HugeIcons.strokeRoundedArrowLeft01,
           ),
           const SizedBox(height: 12),
           _DangerCard(
