@@ -131,12 +131,16 @@ class InotraAuthenticatedHeader extends StatelessWidget
 }
 
 String _shortName(String full) {
-  final parts = full.trim().split(RegExp(r"\\s+"));
+  final parts = full
+      .trim()
+      .split(RegExp(r"\\s+"))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (parts.isEmpty || parts.first.isEmpty) return full;
-  final firstInitial = parts.first[0];
-  final second = parts.length > 1 ? parts[1] : "";
-  if (second.isEmpty) return "$firstInitial.";
-  return "$firstInitial. $second";
+  final firstInitial = "${parts.first[0]}.";
+  if (parts.length == 1) return firstInitial;
+  final last = parts.sublist(1).join(" ");
+  return "$firstInitial $last";
 }
 
 class _IconPillButton extends StatefulWidget {
