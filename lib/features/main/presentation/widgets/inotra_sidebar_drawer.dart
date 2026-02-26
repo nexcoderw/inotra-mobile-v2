@@ -5,6 +5,7 @@ import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
+import "../../../../i18n/translations.dart";
 import "../../../../core/services/auth_session.dart";
 
 const double _kDrawerTopTileHeight = 72; // same height for links + dropdown headers
@@ -121,8 +122,8 @@ class InotraSidebarDrawer extends StatelessWidget {
                         children: [
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedDashboardSquare01,
-                            title: "Dashboard",
-                            subtitle: "Overview & quick stats",
+                            title: t(_lang, "nav.dashboard"),
+                            subtitle: "",
                             onTap: onDashboardTap,
                             // no trailing arrow for non-dropdown links ✅
                             showTrailing: false,
@@ -131,26 +132,26 @@ class InotraSidebarDrawer extends StatelessWidget {
                           const SizedBox(height: 12),
 
                           _GlassSection(
-                            title: "My Events",
+                            title: t(_lang, "nav.my_events"),
                             icon: HugeIcons.strokeRoundedCalendar01,
                             children: [
                               _GlassSubTile(
-                                title: "My Events",
+                                title: t(_lang, "nav.my_events"),
                                 icon: HugeIcons.strokeRoundedCalendar01,
                                 onTap: onMyEventsTap,
                               ),
                               _GlassSubTile(
-                                title: "My Event Submissions",
+                                title: t(_lang, "nav.my_event_submissions"),
                                 icon: HugeIcons.strokeRoundedTask01,
                                 onTap: onMyEventSubmissionsTap,
                               ),
                               _GlassSubTile(
-                                title: "Review",
+                                title: t(_lang, "nav.event_review"),
                                 icon: HugeIcons.strokeRoundedStar,
                                 onTap: onEventReviewTap,
                               ),
                               _GlassSubTile(
-                                title: "Tickets",
+                                title: t(_lang, "nav.event_tickets"),
                                 icon: HugeIcons.strokeRoundedTicket01,
                                 onTap: onEventTicketsTap,
                               ),
@@ -160,26 +161,26 @@ class InotraSidebarDrawer extends StatelessWidget {
                           const SizedBox(height: 12),
 
                           _GlassSection(
-                            title: "My Listings",
+                            title: t(_lang, "nav.my_listings"),
                             icon: HugeIcons.strokeRoundedLocation01,
                             children: [
                               _GlassSubTile(
-                                title: "My Listings",
+                                title: t(_lang, "nav.my_listings"),
                                 icon: HugeIcons.strokeRoundedLocation01,
                                 onTap: onMyListingsTap,
                               ),
                               _GlassSubTile(
-                                title: "My Listing Submissions",
+                                title: t(_lang, "nav.my_listing_submissions"),
                                 icon: HugeIcons.strokeRoundedTask01,
                                 onTap: onMyListingSubmissionsTap,
                               ),
                               _GlassSubTile(
-                                title: "Reviews",
+                                title: t(_lang, "nav.listing_reviews"),
                                 icon: HugeIcons.strokeRoundedStar,
                                 onTap: onListingReviewsTap,
                               ),
                               _GlassSubTile(
-                                title: "Booking",
+                                title: t(_lang, "nav.listing_booking"),
                                 icon: HugeIcons.strokeRoundedCalendarCheckIn01,
                                 onTap: onListingBookingTap,
                               ),
@@ -190,8 +191,8 @@ class InotraSidebarDrawer extends StatelessWidget {
 
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedTicket01,
-                            title: "Trip Reservations",
-                            subtitle: "Your bookings & status",
+                            title: t(_lang, "nav.trip_reservations"),
+                            subtitle: "",
                             onTap: onTripReservationsTap,
                             showTrailing: false, // ✅ no arrow
                           ),
@@ -200,8 +201,8 @@ class InotraSidebarDrawer extends StatelessWidget {
 
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedUser,
-                            title: "Open Profile",
-                            subtitle: "Account & personal details",
+                            title: t(_lang, "nav.profile"),
+                            subtitle: "",
                             onTap: () => _openProfile(context),
                             showTrailing: false, // ✅ no arrow, same as others
                           ),
@@ -210,8 +211,8 @@ class InotraSidebarDrawer extends StatelessWidget {
 
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedSettings02,
-                            title: "Settings",
-                            subtitle: "Your settings & preferences",
+                            title: t(_lang, "nav.settings"),
+                            subtitle: t(_lang, "nav.settings_sub"),
                             onTap: onSettingsTap,
                             showTrailing: false, // ✅ no arrow
                           ),
@@ -220,8 +221,8 @@ class InotraSidebarDrawer extends StatelessWidget {
 
                           _GlassDangerTile(
                             icon: HugeIcons.strokeRoundedLogout01,
-                            title: "Logout",
-                            subtitle: "Sign out of your account",
+                            title: t(_lang, "nav.logout"),
+                            subtitle: t(_lang, "nav.logout_sub"),
                             onTap: () => _logout(context),
                           ),
 
