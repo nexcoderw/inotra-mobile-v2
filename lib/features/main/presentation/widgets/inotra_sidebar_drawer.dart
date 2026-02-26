@@ -134,7 +134,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedDashboardSquare01,
                             title: t(_lang, "nav.dashboard"),
-                            subtitle: "",
+                            subtitle: t(_lang, "nav.highlights"),
                             onTap: onDashboardTap,
                             // no trailing arrow for non-dropdown links ✅
                             showTrailing: false,
@@ -203,7 +203,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedTicket01,
                             title: t(_lang, "nav.trip_reservations"),
-                            subtitle: "",
+                            subtitle: t(_lang, "common.coming_soon"),
                             onTap: onTripReservationsTap,
                             showTrailing: false, // ✅ no arrow
                           ),
@@ -213,7 +213,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                           _GlassNavTile(
                             icon: HugeIcons.strokeRoundedUser,
                             title: t(_lang, "nav.profile"),
-                            subtitle: "",
+                            subtitle: t(_lang, "profile.user_profile"),
                             onTap: () => _openProfile(context),
                             showTrailing: false, // ✅ no arrow, same as others
                           ),
@@ -387,9 +387,9 @@ class _GlassNavTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                           fontSize: 11,
-                          color: scheme.onSurface.withOpacity(0.62),
+                          color: scheme.onSurface.withOpacity(0.70),
                         ),
                       ),
                     ],
