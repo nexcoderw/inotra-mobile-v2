@@ -7,6 +7,16 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
 import "../../../../i18n/translations.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../presentation/pages/dashboard_page.dart";
+import "../../presentation/pages/events/my_events_page.dart";
+import "../../presentation/pages/events/my_event_submissions_page.dart";
+import "../../presentation/pages/events/event_review_page.dart";
+import "../../presentation/pages/events/event_tickets_page.dart";
+import "../../presentation/pages/listings/my_listings_page.dart";
+import "../../presentation/pages/listings/my_listing_submissions_page.dart";
+import "../../presentation/pages/listings/listing_reviews_page.dart";
+import "../../presentation/pages/listings/listing_booking_page.dart";
+import "../../presentation/pages/trips/trip_reservations_page.dart";
 
 const double _kDrawerTopTileHeight = 72;
 
@@ -112,90 +122,71 @@ class InotraSidebarDrawer extends StatelessWidget {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                     children: [
-                      _GlassNavTile(
-                        icon: HugeIcons.strokeRoundedDashboardSquare01,
-                        title: t(_lang, "nav.dashboard"),
-                        subtitle: t(_lang, "nav.highlights"),
-                        onTap: onDashboardTap,
-                        showTrailing: false,
-                      ),
-
                       _GlassSection(
-                        title: t(_lang, "nav.my_events"),
-                        icon: HugeIcons.strokeRoundedCalendar01,
+                        title: "Me",
+                        icon: HugeIcons.strokeRoundedUser,
                         children: [
+                          _GlassSubTile(
+                            title: t(_lang, "nav.dashboard"),
+                            icon: HugeIcons.strokeRoundedDashboardSquare01,
+                            onTap: () => _open(context, const DashboardPage()),
+                          ),
                           _GlassSubTile(
                             title: t(_lang, "nav.my_events"),
                             icon: HugeIcons.strokeRoundedCalendar01,
-                            onTap: onMyEventsTap,
+                            onTap: () => _open(context, const MyEventsPage()),
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.my_event_submissions"),
                             icon: HugeIcons.strokeRoundedTask01,
-                            onTap: onMyEventSubmissionsTap,
+                            onTap: () => _open(context, const MyEventSubmissionsPage()),
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.event_review"),
                             icon: HugeIcons.strokeRoundedStar,
-                            onTap: onEventReviewTap,
+                            onTap: () => _open(context, const EventReviewPage()),
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.event_tickets"),
                             icon: HugeIcons.strokeRoundedTicket01,
-                            onTap: onEventTicketsTap,
+                            onTap: () => _open(context, const EventTicketsPage()),
                           ),
-                        ],
-                      ),
-
-                      _GlassSection(
-                        title: t(_lang, "nav.my_listings"),
-                        icon: HugeIcons.strokeRoundedLocation01,
-                        children: [
                           _GlassSubTile(
                             title: t(_lang, "nav.my_listings"),
                             icon: HugeIcons.strokeRoundedLocation01,
-                            onTap: onMyListingsTap,
+                            onTap: () => _open(context, const MyListingsPage()),
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.my_listing_submissions"),
                             icon: HugeIcons.strokeRoundedTask01,
-                            onTap: onMyListingSubmissionsTap,
+                            onTap: () => _open(context, const MyListingSubmissionsPage()),
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.listing_reviews"),
                             icon: HugeIcons.strokeRoundedStar,
-                            onTap: onListingReviewsTap,
+                            onTap: () => _open(context, const ListingReviewsPage()),
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.listing_booking"),
                             icon: HugeIcons.strokeRoundedCalendarCheckIn01,
-                            onTap: onListingBookingTap,
+                            onTap: () => _open(context, const ListingBookingPage()),
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.trip_reservations"),
+                            icon: HugeIcons.strokeRoundedTicket01,
+                            onTap: () => _open(context, const TripReservationsPage()),
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.profile"),
+                            icon: HugeIcons.strokeRoundedUserIdVerification,
+                            onTap: () => _openProfile(context),
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.settings"),
+                            icon: HugeIcons.strokeRoundedSettings02,
+                            onTap: onSettingsTap,
                           ),
                         ],
-                      ),
-
-                      _GlassNavTile(
-                        icon: HugeIcons.strokeRoundedTicket01,
-                        title: t(_lang, "nav.trip_reservations"),
-                        subtitle: t(_lang, "common.coming_soon"),
-                        onTap: onTripReservationsTap,
-                        showTrailing: false,
-                      ),
-
-                      _GlassNavTile(
-                        icon: HugeIcons.strokeRoundedUser,
-                        title: t(_lang, "nav.profile"),
-                        subtitle: t(_lang, "profile.user_profile"),
-                        onTap: () => _openProfile(context),
-                        showTrailing: false,
-                      ),
-
-                      _GlassNavTile(
-                        icon: HugeIcons.strokeRoundedSettings02,
-                        title: t(_lang, "nav.settings"),
-                        subtitle: t(_lang, "nav.settings_sub"),
-                        onTap: onSettingsTap,
-                        showTrailing: false,
                       ),
 
                       _GlassDangerTile(
