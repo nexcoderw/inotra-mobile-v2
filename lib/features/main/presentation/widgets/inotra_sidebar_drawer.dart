@@ -50,7 +50,8 @@ class InotraSidebarDrawer extends StatelessWidget {
   });
 
   String get _lang {
-    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    final preferred =
+        AuthSession.instance.value.user?['preferred_language'] as String?;
     if (preferred == null || preferred.isEmpty) return 'en';
     final lower = preferred.toLowerCase();
     if (lower.startsWith('rw')) return 'rw';
@@ -100,32 +101,39 @@ class InotraSidebarDrawer extends StatelessWidget {
       backgroundColor: Colors.transparent,
       child: Container(
         height: MediaQuery.of(context).size.height,
+
+        // ✅ Main drawer surface: NO border, NO gradient, NO shadow
         decoration: BoxDecoration(
-          // Glass base surface
-          color: scheme.surface.withOpacity(isDark ? 0.55 : 0.80),
+          color: scheme.surface.withOpacity(isDark ? 0.50 : 0.78),
         ),
+
         child: Stack(
           children: [
-            // soft blobs (premium glass feel)
+            // ✅ softer blobs (premium, but calm)
             Positioned(
-              top: -80,
-              left: -60,
-              child: _GlowBlob(color: AppColors.primary.withOpacity(0.20), size: 220),
+              top: -90,
+              left: -70,
+              child: _GlowBlob(
+                color: AppColors.primary.withOpacity(isDark ? 0.14 : 0.10),
+                size: 240,
+              ),
             ),
             Positioned(
-              bottom: -90,
-              right: -60,
-              child: _GlowBlob(color: scheme.secondary.withOpacity(0.16), size: 240),
+              bottom: -110,
+              right: -70,
+              child: _GlowBlob(
+                color: scheme.secondary.withOpacity(isDark ? 0.10 : 0.08),
+                size: 260,
+              ),
             ),
 
-            // main content
             ClipRRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Column(
                   children: [
                     const SizedBox(height: 40),
-                    _GlassHeader(),
+                    const _GlassHeader(),
 
                     Expanded(
                       child: ListView(
@@ -136,7 +144,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                             title: t(_lang, "nav.dashboard"),
                             subtitle: t(_lang, "nav.highlights"),
                             onTap: onDashboardTap,
-                            // no trailing arrow for non-dropdown links ✅
                             showTrailing: false,
                           ),
 
@@ -205,7 +212,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                             title: t(_lang, "nav.trip_reservations"),
                             subtitle: t(_lang, "common.coming_soon"),
                             onTap: onTripReservationsTap,
-                            showTrailing: false, // ✅ no arrow
+                            showTrailing: false,
                           ),
 
                           const SizedBox(height: 16),
@@ -215,7 +222,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                             title: t(_lang, "nav.profile"),
                             subtitle: t(_lang, "profile.user_profile"),
                             onTap: () => _openProfile(context),
-                            showTrailing: false, // ✅ no arrow, same as others
+                            showTrailing: false,
                           ),
 
                           const SizedBox(height: 12),
@@ -225,7 +232,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                             title: t(_lang, "nav.settings"),
                             subtitle: t(_lang, "nav.settings_sub"),
                             onTap: onSettingsTap,
-                            showTrailing: false, // ✅ no arrow
+                            showTrailing: false,
                           ),
 
                           const SizedBox(height: 12),
@@ -279,16 +286,16 @@ class _GlassHeader extends StatelessWidget {
         color: Colors.transparent,
         child: Row(
           children: [
-            // ✅ Logo from assets (instead of icon)
+            // ✅ Logo from assets (unchanged)
             Container(
               height: 44,
               width: 44,
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: scheme.surface.withOpacity(isDark ? 0.18 : 0.10),
+                color: scheme.surface.withOpacity(isDark ? 0.16 : 0.10),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withOpacity(isDark ? 0.10 : 0.22),
+                  color: Colors.white.withOpacity(isDark ? 0.10 : 0.20),
                 ),
               ),
               child: Image.asset(
@@ -308,17 +315,18 @@ class _GlassHeader extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0.6,
-                      color: scheme.onSurface,
+                      color: scheme.onSurface.withOpacity(0.96),
                       fontSize: 14,
                     ),
                   ),
                   const SizedBox(height: 3),
+                  // ✅ subtitle now more readable in both themes
                   Text(
                     "Premium navigation",
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 11,
-                      color: scheme.onSurface.withOpacity(0.62),
+                      color: scheme.onSurface.withOpacity(0.78),
                       height: 1.1,
                     ),
                   ),
@@ -361,7 +369,7 @@ class _GlassNavTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: SizedBox(
-          height: _kDrawerTopTileHeight, // ✅ fixed height
+          height: _kDrawerTopTileHeight,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
             child: Row(
@@ -378,18 +386,21 @@ class _GlassNavTile extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          color: scheme.onSurface.withOpacity(0.94),
+                        ),
                       ),
                       const SizedBox(height: 3),
-                      // ✅ always reserve the subtitle line height so all tiles match
                       Text(
                         (subtitle ?? ""),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                           fontSize: 11,
-                          color: scheme.onSurface.withOpacity(0.70),
+                          color: scheme.onSurface.withOpacity(0.72),
                         ),
                       ),
                     ],
@@ -436,17 +447,16 @@ class _GlassDangerTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: SizedBox(
-          height: _kDrawerTopTileHeight, // ✅ same height
+          height: _kDrawerTopTileHeight,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
             child: Row(
               children: [
-                // danger pill
                 Container(
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(isDark ? 0.18 : 0.10),
+                    color: Colors.red.withOpacity(isDark ? 0.16 : 0.10),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: Colors.white.withOpacity(isDark ? 0.08 : 0.16),
@@ -471,9 +481,10 @@ class _GlassDangerTile extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 12,
+                          color: scheme.onSurface.withOpacity(0.94),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -484,7 +495,7 @@ class _GlassDangerTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 11,
-                          color: scheme.onSurface.withOpacity(0.62),
+                          color: scheme.onSurface.withOpacity(0.72),
                         ),
                       ),
                     ],
@@ -539,12 +550,11 @@ class _GlassSectionState extends State<_GlassSection>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ✅ FIXED HEIGHT HEADER (exactly like _GlassNavTile)
           InkWell(
             borderRadius: BorderRadius.circular(18),
             onTap: _toggle,
             child: SizedBox(
-              height: _kDrawerTopTileHeight, // ✅ guaranteed equal height
+              height: _kDrawerTopTileHeight,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                 child: Row(
@@ -560,9 +570,10 @@ class _GlassSectionState extends State<_GlassSection>
                             widget.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 12,
+                              color: scheme.onSurface.withOpacity(0.94),
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -573,14 +584,12 @@ class _GlassSectionState extends State<_GlassSection>
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
-                              color: scheme.onSurface.withOpacity(0.60),
+                              color: scheme.onSurface.withOpacity(0.70),
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                    // ✅ consistent chevron space (so alignment never changes)
                     AnimatedRotation(
                       turns: _expanded ? 0.5 : 0.0,
                       duration: const Duration(milliseconds: 180),
@@ -597,8 +606,6 @@ class _GlassSectionState extends State<_GlassSection>
               ),
             ),
           ),
-
-          // ✅ Animated expand area (does NOT affect header height)
           ClipRRect(
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(18),
@@ -652,14 +659,20 @@ class _GlassSubTile extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
         child: Row(
           children: [
-            HugeIcon(icon: icon, size: 18, strokeWidth: 2.0),
+            HugeIcon(
+              icon: icon,
+              size: 18,
+              strokeWidth: 2.0,
+              color: scheme.onSurface.withOpacity(0.88),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w800,
-                  fontSize: 12, // ✅ dropdown item font size
+                  fontSize: 12,
+                  color: scheme.onSurface.withOpacity(0.92),
                 ),
               ),
             ),
@@ -679,6 +692,10 @@ class _GlassSubTile extends StatelessWidget {
 /// ----------------------------
 /// REUSABLE GLASS CARD
 /// ----------------------------
+/// ✅ made more premium but kept the same structure
+/// - removed hard borders
+/// - removed heavy shadows
+/// - kept clean glass surface with subtle highlight
 class _GlassCard extends StatelessWidget {
   final Widget child;
   final double radius;
@@ -702,19 +719,20 @@ class _GlassCard extends StatelessWidget {
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(isDark ? 0.35 : 0.62),
             borderRadius: BorderRadius.circular(radius),
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.10 : 0.22),
+
+            // ✅ glass surface (no border, no shadow, no gradient)
+            color: scheme.surface.withOpacity(isDark ? 0.34 : 0.60),
+
+            // ✅ subtle top highlight line (premium detail, not a "border")
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withOpacity(isDark ? 0.06 : 0.10),
+                Colors.white.withOpacity(0.0),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 18,
-                spreadRadius: 0,
-                offset: const Offset(0, 10),
-                color: Colors.black.withOpacity(isDark ? 0.18 : 0.08),
-              ),
-            ],
           ),
           child: child,
         ),
@@ -739,9 +757,11 @@ class _IconPill extends StatelessWidget {
       height: 40,
       width: 40,
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(isDark ? 0.26 : 0.12),
+        color: AppColors.primary.withOpacity(isDark ? 0.22 : 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(isDark ? 0.08 : 0.18)),
+
+        // ✅ softer line (looks premium in both themes)
+        border: Border.all(color: Colors.white.withOpacity(isDark ? 0.08 : 0.16)),
       ),
       child: Center(
         child: HugeIcon(
