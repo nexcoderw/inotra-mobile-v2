@@ -70,7 +70,7 @@ class _ProfileDangerZonePageState extends State<ProfileDangerZonePage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    "These actions are permanent and may log you out.",
+                    t(lang, "profile.danger_notice"),
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.2,
