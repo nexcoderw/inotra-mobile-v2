@@ -1,8 +1,7 @@
 import "package:flutter/material.dart";
-
-import "../../../../i18n/lang.dart";
-import "../../../../i18n/translations.dart";
-import "../../../main/presentation/widgets/main_scaffold.dart";
+import "package:inotra/i18n/lang.dart";
+import "package:inotra/i18n/translations.dart";
+import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
 
 class MyEventSubmissionsPage extends StatelessWidget {
   const MyEventSubmissionsPage({super.key});
@@ -15,13 +14,27 @@ class MyEventSubmissionsPage extends StatelessWidget {
     return MainScaffold(
       title: t(lang, "nav.my_event_submissions"),
       child: Center(
-        child: Text(
-          t(lang, "common.coming_soon"),
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: scheme.onSurface.withOpacity(0.8),
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              t(lang, "nav.my_event_submissions"),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: scheme.onSurface.withOpacity(0.92),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              t(lang, "common.coming_soon"),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface.withOpacity(0.72),
+              ),
+            ),
+          ],
         ),
       ),
     );
