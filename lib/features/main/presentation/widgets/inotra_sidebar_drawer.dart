@@ -92,6 +92,8 @@ class InotraSidebarDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset =
+        isDark ? "assets/branding/logo_color.png" : "assets/branding/logo_black.png";
 
     return Drawer(
       elevation: 0,
@@ -254,10 +256,7 @@ class _GlassHeader extends StatelessWidget {
                 color: Colors.white.withOpacity(isDark ? 0.10 : 0.20),
               ),
             ),
-            child: Image.asset(
-              "assets/branding/logo_color.png",
-              fit: BoxFit.contain,
-            ),
+            child: Image.asset(logoAsset, fit: BoxFit.contain),
           ),
           const SizedBox(width: 12),
           Expanded(
