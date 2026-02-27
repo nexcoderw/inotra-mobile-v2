@@ -136,6 +136,7 @@ class _ActionButton extends StatelessWidget {
   final List<List<dynamic>> icon;
   final String label;
   final bool selected;
+  final Color? color;
   final VoidCallback onTap;
 
   const _ActionButton({
@@ -143,12 +144,16 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.selected = false,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = selected ? Colors.redAccent : Colors.white;
+    final iconColor = color ??
+        (selected
+            ? Colors.redAccent
+            : (isDark ? Colors.white : Colors.white.withOpacity(0.9)));
     final textColor = isDark ? Colors.white : Colors.white.withOpacity(0.9);
 
     return GestureDetector(
