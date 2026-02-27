@@ -7,18 +7,6 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
 import "../../../../i18n/translations.dart";
 import "../../../../core/services/auth_session.dart";
-import "package:inotra/features/me/presentation/pages/dashboard_page.dart";
-import "package:inotra/features/me/presentation/pages/events/my_events_page.dart";
-import "package:inotra/features/me/presentation/pages/events/my_event_submissions_page.dart";
-import "package:inotra/features/me/presentation/pages/events/event_review_page.dart";
-import "package:inotra/features/me/presentation/pages/events/event_tickets_page.dart";
-import "package:inotra/features/me/presentation/pages/listings/my_listings_page.dart";
-import "package:inotra/features/me/presentation/pages/listings/my_listing_submissions_page.dart";
-import "package:inotra/features/me/presentation/pages/listings/listing_reviews_page.dart";
-import "package:inotra/features/me/presentation/pages/listings/listing_booking_page.dart";
-import "package:inotra/features/me/presentation/pages/trips/trip_reservations_page.dart";
-import "package:inotra/features/me/presentation/pages/profile_page.dart";
-import "package:inotra/features/me/presentation/pages/settings/settings_page.dart";
 
 const double _kDrawerTopTileHeight = 72;
 
@@ -100,12 +88,6 @@ class InotraSidebarDrawer extends StatelessWidget {
     navigator.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
   }
 
-  void _open(BuildContext context, Widget page) {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) navigator.pop();
-    navigator.push(MaterialPageRoute(builder: (_) => page));
-  }
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -130,6 +112,92 @@ class InotraSidebarDrawer extends StatelessWidget {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                     children: [
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedDashboardSquare01,
+                        title: t(_lang, "nav.dashboard"),
+                        subtitle: t(_lang, "nav.highlights"),
+                        onTap: onDashboardTap,
+                        showTrailing: false,
+                      ),
+
+                      _GlassSection(
+                        title: t(_lang, "nav.my_events"),
+                        icon: HugeIcons.strokeRoundedCalendar01,
+                        children: [
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_events"),
+                            icon: HugeIcons.strokeRoundedCalendar01,
+                            onTap: onMyEventsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_event_submissions"),
+                            icon: HugeIcons.strokeRoundedTask01,
+                            onTap: onMyEventSubmissionsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.event_review"),
+                            icon: HugeIcons.strokeRoundedStar,
+                            onTap: onEventReviewTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.event_tickets"),
+                            icon: HugeIcons.strokeRoundedTicket01,
+                            onTap: onEventTicketsTap,
+                          ),
+                        ],
+                      ),
+
+                      _GlassSection(
+                        title: t(_lang, "nav.my_listings"),
+                        icon: HugeIcons.strokeRoundedLocation01,
+                        children: [
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_listings"),
+                            icon: HugeIcons.strokeRoundedLocation01,
+                            onTap: onMyListingsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_listing_submissions"),
+                            icon: HugeIcons.strokeRoundedTask01,
+                            onTap: onMyListingSubmissionsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.listing_reviews"),
+                            icon: HugeIcons.strokeRoundedStar,
+                            onTap: onListingReviewsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.listing_booking"),
+                            icon: HugeIcons.strokeRoundedCalendarCheckIn01,
+                            onTap: onListingBookingTap,
+                          ),
+                        ],
+                      ),
+
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedTicket01,
+                        title: t(_lang, "nav.trip_reservations"),
+                        subtitle: t(_lang, "common.coming_soon"),
+                        onTap: onTripReservationsTap,
+                        showTrailing: false,
+                      ),
+
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedUser,
+                        title: t(_lang, "nav.profile"),
+                        subtitle: t(_lang, "profile.user_profile"),
+                        onTap: () => _openProfile(context),
+                        showTrailing: false,
+                      ),
+
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedSettings02,
+                        title: t(_lang, "nav.settings"),
+                        subtitle: t(_lang, "nav.settings_sub"),
+                        onTap: onSettingsTap,
+                        showTrailing: false,
+                      ),
+
                       _GlassDangerTile(
                         icon: HugeIcons.strokeRoundedLogout01,
                         title: t(_lang, "nav.logout"),
@@ -207,7 +275,7 @@ class _GlassHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  "Premium navigation",
+                  "By NAVIG8",
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 11,
