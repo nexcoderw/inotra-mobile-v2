@@ -1,10 +1,11 @@
+import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 class HighlightCard extends StatelessWidget {
   final String? imageUrl;
   final String title;
-  final String meta;
+  final String? meta;
   final bool liked;
   final int likes;
   final int comments;
@@ -12,12 +13,14 @@ class HighlightCard extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
+  final bool expandedCaption;
+  final VoidCallback onCaptionTap;
 
   const HighlightCard({
     super.key,
     required this.imageUrl,
     required this.title,
-    required this.meta,
+    this.meta,
     required this.liked,
     required this.likes,
     required this.comments,
@@ -25,26 +28,26 @@ class HighlightCard extends StatelessWidget {
     required this.onLike,
     required this.onComment,
     required this.onShare,
+    required this.expandedCaption,
+    required this.onCaptionTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final titleColor = isDark ? Colors.white : scheme.onSurface;
-    final metaColor =
-        isDark ? Colors.white.withOpacity(0.85) : scheme.onSurface.withOpacity(0.75);
-
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: ClipRRect(
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(18)),
+      child: Stack(
+        children: [
+          // Media
+          Positioned.fill(
             child: Image.network(
               imageUrl ?? "",
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 color: scheme.surfaceVariant,
+                alignment: Alignment.center,
                 child: Icon(
                   Icons.image_not_supported,
                   color: scheme.onSurface.withOpacity(0.5),
@@ -53,81 +56,175 @@ class HighlightCard extends StatelessWidget {
               ),
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: progress.expectedTotalBytes == null
-                        ? null
-                        : progress.cumulativeBytesLoaded /
-                            (progress.expectedTotalBytes ?? 1),
-                  ),
-                );
+                final value = progress.expectedTotalBytes == null
+                    ? null
+                    : progress.cumulativeBytesLoaded /
+                        (progress.expectedTotalBytes ?? 1);
+                return Center(child: CircularProgressIndicator(value: value));
               },
             ),
           ),
-        ),
 
-        // ❌ Removed gradient overlay completely
-
-        Positioned(
-          left: 16,
-          bottom: 26,
-          right: 90,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: titleColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+          // Subtle overall vignette (keeps the card premium on any image)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.10),
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.55),
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                meta,
-                style: TextStyle(
-                  color: metaColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
 
-        Positioned(
-          right: 16,
-          bottom: 40,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ActionButton(
-                icon: liked
-                    ? HugeIcons.strokeRoundedHeartCheck
-                    : HugeIcons.strokeRoundedHeartAdd,
-                selected: liked,
-                label: "$likes",
-                onTap: onLike,
+          // Right actions (Instagram Reel-like)
+          Positioned(
+            right: 14,
+            bottom: 72,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ActionButton(
+                  icon: liked
+                      ? HugeIcons.strokeRoundedHeartCheck
+                      : HugeIcons.strokeRoundedHeartAdd,
+                  selected: liked,
+                  label: "$likes",
+                  onTap: onLike,
+                ),
+                const SizedBox(height: 14),
+                _ActionButton(
+                  icon: HugeIcons.strokeRoundedMessage02,
+                  label: "$comments",
+                  onTap: onComment,
+                ),
+                const SizedBox(height: 14),
+                _ActionButton(
+                  icon: HugeIcons.strokeRoundedShare08,
+                  label: "$shares",
+                  onTap: onShare,
+                ),
+              ],
+            ),
+          ),
+
+          // Bottom info area (caption + optional place/event)
+          Positioned(
+            left: 14,
+            right: 78,
+            bottom: 14,
+            child: _BottomInfo(
+              title: title,
+              meta: meta,
+              expanded: expandedCaption,
+              onTap: onCaptionTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomInfo extends StatelessWidget {
+  final String title;
+  final String? meta;
+  final bool expanded;
+  final VoidCallback onTap;
+
+  const _BottomInfo({
+    required this.title,
+    required this.meta,
+    required this.expanded,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Instagram-like readability: blur + gradient + soft shadow behind text
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(14)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.10),
+                Colors.black.withOpacity(0.42),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.10),
+              width: 1,
+            ),
+            borderRadius: const BorderRadius.all(Radius.circular(14)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: DefaultTextStyle(
+              style: const TextStyle(color: Colors.white),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: onTap,
+                    child: Text(
+                      title,
+                      maxLines: expanded ? null : 2,
+                      overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 12,
+                            offset: Offset(0, 3),
+                            color: Colors.black87,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (meta != null && meta!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      meta!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 10,
+                            offset: Offset(0, 3),
+                            color: Colors.black87,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: 12),
-              _ActionButton(
-                icon: HugeIcons.strokeRoundedMessage02,
-                label: "$comments",
-                onTap: onComment,
-              ),
-              const SizedBox(height: 12),
-              _ActionButton(
-                icon: HugeIcons.strokeRoundedShare08,
-                label: "$shares",
-                onTap: onShare,
-              ),
-            ],
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -149,38 +246,51 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = color ??
-        (selected
-            ? Colors.redAccent
-            : (isDark ? Colors.white : Colors.white.withOpacity(0.9)));
-    final textColor = isDark ? Colors.white : Colors.white.withOpacity(0.9);
+    final iconColor = color ?? (selected ? Colors.redAccent : Colors.white);
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Column(
         children: [
-          // ✅ Transparent container (no shadow, no dark overlay)
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.all(Radius.circular(18)),
-            ),
-            child: HugeIcon(
-              icon: icon,
-              size: 18,
-              strokeWidth: 2,
-              color: iconColor,
+          // Small glassy pill behind icon (clean + visible)
+          ClipRRect(
+            borderRadius: const BorderRadius.all(Radius.circular(18)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.22),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.10),
+                    width: 1,
+                  ),
+                  borderRadius: const BorderRadius.all(Radius.circular(18)),
+                ),
+                child: HugeIcon(
+                  icon: icon,
+                  size: 18,
+                  strokeWidth: 2,
+                  color: iconColor,
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(
-              color: textColor,
+            style: const TextStyle(
+              color: Colors.white,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  blurRadius: 14,
+                  offset: Offset(0, 3),
+                  color: Colors.black87,
+                ),
+              ],
             ),
           ),
         ],
