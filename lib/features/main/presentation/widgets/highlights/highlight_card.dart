@@ -135,7 +135,7 @@ class HighlightCard extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  final HugeIcons icon;
+  final dynamic icon;
   final String label;
   final Color? color;
   final VoidCallback onTap;
