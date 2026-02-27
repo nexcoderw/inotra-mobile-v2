@@ -242,7 +242,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
               HighlightCard(
                 imageUrl: item.coverUrl,
                 title: item.caption ?? t(lang, "highlights.title"),
-                meta: _placeOrEvent(item),
+                meta: _metaLine(item, lang),
                 liked: item.liked,
                 likes: item.likes,
                 comments: item.comments,
@@ -289,6 +289,8 @@ class _Highlight {
   final int comments;
   final int shares;
   final bool liked;
+  final String? placeName;
+  final String? eventName;
 
   _Highlight({
     required this.id,
@@ -298,6 +300,8 @@ class _Highlight {
     required this.comments,
     required this.shares,
     required this.liked,
+    required this.placeName,
+    required this.eventName,
   });
 
   _Highlight copyWith({
@@ -333,6 +337,8 @@ class _Highlight {
       comments: (json["comments_count"] as num?)?.toInt() ?? 0,
       shares: (json["shares_count"] as num?)?.toInt() ?? 0,
       liked: json["liked"] == true,
+      placeName: json["place_name"] as String?,
+      eventName: json["event_name"] as String?,
     );
   }
 }
@@ -342,6 +348,12 @@ HighlightComment _commentFromJson(Map<String, dynamic> json) {
     author: json["user"] as String? ?? json["author"] as String?,
     text: json["comment"] as String? ?? json["text"] as String?,
   );
+}
+
+String? _metaLine(_Highlight h, String lang) {
+  if (h.placeName != null && h.placeName!.isNotEmpty) return h.placeName;
+  if (h.eventName != null && h.eventName!.isNotEmpty) return h.eventName;
+  return null;
 }
 
 class _ActionButton extends StatelessWidget {
