@@ -122,7 +122,7 @@ class HighlightCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _ActionButton(
-                icon: HugeIcons.strokeRoundedShare01,
+                icon: HugeIcons.strokeRoundedShare08,
                 label: "$shares",
                 onTap: onShare,
               ),
@@ -161,7 +161,7 @@ class _ActionButton extends StatelessWidget {
             ),
             child: HugeIcon(
               icon: icon,
-              size: 24,
+              size: 18,
               strokeWidth: 2,
               color: color ?? Colors.white,
             ),

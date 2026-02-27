@@ -2,7 +2,6 @@ import "package:flutter/material.dart";
 
 import "inotra_authenticated_header.dart";
 import "inotra_guest_header.dart";
-import "../../../../i18n/lang.dart";
 
 class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
   static const double _headerHeight = kToolbarHeight + 6;

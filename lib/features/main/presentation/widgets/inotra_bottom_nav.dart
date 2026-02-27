@@ -17,8 +17,7 @@ class InotraBottomNav extends StatelessWidget {
   });
 
   String _lang() {
-    final preferred =
-        AuthSession.instance.value.user?['preferred_language'] as String?;
+    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
     if (preferred == null || preferred.isEmpty) return 'en';
     final lower = preferred.toLowerCase();
     if (lower.startsWith('rw')) return 'rw';
@@ -31,59 +30,61 @@ class InotraBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = _lang();
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // ✅ soft glass base, no border, no shadow, no gradient
-    final baseBg = scheme.surface.withOpacity(isDark ? 0.52 : 0.78);
-
     return SafeArea(
       top: false,
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(34),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
-              height: 66,
+              height: 64,
               decoration: BoxDecoration(
-                color: baseBg,
-                borderRadius: BorderRadius.circular(999),
+                color: AppColors.primary.withOpacity(0.92),
+                borderRadius: BorderRadius.circular(34),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.10),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.18),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _MiniNavItem(
+                  _NavItem(
                     selected: currentIndex == 0,
                     label: t(lang, "nav.explore"),
                     icon: HugeIcons.strokeRoundedHome01,
                     onTap: () => onChanged(0),
                   ),
-                  _MiniNavItem(
+                  _NavItem(
                     selected: currentIndex == 1,
                     label: t(lang, "nav.listings"),
                     icon: HugeIcons.strokeRoundedHotelBell,
                     onTap: () => onChanged(1),
                   ),
-
-                  // ✅ floating center action (premium)
-                  _CenterFabNavItem(
+                  _NavItem(
                     selected: currentIndex == 2,
                     label: t(lang, "nav.ai_chat"),
                     icon: HugeIcons.strokeRoundedSparkles,
                     onTap: () => onChanged(2),
                   ),
-
-                  _MiniNavItem(
+                  _NavItem(
                     selected: currentIndex == 3,
                     label: t(lang, "nav.events"),
                     icon: HugeIcons.strokeRoundedFireworks,
                     onTap: () => onChanged(3),
                   ),
-                  _MiniNavItem(
+                  _NavItem(
                     selected: currentIndex == 4,
                     label: t(lang, "nav.highlights"),
                     icon: HugeIcons.strokeRoundedPlay,
@@ -99,13 +100,13 @@ class InotraBottomNav extends StatelessWidget {
   }
 }
 
-class _MiniNavItem extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final bool selected;
   final String label;
-  final dynamic icon;
+  final dynamic icon; // HugeIcons.* type
   final VoidCallback onTap;
 
-  const _MiniNavItem({
+  const _NavItem({
     required this.selected,
     required this.label,
     required this.icon,
@@ -114,138 +115,69 @@ class _MiniNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fg = selected ? AppColors.primary : Colors.white;
+    final bg = selected ? Colors.white : Colors.transparent;
 
-    // ✅ theme icon rule
-    final baseIconColor = isDark ? Colors.white : AppColors.primary;
-    final iconColor = selected ? scheme.primary : baseIconColor;
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+      tween: Tween<double>(begin: 0, end: selected ? 1 : 0),
+      builder: (context, t, child) {
+        final width = lerpDouble(40, 100, t)!;
+        final scale = lerpDouble(1.0, 1.05, t)!;
 
-    // ✅ small top indicator instead of wide pill (new UI)
-    final indicatorColor =
-        selected ? scheme.primary : scheme.onSurface.withOpacity(isDark ? 0.12 : 0.10);
-
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: SizedBox(
-          height: double.infinity,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-                height: 4,
-                width: selected ? 18 : 8,
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: indicatorColor,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              HugeIcon(
-                icon: icon,
-                size: 18,
-                strokeWidth: 2.2,
-                color: iconColor,
-              ),
-              const SizedBox(height: 6),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                  color: selected
-                      ? scheme.onSurface.withOpacity(0.92)
-                      : scheme.onSurface.withOpacity(0.60),
-                ),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CenterFabNavItem extends StatelessWidget {
-  final bool selected;
-  final String label;
-  final dynamic icon;
-  final VoidCallback onTap;
-
-  const _CenterFabNavItem({
-    required this.selected,
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // ✅ no shadows, no gradients
-    final fabBg = scheme.primary;
-    final ring = isDark
-        ? Colors.white.withOpacity(0.18)
-        : scheme.onSurface.withOpacity(0.08);
-
-    // make it feel “floating” via position only (not shadow)
-    return Expanded(
-      child: Center(
-        child: GestureDetector(
+        return GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
-          child: AnimatedScale(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            scale: selected ? 1.02 : 1.0,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 44,
-                  width: 44,
-                  decoration: BoxDecoration(
-                    color: fabBg,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: ring, width: 1),
-                  ),
-                  child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 340),
+            curve: Curves.easeOutCubic,
+            width: width,
+            height: 40,
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(23),
+            ),
+            child: Transform.scale(
+              scale: scale,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
                     child: HugeIcon(
                       icon: icon,
-                      size: 20,
-                      strokeWidth: 2.2,
-                      color: Colors.white,
+                      key: ValueKey("$label-$selected"),
+                      color: fg,
+                      size: 14,
+                      strokeWidth: 2.0,
                     ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                    color: scheme.onSurface.withOpacity(0.78),
-                  ),
-                ),
-              ],
+                  if (selected) ...[
+                    const SizedBox(width: 7),
+                    Flexible(
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: selected ? 1 : 0,
+                        child: Text(
+                          label,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: fg,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
