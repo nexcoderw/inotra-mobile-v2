@@ -7,16 +7,16 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/app_colors.dart";
 import "../../../../i18n/translations.dart";
 import "../../../../core/services/auth_session.dart";
-import "../../presentation/pages/dashboard_page.dart";
-import "../../presentation/pages/events/my_events_page.dart";
-import "../../presentation/pages/events/my_event_submissions_page.dart";
-import "../../presentation/pages/events/event_review_page.dart";
-import "../../presentation/pages/events/event_tickets_page.dart";
-import "../../presentation/pages/listings/my_listings_page.dart";
-import "../../presentation/pages/listings/my_listing_submissions_page.dart";
-import "../../presentation/pages/listings/listing_reviews_page.dart";
-import "../../presentation/pages/listings/listing_booking_page.dart";
-import "../../presentation/pages/trips/trip_reservations_page.dart";
+import "../../me/presentation/pages/dashboard_page.dart";
+import "../../me/presentation/pages/events/my_events_page.dart";
+import "../../me/presentation/pages/events/my_event_submissions_page.dart";
+import "../../me/presentation/pages/events/event_review_page.dart";
+import "../../me/presentation/pages/events/event_tickets_page.dart";
+import "../../me/presentation/pages/listings/my_listings_page.dart";
+import "../../me/presentation/pages/listings/my_listing_submissions_page.dart";
+import "../../me/presentation/pages/listings/listing_reviews_page.dart";
+import "../../me/presentation/pages/listings/listing_booking_page.dart";
+import "../../me/presentation/pages/trips/trip_reservations_page.dart";
 
 const double _kDrawerTopTileHeight = 72;
 
