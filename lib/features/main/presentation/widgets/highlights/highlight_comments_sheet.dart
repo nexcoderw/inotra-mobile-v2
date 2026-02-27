@@ -138,10 +138,3 @@ class _HighlightCommentsSheetState extends State<HighlightCommentsSheet> {
     );
   }
 }
-
-class _Comment {
-  final String? author;
-  final String? text;
-
-  _Comment({this.text});
-}
