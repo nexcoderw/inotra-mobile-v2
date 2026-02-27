@@ -1,11 +1,12 @@
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
-import "../../../../i18n/lang.dart";
-import "../../../../i18n/translations.dart";
+import "package:inotra/i18n/lang.dart";
+import "package:inotra/i18n/translations.dart";
+import "highlight_comment.dart";
 
 class HighlightCommentsSheet extends StatefulWidget {
-  final Future<List<_Comment>> Function() loadComments;
+  final Future<List<HighlightComment>> Function() loadComments;
   final Future<void> Function(String text) onSend;
 
   const HighlightCommentsSheet({
@@ -20,7 +21,7 @@ class HighlightCommentsSheet extends StatefulWidget {
 
 class _HighlightCommentsSheetState extends State<HighlightCommentsSheet> {
   bool _loading = false;
-  List<_Comment> _comments = const [];
+  List<HighlightComment> _comments = const [];
   final _controller = TextEditingController();
 
   @override
@@ -142,5 +143,5 @@ class _Comment {
   final String? author;
   final String? text;
 
-  _Comment({this.author, this.text});
+  _Comment({this.text});
 }

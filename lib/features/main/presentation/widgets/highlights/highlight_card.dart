@@ -53,7 +53,7 @@ class HighlightCard extends StatelessWidget {
                     value: progress.expectedTotalBytes == null
                         ? null
                         : progress.cumulativeBytesLoaded /
-                            (progress.expectedTotalBytes ?? 1),
+                              (progress.expectedTotalBytes ?? 1),
                   ),
                 );
               },
@@ -66,10 +66,7 @@ class HighlightCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                colors: [
-                  Colors.black54,
-                  Colors.transparent,
-                ],
+                colors: [Colors.black54, Colors.transparent],
               ),
             ),
           ),
@@ -110,7 +107,9 @@ class HighlightCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _ActionButton(
-                icon: liked ? HugeIcons.strokeRoundedHeart : HugeIcons.strokeRoundedHeart01,
+                icon: liked
+                    ? HugeIcons.strokeRoundedHeartCheck
+                    : HugeIcons.strokeRoundedHeartAdd,
                 color: liked ? Colors.redAccent : Colors.white,
                 label: "$likes",
                 onTap: onLike,
@@ -123,7 +122,7 @@ class HighlightCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _ActionButton(
-                icon: HugeIcons.strokeRoundedSend01,
+                icon: HugeIcons.strokeRoundedShare01,
                 label: "$shares",
                 onTap: onShare,
               ),
