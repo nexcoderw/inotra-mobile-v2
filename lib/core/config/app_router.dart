@@ -30,6 +30,10 @@ import "../../features/me/presentation/pages/events/event_review_page.dart";
 import "../../features/me/presentation/pages/events/event_tickets_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
 import "../../features/me/presentation/pages/events/my_events_page.dart";
+import "../../features/me/presentation/pages/listings/listing_booking_page.dart";
+import "../../features/me/presentation/pages/listings/listing_reviews_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_submissions_page.dart";
+import "../../features/me/presentation/pages/listings/my_listings_page.dart";
 import "../../features/me/presentation/pages/profile/profile_account_details_page.dart";
 import "../../features/me/presentation/pages/profile/profile_change_password_page.dart";
 import "../../features/me/presentation/pages/profile/profile_danger_zone_page.dart";
@@ -145,6 +149,30 @@ final class AppRouter {
           featureLabel: t(lang, "nav.event_tickets"),
           description: null,
           builder: (_) => const EventTicketsPage(),
+        );
+      case AppRoutes.myListings:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.my_listings"),
+          description: null,
+          builder: (_) => const MyListingsPage(),
+        );
+      case AppRoutes.myListingSubmissions:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.my_listing_submissions"),
+          description: null,
+          builder: (_) => const MyListingSubmissionsPage(),
+        );
+      case AppRoutes.listingReviews:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.listing_reviews"),
+          description: null,
+          builder: (_) => const ListingReviewsPage(),
+        );
+      case AppRoutes.listingBooking:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.listing_booking"),
+          description: null,
+          builder: (_) => const ListingBookingPage(),
         );
       case AppRoutes.profile:
         return AuthGuard.protect(
