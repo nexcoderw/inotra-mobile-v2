@@ -42,17 +42,17 @@ class InotraBottomNav extends StatelessWidget {
             child: Container(
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.92),
+                color: Colors.black.withOpacity(0.22),
                 borderRadius: BorderRadius.circular(34),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.10),
+                  color: Colors.white.withOpacity(0.16),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 14,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -115,8 +115,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? AppColors.primary : Colors.white;
-    final bg = selected ? Colors.white : Colors.transparent;
+    final fg = selected ? Colors.white : Colors.white.withOpacity(0.82);
+    final bg = selected ? AppColors.primary.withOpacity(0.28) : Colors.transparent;
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 340),
