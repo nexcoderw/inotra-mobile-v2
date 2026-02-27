@@ -10,6 +10,8 @@ import "../../features/auth/presentation/pages/verify_registration_otp_page.dart
 
 // Shell and main tabs
 import "../../features/main/presentation/layouts/main_shell.dart";
+// Me shell
+import "../../features/me/presentation/layouts/me_shell.dart";
 
 // AI chat
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
@@ -125,61 +127,91 @@ final class AppRouter {
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.dashboard"),
           description: null,
-          builder: (_) => const DashboardPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.dashboard"),
+            child: const DashboardPage(),
+          ),
         );
       case AppRoutes.myEvents:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.my_events"),
           description: null,
-          builder: (_) => const MyEventsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.my_events"),
+            child: const MyEventsPage(),
+          ),
         );
       case AppRoutes.myEventSubmissions:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.my_event_submissions"),
           description: null,
-          builder: (_) => const MyEventSubmissionsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.my_event_submissions"),
+            child: const MyEventSubmissionsPage(),
+          ),
         );
       case AppRoutes.eventReview:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.event_review"),
           description: null,
-          builder: (_) => const EventReviewPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.event_review"),
+            child: const EventReviewPage(),
+          ),
         );
       case AppRoutes.eventTickets:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.event_tickets"),
           description: null,
-          builder: (_) => const EventTicketsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.event_tickets"),
+            child: const EventTicketsPage(),
+          ),
         );
       case AppRoutes.myListings:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.my_listings"),
           description: null,
-          builder: (_) => const MyListingsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.my_listings"),
+            child: const MyListingsPage(),
+          ),
         );
       case AppRoutes.myListingSubmissions:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.my_listing_submissions"),
           description: null,
-          builder: (_) => const MyListingSubmissionsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.my_listing_submissions"),
+            child: const MyListingSubmissionsPage(),
+          ),
         );
       case AppRoutes.listingReviews:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.listing_reviews"),
           description: null,
-          builder: (_) => const ListingReviewsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.listing_reviews"),
+            child: const ListingReviewsPage(),
+          ),
         );
       case AppRoutes.listingBooking:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.listing_booking"),
           description: null,
-          builder: (_) => const ListingBookingPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.listing_booking"),
+            child: const ListingBookingPage(),
+          ),
         );
       case AppRoutes.tripReservations:
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.trip_reservations"),
           description: null,
-          builder: (_) => const TripReservationsPage(),
+          builder: (_) => MeShell(
+            title: t(lang, "nav.trip_reservations"),
+            child: const TripReservationsPage(),
+          ),
         );
       case AppRoutes.profile:
         return AuthGuard.protect(
