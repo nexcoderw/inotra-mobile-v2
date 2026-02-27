@@ -14,12 +14,14 @@ class MeShell extends StatefulWidget {
   final String title;
   final Widget child;
   final int currentIndex;
+  final ValueChanged<int>? onTabChange;
 
   const MeShell({
     super.key,
     required this.title,
     required this.child,
     this.currentIndex = 0,
+    this.onTabChange,
   });
 
   @override
@@ -89,7 +91,7 @@ class _MeShellState extends State<MeShell> {
       body: widget.child,
       bottomNavigationBar: InotraBottomNav(
         currentIndex: widget.currentIndex,
-        onChanged: _onTabChange,
+        onChanged: widget.onTabChange ?? _onTabChange,
       ),
     );
   }

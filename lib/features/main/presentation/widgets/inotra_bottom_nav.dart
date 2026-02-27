@@ -17,7 +17,8 @@ class InotraBottomNav extends StatelessWidget {
   });
 
   String _lang() {
-    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    final preferred =
+        AuthSession.instance.value.user?['preferred_language'] as String?;
     if (preferred == null || preferred.isEmpty) return 'en';
     final lower = preferred.toLowerCase();
     if (lower.startsWith('rw')) return 'rw';
@@ -30,6 +31,9 @@ class InotraBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = _lang();
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       top: false,
       bottom: false,
@@ -41,21 +45,17 @@ class InotraBottomNav extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
               height: 64,
+
+              // ✅ same “do the same” rules:
+              // - remove shadow
+              // - remove border
+              // - remove gradients (none here)
+              // - keep premium glass + theme-friendly surface (NOT forcing primary bg)
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.22),
+                color: scheme.surface.withOpacity(isDark ? 0.55 : 0.78),
                 borderRadius: BorderRadius.circular(34),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.16),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
-                    blurRadius: 14,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
               ),
+
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -103,7 +103,7 @@ class InotraBottomNav extends StatelessWidget {
 class _NavItem extends StatelessWidget {
   final bool selected;
   final String label;
-  final dynamic icon; // HugeIcons.* type
+  final dynamic icon;
   final VoidCallback onTap;
 
   const _NavItem({
@@ -115,8 +115,23 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : Colors.white.withOpacity(0.82);
-    final bg = selected ? AppColors.primary.withOpacity(0.28) : Colors.transparent;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // ✅ icon rules like you requested for drawer:
+    // - dark theme => white icons
+    // - light theme => primary icons
+    final baseIconColor = isDark ? Colors.white : AppColors.primary;
+
+    // Keep your selection logic, but theme friendly:
+    // - selected pill gets a subtle onSurface tint (not white-only)
+    // - text/icon remain readable on both themes
+    final fg = selected ? (isDark ? Colors.white : AppColors.primary) : baseIconColor;
+    final bg = selected
+        ? (isDark
+            ? Colors.white.withOpacity(0.14)
+            : AppColors.primary.withOpacity(0.12))
+        : Colors.transparent;
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 340),
@@ -134,6 +149,8 @@ class _NavItem extends StatelessWidget {
             curve: Curves.easeOutCubic,
             width: width,
             height: 40,
+
+            // ✅ transparent background for unselected; no border; no shadow
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(23),
@@ -164,7 +181,7 @@ class _NavItem extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: fg,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             fontSize: 11,
                             letterSpacing: -0.2,
                           ),
