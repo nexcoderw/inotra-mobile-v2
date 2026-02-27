@@ -300,8 +300,8 @@ class _Highlight {
     required this.comments,
     required this.shares,
     required this.liked,
-    required this.placeName,
-    required this.eventName,
+    this.placeName,
+    this.eventName,
   });
 
   _Highlight copyWith({
