@@ -27,17 +27,19 @@ class _MeShellState extends State<MeShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   String get _lang => currentLangSync();
-
   AuthSession get _session => AuthSession.instance;
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
+  void _closeDrawerIfOpen() {
+    if (Navigator.canPop(context)) Navigator.pop(context);
+  }
 
   void _goTo(String route) {
+    _closeDrawerIfOpen();
     Navigator.pushNamed(context, route);
   }
 
   void _goToNotifications() => _goTo(AppRoutes.notifications);
-
   void _goToProfile() => _goTo(AppRoutes.profile);
 
   @override
