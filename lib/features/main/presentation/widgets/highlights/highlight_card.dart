@@ -30,6 +30,11 @@ class HighlightCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final titleColor = isDark ? Colors.white : scheme.onSurface;
+    final metaColor =
+        isDark ? Colors.white.withOpacity(0.85) : scheme.onSurface.withOpacity(0.75);
 
     return Stack(
       children: [
@@ -53,24 +58,16 @@ class HighlightCard extends StatelessWidget {
                     value: progress.expectedTotalBytes == null
                         ? null
                         : progress.cumulativeBytesLoaded /
-                              (progress.expectedTotalBytes ?? 1),
+                            (progress.expectedTotalBytes ?? 1),
                   ),
                 );
               },
             ),
           ),
         ),
-        Positioned.fill(
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [Colors.black54, Colors.transparent],
-              ),
-            ),
-          ),
-        ),
+
+        // ❌ Removed gradient overlay completely
+
         Positioned(
           left: 16,
           bottom: 26,
@@ -82,8 +79,8 @@ class HighlightCard extends StatelessWidget {
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: titleColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
                 ),
@@ -92,7 +89,7 @@ class HighlightCard extends StatelessWidget {
               Text(
                 meta,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.84),
+                  color: metaColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -100,6 +97,7 @@ class HighlightCard extends StatelessWidget {
             ],
           ),
         ),
+
         Positioned(
           right: 16,
           bottom: 40,
@@ -110,7 +108,7 @@ class HighlightCard extends StatelessWidget {
                 icon: liked
                     ? HugeIcons.strokeRoundedHeartCheck
                     : HugeIcons.strokeRoundedHeartAdd,
-                color: liked ? Colors.redAccent : Colors.white,
+                selected: liked,
                 label: "$likes",
                 onTap: onLike,
               ),
@@ -135,42 +133,47 @@ class HighlightCard extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  final dynamic icon;
+  final List<List<dynamic>> icon;
   final String label;
-  final Color? color;
+  final bool selected;
   final VoidCallback onTap;
 
   const _ActionButton({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.color,
+    this.selected = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = selected ? Colors.redAccent : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.white.withOpacity(0.9);
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
+          // ✅ Transparent container (no shadow, no dark overlay)
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.35),
-              borderRadius: BorderRadius.circular(18),
+            decoration: const BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.all(Radius.circular(18)),
             ),
             child: HugeIcon(
               icon: icon,
               size: 18,
               strokeWidth: 2,
-              color: color ?? Colors.white,
+              color: iconColor,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: textColor,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
