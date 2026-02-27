@@ -8,15 +8,21 @@ import "../../features/auth/presentation/pages/register_page.dart";
 import "../../features/auth/presentation/pages/reset_password_page.dart";
 import "../../features/auth/presentation/pages/verify_registration_otp_page.dart";
 
-// Shell & tabs
+// Shell and main tabs
 import "../../features/main/presentation/layouts/main_shell.dart";
+
+// AI chat
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
 
-// Details / discover
+// Discover & details
 import "../../features/main/presentation/pages/event_details_page.dart";
+
+// Listings details
 import "../../features/main/presentation/pages/listing_details_page.dart";
-import "../../features/main/presentation/pages/trip_package_details_page.dart";
+
+// Trip packages
 import "../../features/main/presentation/pages/trip_packages_page.dart";
+import "../../features/main/presentation/pages/trip_package_details_page.dart";
 
 // Me area (dashboard, profile, settings)
 import "../../features/me/presentation/pages/dashboard_page.dart";
@@ -28,9 +34,15 @@ import "../../features/me/presentation/pages/settings/settings_language_page.dar
 import "../../features/me/presentation/pages/settings/settings_page.dart";
 import "../../features/me/presentation/pages/settings/settings_theme_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
+
+// Translations
 import "../../i18n/lang.dart";
 import "../../i18n/translations.dart";
+
+// Guards
 import "../guards/auth_guard.dart";
+
+// Routes
 import "app_routes.dart";
 
 final class AppRouter {
