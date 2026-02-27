@@ -1,8 +1,7 @@
 import "package:flutter/material.dart";
-
-import "../../../../i18n/lang.dart";
-import "../../../../i18n/translations.dart";
-import "../../../main/presentation/widgets/main_scaffold.dart";
+import "package:inotra/i18n/lang.dart";
+import "package:inotra/i18n/translations.dart";
+import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
 
 class ListingBookingPage extends StatelessWidget {
   const ListingBookingPage({super.key});
