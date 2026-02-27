@@ -5,6 +5,7 @@ import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../../../main/presentation/widgets/inotra_app_header.dart";
+import "../../../main/presentation/widgets/inotra_bottom_nav.dart";
 import "../../../main/presentation/widgets/inotra_sidebar_drawer.dart";
 
 /// Shell layout for all pages under the `me/` area.
@@ -12,11 +13,15 @@ import "../../../main/presentation/widgets/inotra_sidebar_drawer.dart";
 class MeShell extends StatefulWidget {
   final String title;
   final Widget child;
+  final int? currentIndex;
+  final ValueChanged<int>? onTabChange;
 
   const MeShell({
     super.key,
     required this.title,
     required this.child,
+    this.currentIndex,
+    this.onTabChange,
   });
 
   @override
@@ -72,6 +77,12 @@ class _MeShellState extends State<MeShell> {
         onLogoutTap: null,
       ),
       body: widget.child,
+      bottomNavigationBar: (widget.currentIndex != null && widget.onTabChange != null)
+          ? InotraBottomNav(
+              currentIndex: widget.currentIndex!,
+              onChanged: widget.onTabChange!,
+            )
+          : null,
     );
   }
 }
