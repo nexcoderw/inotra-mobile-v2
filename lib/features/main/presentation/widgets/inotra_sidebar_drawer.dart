@@ -17,6 +17,8 @@ import "../../me/presentation/pages/listings/my_listing_submissions_page.dart";
 import "../../me/presentation/pages/listings/listing_reviews_page.dart";
 import "../../me/presentation/pages/listings/listing_booking_page.dart";
 import "../../me/presentation/pages/trips/trip_reservations_page.dart";
+import "../pages/profile_page.dart";
+import "../pages/settings_page.dart";
 
 const double _kDrawerTopTileHeight = 72;
 
@@ -96,6 +98,12 @@ class InotraSidebarDrawer extends StatelessWidget {
     );
 
     navigator.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+  }
+
+  void _open(BuildContext context, Widget page) {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) navigator.pop();
+    navigator.push(MaterialPageRoute(builder: (_) => page));
   }
 
   @override
