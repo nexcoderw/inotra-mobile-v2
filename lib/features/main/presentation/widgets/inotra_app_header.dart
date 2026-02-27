@@ -40,7 +40,6 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
       onNotificationsTap: onNotificationsTap,
       onProfileTap: onProfileTap,
       height: _headerHeight,
-      backgroundColor: Colors.transparent,
     );
   }
 }
