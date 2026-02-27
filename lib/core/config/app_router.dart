@@ -26,6 +26,10 @@ import "../../features/main/presentation/pages/trip_package_details_page.dart";
 
 // Me area (dashboard, profile, settings)
 import "../../features/me/presentation/pages/dashboard_page.dart";
+import "../../features/me/presentation/pages/events/event_review_page.dart";
+import "../../features/me/presentation/pages/events/event_tickets_page.dart";
+import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
+import "../../features/me/presentation/pages/events/my_events_page.dart";
 import "../../features/me/presentation/pages/profile/profile_account_details_page.dart";
 import "../../features/me/presentation/pages/profile/profile_change_password_page.dart";
 import "../../features/me/presentation/pages/profile/profile_danger_zone_page.dart";
@@ -117,6 +121,30 @@ final class AppRouter {
           featureLabel: t(lang, "nav.dashboard"),
           description: null,
           builder: (_) => const DashboardPage(),
+        );
+      case AppRoutes.myEvents:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.my_events"),
+          description: null,
+          builder: (_) => const MyEventsPage(),
+        );
+      case AppRoutes.myEventSubmissions:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.my_event_submissions"),
+          description: null,
+          builder: (_) => const MyEventSubmissionsPage(),
+        );
+      case AppRoutes.eventReview:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.event_review"),
+          description: null,
+          builder: (_) => const EventReviewPage(),
+        );
+      case AppRoutes.eventTickets:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.event_tickets"),
+          description: null,
+          builder: (_) => const EventTicketsPage(),
         );
       case AppRoutes.profile:
         return AuthGuard.protect(
