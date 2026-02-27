@@ -8,7 +8,7 @@ import "../../../../core/constants/app_colors.dart";
 import "../../../../i18n/translations.dart";
 import "../../../../core/services/auth_session.dart";
 
-const double _kDrawerTopTileHeight = 72; // same height for links + dropdown headers
+const double _kDrawerTopTileHeight = 72;
 
 class InotraSidebarDrawer extends StatelessWidget {
   final VoidCallback onDashboardTap;
@@ -29,7 +29,6 @@ class InotraSidebarDrawer extends StatelessWidget {
   final VoidCallback onSettingsTap;
   final VoidCallback? onProfileTap;
 
-  /// Optional callback for additional logout side effects (e.g., clearing tokens).
   final VoidCallback? onLogoutTap;
 
   const InotraSidebarDrawer({
@@ -63,7 +62,7 @@ class InotraSidebarDrawer extends StatelessWidget {
 
   void _openProfile(BuildContext context) {
     final navigator = Navigator.of(context);
-    if (navigator.canPop()) navigator.pop(); // close drawer first
+    if (navigator.canPop()) navigator.pop();
 
     onProfileTap?.call();
     navigator.pushNamed(AppRoutes.profile);
@@ -71,11 +70,9 @@ class InotraSidebarDrawer extends StatelessWidget {
 
   void _logout(BuildContext context) {
     final navigator = Navigator.of(context);
-    if (navigator.canPop()) navigator.pop(); // close drawer first
+    if (navigator.canPop()) navigator.pop();
 
-    // Clear local session
     AuthSession.instance.signOut();
-
     onLogoutTap?.call();
 
     toastification.show(
@@ -102,167 +99,144 @@ class InotraSidebarDrawer extends StatelessWidget {
       child: Container(
         height: MediaQuery.of(context).size.height,
 
-        // ✅ Main drawer surface: NO border, NO gradient, NO shadow
+        // main drawer surface (no border/gradient/shadow)
         decoration: BoxDecoration(
           color: scheme.surface.withOpacity(isDark ? 0.50 : 0.78),
         ),
 
-        child: Stack(
-          children: [
-            // ✅ softer blobs (premium, but calm)
-            Positioned(
-              top: -90,
-              left: -70,
-              child: _GlowBlob(
-                color: AppColors.primary.withOpacity(isDark ? 0.14 : 0.10),
-                size: 240,
-              ),
-            ),
-            Positioned(
-              bottom: -110,
-              right: -70,
-              child: _GlowBlob(
-                color: scheme.secondary.withOpacity(isDark ? 0.10 : 0.08),
-                size: 260,
-              ),
-            ),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                const _GlassHeader(),
 
-            ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 40),
-                    const _GlassHeader(),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                    children: [
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedDashboardSquare01,
+                        title: t(_lang, "nav.dashboard"),
+                        subtitle: t(_lang, "nav.highlights"),
+                        onTap: onDashboardTap,
+                        showTrailing: false,
+                      ),
+                      const SizedBox(height: 12),
 
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                      _GlassSection(
+                        title: t(_lang, "nav.my_events"),
+                        icon: HugeIcons.strokeRoundedCalendar01,
                         children: [
-                          _GlassNavTile(
-                            icon: HugeIcons.strokeRoundedDashboardSquare01,
-                            title: t(_lang, "nav.dashboard"),
-                            subtitle: t(_lang, "nav.highlights"),
-                            onTap: onDashboardTap,
-                            showTrailing: false,
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          _GlassSection(
+                          _GlassSubTile(
                             title: t(_lang, "nav.my_events"),
                             icon: HugeIcons.strokeRoundedCalendar01,
-                            children: [
-                              _GlassSubTile(
-                                title: t(_lang, "nav.my_events"),
-                                icon: HugeIcons.strokeRoundedCalendar01,
-                                onTap: onMyEventsTap,
-                              ),
-                              _GlassSubTile(
-                                title: t(_lang, "nav.my_event_submissions"),
-                                icon: HugeIcons.strokeRoundedTask01,
-                                onTap: onMyEventSubmissionsTap,
-                              ),
-                              _GlassSubTile(
-                                title: t(_lang, "nav.event_review"),
-                                icon: HugeIcons.strokeRoundedStar,
-                                onTap: onEventReviewTap,
-                              ),
-                              _GlassSubTile(
-                                title: t(_lang, "nav.event_tickets"),
-                                icon: HugeIcons.strokeRoundedTicket01,
-                                onTap: onEventTicketsTap,
-                              ),
-                            ],
+                            onTap: onMyEventsTap,
                           ),
-
-                          const SizedBox(height: 12),
-
-                          _GlassSection(
-                            title: t(_lang, "nav.my_listings"),
-                            icon: HugeIcons.strokeRoundedLocation01,
-                            children: [
-                              _GlassSubTile(
-                                title: t(_lang, "nav.my_listings"),
-                                icon: HugeIcons.strokeRoundedLocation01,
-                                onTap: onMyListingsTap,
-                              ),
-                              _GlassSubTile(
-                                title: t(_lang, "nav.my_listing_submissions"),
-                                icon: HugeIcons.strokeRoundedTask01,
-                                onTap: onMyListingSubmissionsTap,
-                              ),
-                              _GlassSubTile(
-                                title: t(_lang, "nav.listing_reviews"),
-                                icon: HugeIcons.strokeRoundedStar,
-                                onTap: onListingReviewsTap,
-                              ),
-                              _GlassSubTile(
-                                title: t(_lang, "nav.listing_booking"),
-                                icon: HugeIcons.strokeRoundedCalendarCheckIn01,
-                                onTap: onListingBookingTap,
-                              ),
-                            ],
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_event_submissions"),
+                            icon: HugeIcons.strokeRoundedTask01,
+                            onTap: onMyEventSubmissionsTap,
                           ),
-
-                          const SizedBox(height: 12),
-
-                          _GlassNavTile(
+                          _GlassSubTile(
+                            title: t(_lang, "nav.event_review"),
+                            icon: HugeIcons.strokeRoundedStar,
+                            onTap: onEventReviewTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.event_tickets"),
                             icon: HugeIcons.strokeRoundedTicket01,
-                            title: t(_lang, "nav.trip_reservations"),
-                            subtitle: t(_lang, "common.coming_soon"),
-                            onTap: onTripReservationsTap,
-                            showTrailing: false,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          _GlassNavTile(
-                            icon: HugeIcons.strokeRoundedUser,
-                            title: t(_lang, "nav.profile"),
-                            subtitle: t(_lang, "profile.user_profile"),
-                            onTap: () => _openProfile(context),
-                            showTrailing: false,
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          _GlassNavTile(
-                            icon: HugeIcons.strokeRoundedSettings02,
-                            title: t(_lang, "nav.settings"),
-                            subtitle: t(_lang, "nav.settings_sub"),
-                            onTap: onSettingsTap,
-                            showTrailing: false,
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          _GlassDangerTile(
-                            icon: HugeIcons.strokeRoundedLogout01,
-                            title: t(_lang, "nav.logout"),
-                            subtitle: t(_lang, "nav.logout_sub"),
-                            onTap: () => _logout(context),
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          Text(
-                            "INOTRA • v1.0",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: scheme.onSurface.withOpacity(0.55),
-                            ),
+                            onTap: onEventTicketsTap,
                           ),
                         ],
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 12),
+
+                      _GlassSection(
+                        title: t(_lang, "nav.my_listings"),
+                        icon: HugeIcons.strokeRoundedLocation01,
+                        children: [
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_listings"),
+                            icon: HugeIcons.strokeRoundedLocation01,
+                            onTap: onMyListingsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.my_listing_submissions"),
+                            icon: HugeIcons.strokeRoundedTask01,
+                            onTap: onMyListingSubmissionsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.listing_reviews"),
+                            icon: HugeIcons.strokeRoundedStar,
+                            onTap: onListingReviewsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.listing_booking"),
+                            icon: HugeIcons.strokeRoundedCalendarCheckIn01,
+                            onTap: onListingBookingTap,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedTicket01,
+                        title: t(_lang, "nav.trip_reservations"),
+                        subtitle: t(_lang, "common.coming_soon"),
+                        onTap: onTripReservationsTap,
+                        showTrailing: false,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedUser,
+                        title: t(_lang, "nav.profile"),
+                        subtitle: t(_lang, "profile.user_profile"),
+                        onTap: () => _openProfile(context),
+                        showTrailing: false,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      _GlassNavTile(
+                        icon: HugeIcons.strokeRoundedSettings02,
+                        title: t(_lang, "nav.settings"),
+                        subtitle: t(_lang, "nav.settings_sub"),
+                        onTap: onSettingsTap,
+                        showTrailing: false,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      _GlassDangerTile(
+                        icon: HugeIcons.strokeRoundedLogout01,
+                        title: t(_lang, "nav.logout"),
+                        subtitle: t(_lang, "nav.logout_sub"),
+                        onTap: () => _logout(context),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      Text(
+                        "INOTRA • v1.0",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface.withOpacity(0.55),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -282,66 +256,59 @@ class _GlassHeader extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-      child: Container(
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            // ✅ Logo from assets (unchanged)
-            Container(
-              height: 44,
-              width: 44,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: scheme.surface.withOpacity(isDark ? 0.16 : 0.10),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withOpacity(isDark ? 0.10 : 0.20),
+      child: Row(
+        children: [
+          Container(
+            height: 44,
+            width: 44,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: scheme.surface.withOpacity(isDark ? 0.16 : 0.10),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(isDark ? 0.10 : 0.20),
+              ),
+            ),
+            child: Image.asset(
+              "assets/branding/logo_color.png",
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "INOTRA",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.6,
+                    color: scheme.onSurface.withOpacity(0.96),
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-              child: Image.asset(
-                "assets/branding/logo_color.png",
-                fit: BoxFit.contain,
-              ),
-            ),
-
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "INOTRA",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                      color: scheme.onSurface.withOpacity(0.96),
-                      fontSize: 14,
-                    ),
+                const SizedBox(height: 3),
+                Text(
+                  "Premium navigation",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                    color: scheme.onSurface.withOpacity(0.78),
+                    height: 1.1,
                   ),
-                  const SizedBox(height: 3),
-                  // ✅ subtitle now more readable in both themes
-                  Text(
-                    "Premium navigation",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                      color: scheme.onSurface.withOpacity(0.78),
-                      height: 1.1,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
 /// ----------------------------
-/// TOP LEVEL TILE (no dropdown)
+/// TOP LEVEL TILE
 /// ----------------------------
 class _GlassNavTile extends StatelessWidget {
   final dynamic icon;
@@ -621,9 +588,7 @@ class _GlassSectionState extends State<_GlassSection>
                     : const BoxConstraints(maxHeight: 0),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-                  child: Column(
-                    children: widget.children,
-                  ),
+                  child: Column(children: widget.children),
                 ),
               ),
             ),
@@ -635,7 +600,7 @@ class _GlassSectionState extends State<_GlassSection>
 }
 
 /// ----------------------------
-/// SUB TILE (inside section)
+/// SUB TILE
 /// ----------------------------
 class _GlassSubTile extends StatelessWidget {
   final String title;
@@ -690,12 +655,9 @@ class _GlassSubTile extends StatelessWidget {
 }
 
 /// ----------------------------
-/// REUSABLE GLASS CARD
+/// GLASS CARD
 /// ----------------------------
-/// ✅ made more premium but kept the same structure
-/// - removed hard borders
-/// - removed heavy shadows
-/// - kept clean glass surface with subtle highlight
+/// ✅ Removed: shadows + gradients (per your request)
 class _GlassCard extends StatelessWidget {
   final Widget child;
   final double radius;
@@ -720,18 +682,13 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
-
-            // ✅ glass surface (no border, no shadow, no gradient)
             color: scheme.surface.withOpacity(isDark ? 0.34 : 0.60),
 
-            // ✅ subtle top highlight line (premium detail, not a "border")
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.white.withOpacity(isDark ? 0.06 : 0.10),
-                Colors.white.withOpacity(0.0),
-              ],
+            // ✅ no gradient
+            // ✅ no shadow
+            // keep a very subtle glass edge
+            border: Border.all(
+              color: Colors.white.withOpacity(isDark ? 0.08 : 0.18),
             ),
           ),
           child: child,
@@ -744,6 +701,9 @@ class _GlassCard extends StatelessWidget {
 /// ----------------------------
 /// ICON PILL
 /// ----------------------------
+/// ✅ Theme-based icon styling:
+/// - Dark mode: white icon + visible border
+/// - Light mode: primary icon + softer border
 class _IconPill extends StatelessWidget {
   final dynamic icon;
 
@@ -753,45 +713,29 @@ class _IconPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final iconColor = isDark ? Colors.white : AppColors.primary;
+    final bg = isDark
+        ? Colors.white.withOpacity(0.10)
+        : AppColors.primary.withOpacity(0.10);
+    final border = isDark
+        ? Colors.white.withOpacity(0.22)
+        : AppColors.primary.withOpacity(0.22);
+
     return Container(
       height: 40,
       width: 40,
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(isDark ? 0.22 : 0.12),
+        color: bg,
         borderRadius: BorderRadius.circular(14),
-
-        // ✅ softer line (looks premium in both themes)
-        border: Border.all(color: Colors.white.withOpacity(isDark ? 0.08 : 0.16)),
+        border: Border.all(color: border),
       ),
       child: Center(
         child: HugeIcon(
           icon: icon,
           size: 20,
           strokeWidth: 2.0,
-          color: AppColors.primary,
+          color: iconColor,
         ),
-      ),
-    );
-  }
-}
-
-/// ----------------------------
-/// GLOW BLOB
-/// ----------------------------
-class _GlowBlob extends StatelessWidget {
-  final Color color;
-  final double size;
-
-  const _GlowBlob({required this.color, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
       ),
     );
   }
