@@ -6,6 +6,7 @@ class HighlightCard extends StatelessWidget {
   final String? imageUrl;
   final String title;
   final String? meta;
+  final String? entityName;
   final bool liked;
   final int likes;
   final int comments;
@@ -21,6 +22,7 @@ class HighlightCard extends StatelessWidget {
     required this.imageUrl,
     required this.title,
     this.meta,
+    this.entityName,
     required this.liked,
     required this.likes,
     required this.comments,
@@ -124,6 +126,7 @@ class HighlightCard extends StatelessWidget {
             child: _BottomInfo(
               title: title,
               meta: meta,
+              entityName: entityName,
               expanded: expandedCaption,
               onTap: onCaptionTap,
             ),
@@ -137,12 +140,14 @@ class HighlightCard extends StatelessWidget {
 class _BottomInfo extends StatelessWidget {
   final String title;
   final String? meta;
+  final String? entityName;
   final bool expanded;
   final VoidCallback onTap;
 
   const _BottomInfo({
     required this.title,
     required this.meta,
+    required this.entityName,
     required this.expanded,
     required this.onTap,
   });
@@ -178,6 +183,45 @@ class _BottomInfo extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (entityName != null && entityName!.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.white.withOpacity(0.18),
+                          child: Text(
+                            _initials(entityName!),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            entityName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 10,
+                                  offset: Offset(0, 3),
+                                  color: Colors.black87,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   GestureDetector(
                     onTap: onTap,
                     child: Text(
@@ -227,6 +271,15 @@ class _BottomInfo extends StatelessWidget {
       ),
     );
   }
+}
+
+String _initials(String name) {
+  final parts = name.trim().split(RegExp(r"\s+")).where((p) => p.isNotEmpty).toList();
+  if (parts.isEmpty) return "";
+  if (parts.length == 1) return parts.first.characters.take(2).toString().toUpperCase();
+  final first = parts.first.characters.first;
+  final second = parts[1].characters.first;
+  return "$first$second".toUpperCase();
 }
 
 class _ActionButton extends StatelessWidget {
