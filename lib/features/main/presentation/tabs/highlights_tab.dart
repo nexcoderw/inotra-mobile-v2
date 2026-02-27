@@ -25,11 +25,19 @@ class _HighlightsTabState extends State<HighlightsTab> {
   bool _loading = true;
   String? _error;
   final Map<String, List<HighlightComment>> _commentsCache = {};
+  final Set<String> _expandedCaptions = {};
+  final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -215,40 +223,60 @@ class _HighlightsTabState extends State<HighlightsTab> {
       );
     }
 
-    return PageView.builder(
-      scrollDirection: Axis.vertical,
-      itemCount: _items.length,
-      itemBuilder: (context, index) {
-        final item = _items[index];
-        return Stack(
-          children: [
-            HighlightCard(
-              imageUrl: item.coverUrl,
-              title: item.caption ?? t(lang, "highlights.title"),
-              meta: "${item.likes} likes • ${item.comments} comments • ${item.shares} shares",
-              liked: item.liked,
-              likes: item.likes,
-              comments: item.comments,
-              shares: item.shares,
-              onLike: () => _toggleLike(index),
-              onComment: () => _openCommentSheet(index),
-              onShare: () => _share(index),
-            ),
-            Positioned(
-              top: 40,
-              left: 16,
-              child: Text(
-                t(lang, "highlights.title"),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+    return NotificationListener<ScrollNotification>(
+      onNotification: (n) {
+        if (n.metrics.pixels <= 0 && n is OverscrollNotification && !_loading) {
+          _load();
+        }
+        return false;
+      },
+      child: PageView.builder(
+        scrollDirection: Axis.vertical,
+        controller: _pageController,
+        physics: const BouncingScrollPhysics(),
+        itemCount: _items.length,
+        itemBuilder: (context, index) {
+          final item = _items[index];
+          return Stack(
+            children: [
+              HighlightCard(
+                imageUrl: item.coverUrl,
+                title: item.caption ?? t(lang, "highlights.title"),
+                meta: _placeOrEvent(item),
+                liked: item.liked,
+                likes: item.likes,
+                comments: item.comments,
+                shares: item.shares,
+                expandedCaption: _expandedCaptions.contains(item.id),
+                onCaptionTap: () {
+                  setState(() {
+                    if (_expandedCaptions.contains(item.id)) {
+                      _expandedCaptions.remove(item.id);
+                    } else {
+                      _expandedCaptions.add(item.id);
+                    }
+                  });
+                },
+                onLike: () => _toggleLike(index),
+                onComment: () => _openCommentSheet(index),
+                onShare: () => _share(index),
+              ),
+              Positioned(
+                top: 40,
+                left: 16,
+                child: Text(
+                  t(lang, "highlights.title"),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }
