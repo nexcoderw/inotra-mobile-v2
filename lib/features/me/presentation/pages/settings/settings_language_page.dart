@@ -250,7 +250,7 @@ class _LanguageTileState extends State<_LanguageTile> {
         _ => widget.code,
       };
 
-  String get _flagAsset => "icons/language/${widget.code}.png";
+  String get _flagAsset => "assets/icons/language/${widget.code}.png";
 
   String get _subtitle => switch (widget.code) {
         "en" => "Default experience",
