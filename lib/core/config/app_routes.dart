@@ -22,11 +22,14 @@ final class AppRoutes {
   static const listingDetails = "/listing-details";
   static const eventDetails = "/event-details";
   static const aiChatConversations = "/ai-chat-conversations";
+
+  static const dashboard = "/dashboard";
   static const profile = "/profile";
   static const profileAccount = "/profile/account";
   static const profilePassword = "/profile/password";
   static const profileDanger = "/profile/danger";
   static const notifications = "/notifications";
+
   static const settings = "/settings";
   static const settingsTheme = "/settings/theme";
   static const settingsLanguage = "/settings/language";
