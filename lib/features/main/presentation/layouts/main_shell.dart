@@ -157,10 +157,11 @@ class _MainShellState extends State<MainShell> {
         onEventTicketsTap: () => Navigator.pushNamed(context, AppRoutes.eventTickets),
 
         // LISTINGS dropdown
-        onMyListingsTap: () => _comingSoon(t(_lang, "nav.my_listings")),
-        onMyListingSubmissionsTap: () => _comingSoon(t(_lang, "nav.my_listing_submissions")),
-        onListingReviewsTap: () => _comingSoon(t(_lang, "nav.listing_reviews")),
-        onListingBookingTap: () => _comingSoon(t(_lang, "nav.listing_booking")),
+        onMyListingsTap: () => Navigator.pushNamed(context, AppRoutes.myListings),
+        onMyListingSubmissionsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.myListingSubmissions),
+        onListingReviewsTap: () => Navigator.pushNamed(context, AppRoutes.listingReviews),
+        onListingBookingTap: () => Navigator.pushNamed(context, AppRoutes.listingBooking),
 
         onTripReservationsTap: () => _comingSoon(t(_lang, "nav.trip_reservations")),
 
