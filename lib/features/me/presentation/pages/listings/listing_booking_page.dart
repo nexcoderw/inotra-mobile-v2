@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 import "package:inotra/i18n/lang.dart";
 import "package:inotra/i18n/translations.dart";
-import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
+import "package:inotra/features/me/presentation/layouts/me_shell.dart";
 
 class ListingBookingPage extends StatelessWidget {
   const ListingBookingPage({super.key});
@@ -11,7 +11,7 @@ class ListingBookingPage extends StatelessWidget {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
 
-    return MainScaffold(
+    return MeShell(
       title: t(lang, "nav.listing_booking"),
       child: Center(
         child: Column(
