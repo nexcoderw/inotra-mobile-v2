@@ -17,12 +17,13 @@ import "../../features/main/presentation/pages/trip_package_details_page.dart";
 import "../../features/main/presentation/pages/listing_details_page.dart";
 import "../../features/main/presentation/pages/event_details_page.dart";
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
-import "../../features/main/presentation/pages/profile_page.dart";
+import "../../features/me/presentation/pages/dashboard_page.dart";
+import "../../features/me/presentation/pages/profile_page.dart";
 import "../../features/main/presentation/pages/profile/profile_account_details_page.dart";
 import "../../features/main/presentation/pages/profile/profile_change_password_page.dart";
 import "../../features/main/presentation/pages/profile/profile_danger_zone_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
-import "../../features/main/presentation/pages/settings/settings_page.dart";
+import "../../features/me/presentation/pages/settings/settings_page.dart";
 import "../../features/main/presentation/pages/settings/settings_theme_page.dart";
 import "../../features/main/presentation/pages/settings/settings_language_page.dart";
 import "../guards/auth_guard.dart";
@@ -108,6 +109,13 @@ final class AppRouter {
       return AuthGuard.protect(
         featureLabel: "AI Chat",
         builder: (_) => const AiChatConversationsPage(),
+      );
+
+    case AppRoutes.dashboard:
+      return AuthGuard.protect(
+        featureLabel: "Dashboard",
+        description: "Sign in to view your dashboard and quick stats.",
+        builder: (_) => const DashboardPage(),
       );
 
     case AppRoutes.profile:
