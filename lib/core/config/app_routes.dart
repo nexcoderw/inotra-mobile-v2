@@ -28,6 +28,10 @@ final class AppRoutes {
   static const myEventSubmissions = "/events/my/submissions";
   static const eventReview = "/events/review";
   static const eventTickets = "/events/tickets";
+  static const myListings = "/listings/my";
+  static const myListingSubmissions = "/listings/my/submissions";
+  static const listingReviews = "/listings/reviews";
+  static const listingBooking = "/listings/booking";
   static const profile = "/profile";
   static const profileAccount = "/profile/account";
   static const profilePassword = "/profile/password";
