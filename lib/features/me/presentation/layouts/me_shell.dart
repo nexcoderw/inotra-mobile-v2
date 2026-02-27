@@ -13,15 +13,13 @@ import "../../../main/presentation/widgets/inotra_sidebar_drawer.dart";
 class MeShell extends StatefulWidget {
   final String title;
   final Widget child;
-  final int? currentIndex;
-  final ValueChanged<int>? onTabChange;
+  final int currentIndex;
 
   const MeShell({
     super.key,
     required this.title,
     required this.child,
-    this.currentIndex,
-    this.onTabChange,
+    this.currentIndex = 0,
   });
 
   @override
@@ -46,6 +44,18 @@ class _MeShellState extends State<MeShell> {
 
   void _goToNotifications() => _goTo(AppRoutes.notifications);
   void _goToProfile() => _goTo(AppRoutes.profile);
+
+  void _onTabChange(int next) {
+    if (next == widget.currentIndex) return;
+    final route = switch (next) {
+      0 => AppRoutes.home,
+      1 => AppRoutes.listings,
+      2 => AppRoutes.aiChat,
+      3 => AppRoutes.events,
+      _ => AppRoutes.highlights,
+    };
+    _goTo(route);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +87,10 @@ class _MeShellState extends State<MeShell> {
         onLogoutTap: null,
       ),
       body: widget.child,
-      bottomNavigationBar: (widget.currentIndex != null && widget.onTabChange != null)
-          ? InotraBottomNav(
-              currentIndex: widget.currentIndex!,
-              onChanged: widget.onTabChange!,
-            )
-          : null,
+      bottomNavigationBar: InotraBottomNav(
+        currentIndex: widget.currentIndex,
+        onChanged: _onTabChange,
+      ),
     );
   }
 }
