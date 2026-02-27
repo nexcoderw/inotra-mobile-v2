@@ -581,7 +581,7 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
                       key: const ValueKey("label"),
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.white,
                       ),
                     ),

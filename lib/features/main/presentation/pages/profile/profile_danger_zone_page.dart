@@ -448,7 +448,7 @@ class _DangerButtonState extends State<_DangerButton> {
                       key: const ValueKey("label"),
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                        fontSize: 12,
                         color: Colors.white,
                       ),
                     ),
