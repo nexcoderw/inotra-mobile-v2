@@ -2,12 +2,15 @@ import "dart:convert";
 
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
+import "package:share_plus/share_plus.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/highlight_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../widgets/highlights/highlight_card.dart";
+import "../widgets/highlights/highlight_comments_sheet.dart";
 
 class HighlightsTab extends StatefulWidget {
   const HighlightsTab({super.key});
@@ -98,6 +101,9 @@ class _HighlightsTabState extends State<HighlightsTab> {
         setState(() {
           _items[index] = item.copyWith(shares: item.shares + 1);
         });
+        final shareText =
+            item.caption?.isNotEmpty == true ? item.caption! : "Check this highlight on Inotra";
+        await Share.share(shareText);
       }
     } catch (_) {}
   }
@@ -154,7 +160,6 @@ class _HighlightsTabState extends State<HighlightsTab> {
   }
 
   void _openCommentSheet(int index) {
-    final controller = TextEditingController();
     final item = _items[index];
     showModalBottomSheet(
       context: context,
@@ -163,113 +168,15 @@ class _HighlightsTabState extends State<HighlightsTab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        final bottom = MediaQuery.of(ctx).viewInsets.bottom;
-        final lang = currentLangSync();
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            bool loading = false;
-            List<_Comment> comments = _commentsCache[item.id] ?? [];
-
-            Future<void> loadComments() async {
-              setSheetState(() => loading = true);
-              final fetched = await _fetchComments(item.id);
-              _commentsCache[item.id] = fetched;
-              if (ctx.mounted) {
-                setSheetState(() {
-                  comments = fetched;
-                  loading = false;
-                });
-              }
-            }
-
-            if (comments.isEmpty && !loading) {
-              loadComments();
-            }
-
-            return Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        t(lang, "highlights.title"),
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                      ),
-                      IconButton(
-                        onPressed: () => loadComments(),
-                        icon: loading
-                            ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.refresh, size: 18),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  if (loading && comments.isEmpty) const LinearProgressIndicator(),
-                  if (comments.isNotEmpty) ...[
-                    SizedBox(
-                      height: 220,
-                      child: ListView.separated(
-                        itemCount: comments.length,
-                        separatorBuilder: (_, __) => const Divider(height: 12),
-                        itemBuilder: (_, i) => ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            comments[i].author ?? t(lang, "auth.anonymous"),
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                          subtitle: Text(comments[i].text ?? ""),
-                        ),
-                      ),
-                    ),
-                  ] else if (!loading)
-                    Text(
-                      t(lang, "common.empty"),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: controller,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: t(lang, "highlights.static"),
-                      filled: true,
-                      fillColor: Theme.of(ctx).colorScheme.surfaceVariant.withOpacity(0.5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final text = controller.text;
-                        controller.clear();
-                        await _addComment(index, text);
-                        loadComments();
-                      },
-                      child: const Text(
-                        "Send",
-                        style: TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
+        return HighlightCommentsSheet(
+          loadComments: () async {
+            final cached = _commentsCache[item.id];
+            if (cached != null) return cached;
+            final fetched = await _fetchComments(item.id);
+            _commentsCache[item.id] = fetched;
+            return fetched;
           },
+          onSend: (text) async => _addComment(index, text),
         );
       },
     );
@@ -314,105 +221,17 @@ class _HighlightsTabState extends State<HighlightsTab> {
         final item = _items[index];
         return Stack(
           children: [
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0),
-                ),
-                child: Image.network(
-                  item.coverUrl ?? "",
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    color: scheme.surfaceVariant,
-                    child: Center(
-                      child: Icon(Icons.image_not_supported,
-                          color: scheme.onSurface.withOpacity(0.6)),
-                    ),
-                  ),
-                  loadingBuilder: (c, child, progress) {
-                    if (progress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: progress.expectedTotalBytes == null
-                            ? null
-                            : progress.cumulativeBytesLoaded /
-                                (progress.expectedTotalBytes ?? 1),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black54,
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              bottom: 28,
-              right: 90,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.caption ?? t(lang, "highlights.title"),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "${item.likes} likes • ${item.comments} comments • ${item.shares} shares",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.84),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              right: 16,
-              bottom: 40,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ActionButton(
-                    icon: item.liked ? Icons.favorite : Icons.favorite_border,
-                    color: item.liked ? Colors.redAccent : Colors.white,
-                    label: "${item.likes}",
-                    onTap: () => _toggleLike(index),
-                  ),
-                  const SizedBox(height: 12),
-                  _ActionButton(
-                    icon: Icons.chat_bubble_outline,
-                    label: "${item.comments}",
-                    onTap: () => _openCommentSheet(index),
-                  ),
-                  const SizedBox(height: 12),
-                  _ActionButton(
-                    icon: Icons.send_rounded,
-                    label: "${item.shares}",
-                    onTap: () => _share(index),
-                  ),
-                ],
-              ),
+            HighlightCard(
+              imageUrl: item.coverUrl,
+              title: item.caption ?? t(lang, "highlights.title"),
+              meta: "${item.likes} likes • ${item.comments} comments • ${item.shares} shares",
+              liked: item.liked,
+              likes: item.likes,
+              comments: item.comments,
+              shares: item.shares,
+              onLike: () => _toggleLike(index),
+              onComment: () => _openCommentSheet(index),
+              onShare: () => _share(index),
             ),
             Positioned(
               top: 40,
