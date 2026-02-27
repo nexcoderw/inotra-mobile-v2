@@ -98,12 +98,9 @@ class InotraSidebarDrawer extends StatelessWidget {
       backgroundColor: Colors.transparent,
       child: Container(
         height: MediaQuery.of(context).size.height,
-
-        // main drawer surface (no border/gradient/shadow)
         decoration: BoxDecoration(
           color: scheme.surface.withOpacity(isDark ? 0.50 : 0.78),
         ),
-
         child: ClipRRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
@@ -111,7 +108,6 @@ class InotraSidebarDrawer extends StatelessWidget {
               children: [
                 const SizedBox(height: 40),
                 const _GlassHeader(),
-
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
@@ -123,7 +119,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                         onTap: onDashboardTap,
                         showTrailing: false,
                       ),
-                      const SizedBox(height: 12),
 
                       _GlassSection(
                         title: t(_lang, "nav.my_events"),
@@ -152,8 +147,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                         ],
                       ),
 
-                      const SizedBox(height: 12),
-
                       _GlassSection(
                         title: t(_lang, "nav.my_listings"),
                         icon: HugeIcons.strokeRoundedLocation01,
@@ -181,8 +174,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                         ],
                       ),
 
-                      const SizedBox(height: 12),
-
                       _GlassNavTile(
                         icon: HugeIcons.strokeRoundedTicket01,
                         title: t(_lang, "nav.trip_reservations"),
@@ -190,8 +181,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                         onTap: onTripReservationsTap,
                         showTrailing: false,
                       ),
-
-                      const SizedBox(height: 16),
 
                       _GlassNavTile(
                         icon: HugeIcons.strokeRoundedUser,
@@ -201,8 +190,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                         showTrailing: false,
                       ),
 
-                      const SizedBox(height: 12),
-
                       _GlassNavTile(
                         icon: HugeIcons.strokeRoundedSettings02,
                         title: t(_lang, "nav.settings"),
@@ -210,8 +197,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                         onTap: onSettingsTap,
                         showTrailing: false,
                       ),
-
-                      const SizedBox(height: 12),
 
                       _GlassDangerTile(
                         icon: HugeIcons.strokeRoundedLogout01,
@@ -308,7 +293,7 @@ class _GlassHeader extends StatelessWidget {
 }
 
 /// ----------------------------
-/// TOP LEVEL TILE
+/// LINK TILE (transparent bg + separator line)
 /// ----------------------------
 class _GlassNavTile extends StatelessWidget {
   final dynamic icon;
@@ -328,19 +313,18 @@ class _GlassNavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final divider = scheme.onSurface.withOpacity(0.10);
 
-    return _GlassCard(
-      radius: 18,
-      padding: EdgeInsets.zero,
+    return _SeparatedTile(
+      dividerColor: divider,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: SizedBox(
           height: _kDrawerTopTileHeight,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            padding: const EdgeInsets.fromLTRB(6, 12, 6, 12),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _IconPill(icon: icon),
                 const SizedBox(width: 12),
@@ -406,35 +390,33 @@ class _GlassDangerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final divider = scheme.onSurface.withOpacity(0.10);
 
-    return _GlassCard(
-      radius: 18,
-      padding: EdgeInsets.zero,
+    return _SeparatedTile(
+      dividerColor: divider,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: SizedBox(
           height: _kDrawerTopTileHeight,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            padding: const EdgeInsets.fromLTRB(6, 12, 6, 12),
             child: Row(
               children: [
                 Container(
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
+                    // ✅ no border, transparent-ish bg
                     color: Colors.red.withOpacity(isDark ? 0.16 : 0.10),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(isDark ? 0.08 : 0.16),
-                    ),
                   ),
                   child: Center(
                     child: HugeIcon(
                       icon: icon,
                       size: 20,
                       strokeWidth: 2.0,
-                      color: Colors.red.shade700,
+                      color: isDark ? Colors.white : Colors.red.shade700,
                     ),
                   ),
                 ),
@@ -472,7 +454,7 @@ class _GlassDangerTile extends StatelessWidget {
                   icon: HugeIcons.strokeRoundedArrowRight01,
                   size: 18,
                   strokeWidth: 2.0,
-                  color: scheme.onSurface.withOpacity(0.45),
+                  color: scheme.onSurface.withOpacity(0.50),
                 ),
               ],
             ),
@@ -484,7 +466,7 @@ class _GlassDangerTile extends StatelessWidget {
 }
 
 /// ----------------------------
-/// SECTION (dropdown)
+/// SECTION (header = transparent + separator; body unchanged)
 /// ----------------------------
 class _GlassSection extends StatefulWidget {
   final String title;
@@ -510,20 +492,20 @@ class _GlassSectionState extends State<_GlassSection>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final divider = scheme.onSurface.withOpacity(0.10);
 
-    return _GlassCard(
-      radius: 18,
-      padding: EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(18),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _SeparatedTile(
+          dividerColor: divider,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
             onTap: _toggle,
             child: SizedBox(
               height: _kDrawerTopTileHeight,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                padding: const EdgeInsets.fromLTRB(6, 12, 6, 12),
                 child: Row(
                   children: [
                     _IconPill(icon: widget.icon),
@@ -573,34 +555,32 @@ class _GlassSectionState extends State<_GlassSection>
               ),
             ),
           ),
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(18),
-              bottomRight: Radius.circular(18),
-            ),
-            child: AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: _expanded
-                    ? const BoxConstraints()
-                    : const BoxConstraints(maxHeight: 0),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
-                  child: Column(children: widget.children),
-                ),
+        ),
+
+        // expand area
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints:
+                  _expanded ? const BoxConstraints() : const BoxConstraints(maxHeight: 0),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(52, 6, 6, 10),
+                child: Column(children: widget.children),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 /// ----------------------------
-/// SUB TILE
+/// SUB TILE (inside section) + separator
 /// ----------------------------
 class _GlassSubTile extends StatelessWidget {
   final String title;
@@ -616,38 +596,43 @@ class _GlassSubTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final divider = scheme.onSurface.withOpacity(0.10);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-        child: Row(
-          children: [
-            HugeIcon(
-              icon: icon,
-              size: 18,
-              strokeWidth: 2.0,
-              color: scheme.onSurface.withOpacity(0.88),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  color: scheme.onSurface.withOpacity(0.92),
+    return _SeparatedTile(
+      dividerColor: divider,
+      inset: const EdgeInsets.only(left: 6, right: 0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+          child: Row(
+            children: [
+              HugeIcon(
+                icon: icon,
+                size: 18,
+                strokeWidth: 2.0,
+                color: scheme.onSurface.withOpacity(0.88),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    color: scheme.onSurface.withOpacity(0.92),
+                  ),
                 ),
               ),
-            ),
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedArrowRight01,
-              size: 18,
-              strokeWidth: 2.0,
-              color: scheme.onSurface.withOpacity(0.50),
-            ),
-          ],
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                size: 18,
+                strokeWidth: 2.0,
+                color: scheme.onSurface.withOpacity(0.50),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -655,55 +640,46 @@ class _GlassSubTile extends StatelessWidget {
 }
 
 /// ----------------------------
-/// GLASS CARD
+/// Separator wrapper (line below each link)
 /// ----------------------------
-/// ✅ Removed: shadows + gradients (per your request)
-class _GlassCard extends StatelessWidget {
+class _SeparatedTile extends StatelessWidget {
   final Widget child;
-  final double radius;
-  final EdgeInsets padding;
+  final Color dividerColor;
+  final EdgeInsets inset;
 
-  const _GlassCard({
+  const _SeparatedTile({
     required this.child,
-    this.radius = 16,
-    this.padding = const EdgeInsets.all(12),
+    required this.dividerColor,
+    this.inset = const EdgeInsets.only(left: 52, right: 6),
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            color: scheme.surface.withOpacity(isDark ? 0.34 : 0.60),
-
-            // ✅ no gradient
-            // ✅ no shadow
-            // keep a very subtle glass edge
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.08 : 0.18),
-            ),
-          ),
+    return Column(
+      children: [
+        // ✅ transparent background + no border
+        Material(
+          color: Colors.transparent,
           child: child,
         ),
-      ),
+
+        // ✅ separator line
+        Padding(
+          padding: inset,
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: dividerColor,
+          ),
+        ),
+      ],
     );
   }
 }
 
 /// ----------------------------
-/// ICON PILL
+/// ICON PILL (transparent bg + no border; theme-based icon color)
 /// ----------------------------
-/// ✅ Theme-based icon styling:
-/// - Dark mode: white icon + visible border
-/// - Light mode: primary icon + softer border
 class _IconPill extends StatelessWidget {
   final dynamic icon;
 
@@ -713,22 +689,14 @@ class _IconPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // ✅ Your rule:
+    // - dark: white icon with stroke
+    // - light: primary color icon
     final iconColor = isDark ? Colors.white : AppColors.primary;
-    final bg = isDark
-        ? Colors.white.withOpacity(0.10)
-        : AppColors.primary.withOpacity(0.10);
-    final border = isDark
-        ? Colors.white.withOpacity(0.22)
-        : AppColors.primary.withOpacity(0.22);
 
-    return Container(
+    return SizedBox(
       height: 40,
       width: 40,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-      ),
       child: Center(
         child: HugeIcon(
           icon: icon,
