@@ -125,8 +125,25 @@ class _HighlightsTabState extends State<HighlightsTab> {
     } catch (_) {}
   }
 
+  Future<List<_Comment>> _fetchComments(String highlightId) async {
+    final token = AuthSession.instance.value.accessToken;
+    final uri = Api.url(HighlightEndpoints.comments(highlightId));
+    final resp = await http.get(
+      uri,
+      headers: {
+        if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+        "Accept": "application/json",
+      },
+    );
+    if (resp.statusCode < 200 || resp.statusCode >= 300) return [];
+    final decoded = jsonDecode(resp.body);
+    final results = (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
+    return results.whereType<Map<String, dynamic>>().map(_Comment.fromJson).toList();
+  }
+
   void _openCommentSheet(int index) {
     final controller = TextEditingController();
+    final item = _items[index];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -136,47 +153,78 @@ class _HighlightsTabState extends State<HighlightsTab> {
       builder: (ctx) {
         final bottom = MediaQuery.of(ctx).viewInsets.bottom;
         final lang = currentLangSync();
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                t(lang, "highlights.title"),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: controller,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: t(lang, "highlights.static"),
-                  filled: true,
-                  fillColor: Theme.of(ctx).colorScheme.surfaceVariant.withOpacity(0.5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+        return FutureBuilder<List<_Comment>>(
+          future: _fetchComments(item.id),
+          builder: (context, snapshot) {
+            final comments = snapshot.data ?? [];
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t(lang, "highlights.title"),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _addComment(index, controller.text);
-                  },
-                  child: const Text(
-                    "Send",
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  const SizedBox(height: 8),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const LinearProgressIndicator(),
+                  if (comments.isNotEmpty) ...[
+                    SizedBox(
+                      height: 200,
+                      child: ListView.separated(
+                        itemCount: comments.length,
+                        separatorBuilder: (_, __) => const Divider(height: 12),
+                        itemBuilder: (_, i) => ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            comments[i].author ?? t(lang, "auth.anonymous"),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: Text(comments[i].text ?? ""),
+                        ),
+                      ),
+                    ),
+                  ] else if (snapshot.connectionState == ConnectionState.done)
+                    Text(
+                      t(lang, "common.empty"),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: controller,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: t(lang, "highlights.static"),
+                      filled: true,
+                      fillColor: Theme.of(ctx).colorScheme.surfaceVariant.withOpacity(0.5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _addComment(index, controller.text);
+                      },
+                      child: const Text(
+                        "Send",
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -394,6 +442,18 @@ class _Highlight {
       liked: json["liked"] == true,
     );
   }
+}
+
+class _Comment {
+  final String? author;
+  final String? text;
+
+  _Comment({this.author, this.text});
+
+  static _Comment fromJson(Map<String, dynamic> json) => _Comment(
+        author: json["user"] as String? ?? json["author"] as String?,
+        text: json["comment"] as String? ?? json["text"] as String?,
+      );
 }
 
 class _ActionButton extends StatelessWidget {
