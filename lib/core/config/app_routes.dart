@@ -32,6 +32,7 @@ final class AppRoutes {
   static const myListingSubmissions = "/listings/my/submissions";
   static const listingReviews = "/listings/reviews";
   static const listingBooking = "/listings/booking";
+  static const tripReservations = "/trips/reservations";
   static const profile = "/profile";
   static const profileAccount = "/profile/account";
   static const profilePassword = "/profile/password";
