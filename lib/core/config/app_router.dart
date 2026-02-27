@@ -1,26 +1,33 @@
 import "package:flutter/material.dart";
 
+// Auth
 import "../../features/auth/presentation/pages/confirm_password_reset_page.dart";
 import "../../features/auth/presentation/pages/forgot_password_page.dart";
 import "../../features/auth/presentation/pages/login_page.dart";
 import "../../features/auth/presentation/pages/register_page.dart";
 import "../../features/auth/presentation/pages/reset_password_page.dart";
 import "../../features/auth/presentation/pages/verify_registration_otp_page.dart";
+
+// Shell & tabs
 import "../../features/main/presentation/layouts/main_shell.dart";
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
+
+// Details / discover
 import "../../features/main/presentation/pages/event_details_page.dart";
 import "../../features/main/presentation/pages/listing_details_page.dart";
-import "../../features/main/presentation/pages/notifications_page.dart";
-import "../../features/main/presentation/pages/profile/profile_account_details_page.dart";
-import "../../features/main/presentation/pages/profile/profile_change_password_page.dart";
-import "../../features/main/presentation/pages/profile/profile_danger_zone_page.dart";
-import "../../features/main/presentation/pages/settings/settings_language_page.dart";
-import "../../features/main/presentation/pages/settings/settings_theme_page.dart";
 import "../../features/main/presentation/pages/trip_package_details_page.dart";
 import "../../features/main/presentation/pages/trip_packages_page.dart";
+
+// Me area (dashboard, profile, settings)
 import "../../features/me/presentation/pages/dashboard_page.dart";
+import "../../features/me/presentation/pages/profile/profile_account_details_page.dart";
+import "../../features/me/presentation/pages/profile/profile_change_password_page.dart";
+import "../../features/me/presentation/pages/profile/profile_danger_zone_page.dart";
 import "../../features/me/presentation/pages/profile_page.dart";
+import "../../features/me/presentation/pages/settings/settings_language_page.dart";
 import "../../features/me/presentation/pages/settings/settings_page.dart";
+import "../../features/me/presentation/pages/settings/settings_theme_page.dart";
+import "../../features/main/presentation/pages/notifications_page.dart";
 import "../../i18n/lang.dart";
 import "../../i18n/translations.dart";
 import "../guards/auth_guard.dart";
