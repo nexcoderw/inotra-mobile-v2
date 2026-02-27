@@ -20,6 +20,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
   List<_Highlight> _items = [];
   bool _loading = true;
   String? _error;
+  final Map<String, List<_Comment>> _commentsCache = {};
 
   @override
   void initState() {
@@ -101,25 +102,36 @@ class _HighlightsTabState extends State<HighlightsTab> {
     } catch (_) {}
   }
 
+  Future<bool> _postComment(String highlightId, String text) async {
+    if (text.trim().isEmpty) return false;
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) return false;
+    final uri = Api.url(HighlightEndpoints.addComment(highlightId));
+    final resp = await http.post(
+      uri,
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: jsonEncode({"comment": text.trim()}),
+    );
+    return resp.statusCode >= 200 && resp.statusCode < 300;
+  }
+
   Future<void> _addComment(int index, String text) async {
     if (text.trim().isEmpty) return;
     final item = _items[index];
-    final token = AuthSession.instance.value.accessToken;
-    if (token == null || token.isEmpty) return;
-    final uri = Api.url(HighlightEndpoints.addComment(item.id));
     try {
-      final resp = await http.post(
-        uri,
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: jsonEncode({"comment": text.trim()}),
-      );
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+      final ok = await _postComment(item.id, text);
+      if (ok) {
         setState(() {
           _items[index] = item.copyWith(comments: item.comments + 1);
+          final list = _commentsCache[item.id] ?? [];
+          _commentsCache[item.id] = [
+            _Comment(author: AuthSession.instance.value.displayName, text: text.trim()),
+            ...list,
+          ];
         });
       }
     } catch (_) {}
@@ -153,26 +165,57 @@ class _HighlightsTabState extends State<HighlightsTab> {
       builder: (ctx) {
         final bottom = MediaQuery.of(ctx).viewInsets.bottom;
         final lang = currentLangSync();
-        return FutureBuilder<List<_Comment>>(
-          future: _fetchComments(item.id),
-          builder: (context, snapshot) {
-            final comments = snapshot.data ?? [];
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            bool loading = false;
+            List<_Comment> comments = _commentsCache[item.id] ?? [];
+
+            Future<void> loadComments() async {
+              setSheetState(() => loading = true);
+              final fetched = await _fetchComments(item.id);
+              _commentsCache[item.id] = fetched;
+              if (ctx.mounted) {
+                setSheetState(() {
+                  comments = fetched;
+                  loading = false;
+                });
+              }
+            }
+
+            if (comments.isEmpty && !loading) {
+              loadComments();
+            }
+
             return Padding(
               padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottom),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    t(lang, "highlights.title"),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        t(lang, "highlights.title"),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                      IconButton(
+                        onPressed: () => loadComments(),
+                        icon: loading
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.refresh, size: 18),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  if (snapshot.connectionState == ConnectionState.waiting)
-                    const LinearProgressIndicator(),
+                  const SizedBox(height: 6),
+                  if (loading && comments.isEmpty) const LinearProgressIndicator(),
                   if (comments.isNotEmpty) ...[
                     SizedBox(
-                      height: 200,
+                      height: 220,
                       child: ListView.separated(
                         itemCount: comments.length,
                         separatorBuilder: (_, __) => const Divider(height: 12),
@@ -187,7 +230,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
                         ),
                       ),
                     ),
-                  ] else if (snapshot.connectionState == ConnectionState.done)
+                  ] else if (!loading)
                     Text(
                       t(lang, "common.empty"),
                       style: const TextStyle(fontWeight: FontWeight.w700),
@@ -211,9 +254,11 @@ class _HighlightsTabState extends State<HighlightsTab> {
                     width: double.infinity,
                     height: 44,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _addComment(index, controller.text);
+                      onPressed: () async {
+                        final text = controller.text;
+                        controller.clear();
+                        await _addComment(index, text);
+                        loadComments();
                       },
                       child: const Text(
                         "Send",
