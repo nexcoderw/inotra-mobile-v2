@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
@@ -402,75 +403,127 @@ class _DangerButton extends StatefulWidget {
 
 class _DangerButtonState extends State<_DangerButton> {
   bool _pressed = false;
-  bool _hovered = false;
 
   void _setPressed(bool v) => setState(() => _pressed = v);
-  void _setHovered(bool v) => setState(() => _hovered = v);
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => _setHovered(true),
-      onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
-        onTapCancel: () => _setPressed(false),
-        onTapUp: (_) => _setPressed(false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 140),
-          curve: Curves.easeOut,
-          scale: _pressed ? 0.99 : 1,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 160),
-            curve: Curves.easeOut,
-            height: 44,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  widget.tone,
-                  widget.tone.withOpacity(0.86),
-                ],
-              ),
-              boxShadow: [
-                if (_hovered || _pressed)
-                  BoxShadow(
-                    color: widget.tone.withOpacity(0.32),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
+    // keep using the provided "tone" but match the same style (pill, no shadows, same loader)
+    return GestureDetector(
+      onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        scale: _pressed ? 0.992 : 1,
+        child: Container(
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                widget.tone,
+                widget.tone.withOpacity(0.88),
               ],
             ),
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 160),
-                child: widget.busy
-                    ? const SizedBox(
-                        key: ValueKey("spinner"),
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        widget.label,
-                        key: const ValueKey("label"),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14, // ✅ title 14
-                          color: Colors.white,
-                        ),
-                      ),
+            boxShadow: const [], // ✅ no shadow (hover/click)
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: ScaleTransition(scale: anim, child: child),
               ),
+              child: widget.busy
+                  ? const _PremiumDotsLoader(key: ValueKey("dots"))
+                  : Text(
+                      widget.label,
+                      key: const ValueKey("label"),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+// ✅ Same premium dots loader (copy exactly)
+class _PremiumDotsLoader extends StatefulWidget {
+  const _PremiumDotsLoader({super.key});
+
+  @override
+  State<_PremiumDotsLoader> createState() => _PremiumDotsLoaderState();
+}
+
+class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value; // 0..1
+
+        double bump(double phase) {
+          final x = (t - phase) * 2 * math.pi;
+          return (0.5 + 0.5 * (-math.cos(x))).clamp(0.0, 1.0);
+        }
+
+        final b1 = bump(0.0);
+        final b2 = bump(0.18);
+        final b3 = bump(0.36);
+
+        Widget dot(double b) => AnimatedContainer(
+              duration: const Duration(milliseconds: 90),
+              height: 6 + (b * 4),
+              width: 6 + (b * 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.75 + b * 0.25),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            dot(b1),
+            const SizedBox(width: 7),
+            dot(b2),
+            const SizedBox(width: 7),
+            dot(b3),
+          ],
+        );
+      },
     );
   }
 }
