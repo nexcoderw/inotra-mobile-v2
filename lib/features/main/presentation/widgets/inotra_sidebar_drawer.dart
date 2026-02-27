@@ -116,7 +116,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                         icon: HugeIcons.strokeRoundedDashboardSquare01,
                         title: t(_lang, "nav.dashboard"),
                         subtitle: t(_lang, "nav.highlights"),
-                        onTap: onDashboardTap,
+                        onTap: () => _open(context, const DashboardPage()),
                         showTrailing: false,
                       ),
 
