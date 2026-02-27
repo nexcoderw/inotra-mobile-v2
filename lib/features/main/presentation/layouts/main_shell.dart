@@ -163,7 +163,8 @@ class _MainShellState extends State<MainShell> {
         onListingReviewsTap: () => Navigator.pushNamed(context, AppRoutes.listingReviews),
         onListingBookingTap: () => Navigator.pushNamed(context, AppRoutes.listingBooking),
 
-        onTripReservationsTap: () => _comingSoon(t(_lang, "nav.trip_reservations")),
+        onTripReservationsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.tripReservations),
 
         onSettingsTap: () => Navigator.pushNamed(context, AppRoutes.settings),
       ),
