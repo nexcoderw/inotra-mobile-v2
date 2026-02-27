@@ -240,6 +240,8 @@ class _GlassHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final logoAsset =
+        isDark ? "assets/branding/logo_color.png" : "assets/branding/logo_black.png";
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
