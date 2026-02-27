@@ -11,6 +11,7 @@ import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/highlights/highlight_card.dart";
 import "../widgets/highlights/highlight_comments_sheet.dart";
+import "../widgets/highlights/highlight_comment.dart";
 
 class HighlightsTab extends StatefulWidget {
   const HighlightsTab({super.key});
@@ -23,7 +24,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
   List<_Highlight> _items = [];
   bool _loading = true;
   String? _error;
-  final Map<String, List<_Comment>> _commentsCache = {};
+  final Map<String, List<HighlightComment>> _commentsCache = {};
 
   @override
   void initState() {
@@ -135,7 +136,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
           _items[index] = item.copyWith(comments: item.comments + 1);
           final list = _commentsCache[item.id] ?? [];
           _commentsCache[item.id] = [
-            _Comment(author: AuthSession.instance.value.displayName, text: text.trim()),
+            HighlightComment(author: AuthSession.instance.value.displayName, text: text.trim()),
             ...list,
           ];
         });
@@ -143,7 +144,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
     } catch (_) {}
   }
 
-  Future<List<_Comment>> _fetchComments(String highlightId) async {
+  Future<List<HighlightComment>> _fetchComments(String highlightId) async {
     final token = AuthSession.instance.value.accessToken;
     final uri = Api.url(HighlightEndpoints.comments(highlightId));
     final resp = await http.get(
@@ -156,7 +157,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
     if (resp.statusCode < 200 || resp.statusCode >= 300) return [];
     final decoded = jsonDecode(resp.body);
     final results = (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
-    return results.whereType<Map<String, dynamic>>().map(_Comment.fromJson).toList();
+    return results.whereType<Map<String, dynamic>>().map(_commentFromJson).toList();
   }
 
   void _openCommentSheet(int index) {
@@ -308,16 +309,11 @@ class _Highlight {
   }
 }
 
-class _Comment {
-  final String? author;
-  final String? text;
-
-  _Comment({this.author, this.text});
-
-  static _Comment fromJson(Map<String, dynamic> json) => _Comment(
-        author: json["user"] as String? ?? json["author"] as String?,
-        text: json["comment"] as String? ?? json["text"] as String?,
-      );
+HighlightComment _commentFromJson(Map<String, dynamic> json) {
+  return HighlightComment(
+    author: json["user"] as String? ?? json["author"] as String?,
+    text: json["comment"] as String? ?? json["text"] as String?,
+  );
 }
 
 class _ActionButton extends StatelessWidget {
