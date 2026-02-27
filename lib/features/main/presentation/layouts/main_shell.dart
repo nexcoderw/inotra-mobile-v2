@@ -147,7 +147,7 @@ class _MainShellState extends State<MainShell> {
       ),
 
       drawer: InotraSidebarDrawer(
-        onDashboardTap: () => _comingSoon(t(_lang, "nav.dashboard")),
+        onDashboardTap: () => Navigator.pushNamed(context, AppRoutes.dashboard),
 
         // EVENTS dropdown
         onMyEventsTap: () => _comingSoon(t(_lang, "nav.my_events")),
