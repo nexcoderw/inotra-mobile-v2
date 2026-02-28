@@ -144,16 +144,26 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                   SliverToBoxAdapter(
                     child: const SizedBox(height: 8),
                   ),
+                  if (_loading && _packages.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                        child: Column(
+                          children: List.generate(
+                            3,
+                            (_) => const Padding(
+                              padding: EdgeInsets.only(bottom: 12),
+                              child: _PackageSkeleton(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         if (index >= _packages.length) {
-                          return _loading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(child: CircularProgressIndicator()),
-                                )
-                              : const SizedBox.shrink();
+                          return const SizedBox.shrink();
                         }
                         final p = _packages[index];
                         return Padding(
@@ -475,6 +485,94 @@ class _MiniCTA extends StatelessWidget {
         Icons.arrow_forward_rounded,
         size: 18,
         color: Colors.white.withOpacity(0.95),
+      ),
+    );
+  }
+}
+
+class _PackageSkeleton extends StatelessWidget {
+  const _PackageSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final w = MediaQuery.sizeOf(context).width;
+    final isTablet = w >= 700;
+    final radius = BorderRadius.circular(isTablet ? 26 : 22);
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: SizedBox(
+        height: isTablet ? 230 : 210,
+        child: Stack(
+          children: [
+            Container(
+              color: scheme.surfaceVariant.withOpacity(0.55),
+            ),
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 14,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    border: Border.all(color: Colors.white.withOpacity(0.14)),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 12,
+                              width: 140,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              height: 10,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.20),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.18),
+                          border: Border.all(color: Colors.white.withOpacity(0.18)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
