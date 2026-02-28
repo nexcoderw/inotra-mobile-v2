@@ -3,6 +3,7 @@ import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
