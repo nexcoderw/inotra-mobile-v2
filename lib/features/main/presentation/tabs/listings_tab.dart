@@ -396,6 +396,7 @@ class _ListingCardState extends State<_ListingCard> {
     final isDark = scheme.brightness == Brightness.dark;
 
     final cardW = widget.isTablet ? 260.0 : 200.0;
+    final cardH = widget.isTablet ? 230.0 : 210.0;
     final radius = BorderRadius.circular(widget.isTablet ? 26 : 22);
 
     final title = widget.listing.name.trim().isEmpty ? "Listing" : widget.listing.name.trim();
@@ -409,104 +410,107 @@ class _ListingCardState extends State<_ListingCard> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
         scale: _pressed ? 0.992 : 1.0,
-        child: ClipRRect(
-          borderRadius: radius,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: widget.listing.imageUrl != null
-                    ? Image.network(
-                        widget.listing.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: scheme.surfaceVariant.withOpacity(0.7),
+        child: SizedBox(
+          width: cardW,
+          height: cardH,
+          child: ClipRRect(
+            borderRadius: radius,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: widget.listing.imageUrl != null && widget.listing.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          widget.listing.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: scheme.surfaceVariant.withOpacity(0.7),
+                          ),
+                          loadingBuilder: (context, child, evt) {
+                            if (evt == null) return child;
+                            return Container(color: scheme.surfaceVariant.withOpacity(0.7));
+                          },
+                        )
+                      : Container(color: scheme.surfaceVariant.withOpacity(0.7)),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.10),
+                          Colors.black.withOpacity(0.52),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: radius,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(isDark ? 0.12 : 0.18),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.30 : 0.14),
+                          blurRadius: 26,
+                          offset: const Offset(0, 18),
                         ),
-                        loadingBuilder: (context, child, evt) {
-                          if (evt == null) return child;
-                          return Container(color: scheme.surfaceVariant.withOpacity(0.7));
-                        },
-                      )
-                    : Container(color: scheme.surfaceVariant.withOpacity(0.7)),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.10),
-                        Colors.black.withOpacity(0.52),
                       ],
                     ),
                   ),
                 ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(isDark ? 0.12 : 0.18),
-                      width: 1,
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: _GlassFooter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: widget.isTablet ? 14.5 : 13.5,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                            height: 1.05,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _RatingPill(
+                            rating: widget.listing.avgRating,
+                            reviews: widget.listing.reviewsCount,
+                          ),
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.30 : 0.14),
-                        blurRadius: 26,
-                        offset: const Offset(0, 18),
-                      ),
-                    ],
                   ),
                 ),
-              ),
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
-                child: _GlassFooter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: widget.isTablet ? 14.5 : 13.5,
-                          color: Colors.white,
-                          letterSpacing: -0.2,
-                          height: 1.05,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: _RatingPill(
-                          rating: widget.listing.avgRating,
-                          reviews: widget.listing.reviewsCount,
-                        ),
-                      ),
-                    ],
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: _FavoriteButton(
+                    active: widget.isFavorite,
+                    onTap: widget.onToggleFavorite,
                   ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: _FavoriteButton(
-                  active: widget.isFavorite,
-                  onTap: widget.onToggleFavorite,
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: _SpecularHighlight(radius: radius),
+                  ),
                 ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: _SpecularHighlight(radius: radius),
-                ),
-              ),
-              SizedBox(width: cardW),
-            ],
+              ],
+            ),
           ),
         ),
       ),
