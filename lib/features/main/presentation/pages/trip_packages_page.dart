@@ -152,12 +152,13 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                         onChanged: _onSearchChanged,
                         decoration: InputDecoration(
                           hintText: t(lang, "packages.search_hint"),
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.only(left: 10, right: 6),
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.only(left: 10, right: 6),
                             child: HugeIcon(
                               icon: HugeIcons.strokeRoundedSearch01,
                               size: 16,
                               strokeWidth: 2,
+                              color: scheme.onSurface.withOpacity(0.7),
                             ),
                           ),
                           suffixIcon: _searchCtrl.text.isNotEmpty
