@@ -94,15 +94,13 @@ class _TripPackagesPreviewState extends State<TripPackagesPreview>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _GlassPill(
-                child: Text(
-                  t(lang, "packages.title"),
-                  style: TextStyle(
-                    fontSize: isTablet ? 18 : 16,
-                    fontWeight: FontWeight.w900,
-                    color: scheme.onSurface,
-                    letterSpacing: -0.2,
-                  ),
+              Text(
+                t(lang, "packages.title"),
+                style: TextStyle(
+                  fontSize: isTablet ? 14 : 12,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.onSurface,
+                  letterSpacing: -0.2,
                 ),
               ),
               _GlassButton(
