@@ -6,6 +6,7 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
@@ -108,7 +109,13 @@ class _ListingsTabState extends State<ListingsTab> {
       final resp = await http.get(uri);
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body);
-        final results = (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
+        final resultsRaw = decoded is Map
+            ? (decoded["results"] ?? decoded["data"] ?? decoded.values.firstWhere(
+                  (v) => v is List,
+                  orElse: () => const [],
+                ))
+            : decoded;
+        final results = (resultsRaw as List?) ?? [];
         final incoming =
             results.whereType<Map>().map((e) => _Listing.fromJson(e)).toList();
         final existing = _items.map((e) => e.id).toSet();
@@ -163,15 +170,15 @@ class _ListingsTabState extends State<ListingsTab> {
     });
     await _saveFavorites();
     if (!mounted) return;
-    final msg = added
-        ? "Listing added to favorites"
-        : "Listing removed from favorites";
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
+    final msg =
+        added ? "Listing added to favorites" : "Listing removed from favorites";
+    toastification.show(
+      context: context,
+      type: added ? ToastificationType.success : ToastificationType.info,
+      style: ToastificationStyle.fillColored,
+      title: Text(msg),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 2),
     );
   }
 
