@@ -227,7 +227,7 @@ class _ListingsTabState extends State<ListingsTab> {
                           padding: EdgeInsets.only(left: 10, right: 6),
                           child: HugeIcon(
                             icon: HugeIcons.strokeRoundedSearch01,
-                            size: 16,
+                            size: 14,
                             strokeWidth: 2,
                           ),
                         ),
@@ -273,7 +273,15 @@ class _ListingsTabState extends State<ListingsTab> {
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      if (index >= _items.length) return const SizedBox.shrink();
+                      final showLoader = _loading && _items.isNotEmpty;
+                      if (index >= _items.length) {
+                        return showLoader
+                            ? const Padding(
+                                padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+                                child: _ListingSkeleton(),
+                              )
+                            : const SizedBox.shrink();
+                      }
                       final listing = _items[index];
                       return Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -290,7 +298,7 @@ class _ListingsTabState extends State<ListingsTab> {
                         ),
                       );
                     },
-                    childCount: _items.length,
+                    childCount: _items.length + ((_loading && _items.isNotEmpty) ? 1 : 0),
                   ),
                 ),
                 if (_error != null)

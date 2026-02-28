@@ -157,7 +157,7 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                             padding: const EdgeInsets.only(left: 10, right: 6),
                             child: HugeIcon(
                               icon: HugeIcons.strokeRoundedSearch01,
-                              size: 16,
+                              size: 14,
                               strokeWidth: 2,
                               color: scheme.onSurface.withOpacity(0.7),
                             ),
