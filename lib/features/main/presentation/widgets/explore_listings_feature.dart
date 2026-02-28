@@ -5,12 +5,18 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
+import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
+/// Premium Explore Listings (NO sliding gestures / NO swipe-to-reveal).
+/// - Keeps horizontal browsing, but removes any "sliding logic" effects.
+/// - Uses polished glassmorphism cards + responsive sizes.
+/// - Favorite persistence (7 days) remains.
 class ExploreListingsFeature extends StatefulWidget {
   const ExploreListingsFeature({super.key});
 
@@ -42,6 +48,7 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_favKey);
     if (raw == null) return;
+
     try {
       final decoded = jsonDecode(raw);
       if (decoded is List) {
@@ -50,9 +57,10 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
           final ts = m["ts"] as int? ?? 0;
           return now - ts < _expiryMs;
         }).toList();
+
         _favoriteIds = kept.map((m) => (m["id"] ?? "").toString()).toSet();
         await prefs.setString(_favKey, jsonEncode(kept));
-        setState(() {});
+        if (mounted) setState(() {});
       }
     } catch (_) {
       // ignore invalid cache
@@ -92,8 +100,8 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
   }
 
   void _toggleFavorite(String id) async {
-    final lang = currentLangSync();
     final added = !_favoriteIds.contains(id);
+
     setState(() {
       if (added) {
         _favoriteIds.add(id);
@@ -101,17 +109,19 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
         _favoriteIds.remove(id);
       }
     });
+
     await _saveFavorites();
     if (!mounted) return;
-    final msg = added
-        ? "Listing added to favorites"
-        : "Listing removed from favorites";
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
+
+    final msg = added ? "Listing added to favorites" : "Listing removed from favorites";
+
+    toastification.show(
+      context: context,
+      type: added ? ToastificationType.success : ToastificationType.info,
+      style: ToastificationStyle.fillColored,
+      title: Text(msg),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 2),
     );
   }
 
@@ -124,7 +134,7 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
     final isTablet = w >= 700;
 
     final hPad = isTablet ? 24.0 : 16.0;
-    final height = isTablet ? 260.0 : 224.0;
+    final height = isTablet ? 270.0 : 232.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,18 +148,16 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
                 child: Text(
                   t(lang, "explore.listings_title"),
                   style: TextStyle(
-                    fontSize: isTablet ? 18 : 16,
+                    fontSize: isTablet ? 14 : 12,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
                     color: scheme.onSurface,
+                    letterSpacing: -0.2,
                   ),
                 ),
               ),
               _GlassLink(
                 label: t(lang, "explore.listings_hint"),
-                onTap: () {
-                  // Hook to listings route when available.
-                },
+                onTap: () => Navigator.pushNamed(context, AppRoutes.listings),
               ),
             ],
           ),
@@ -176,6 +184,8 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
                           child: _EmptyState(label: t(lang, "packages.empty")),
                         )
                       : ListView.separated(
+                          // ✅ Keep simple scroll. No slide-to-reveal / dismiss logic anywhere.
+                          physics: const BouncingScrollPhysics(),
                           scrollDirection: Axis.horizontal,
                           padding: EdgeInsets.symmetric(horizontal: hPad),
                           itemCount: _items.length,
@@ -187,6 +197,11 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
                               isTablet: isTablet,
                               isFavorite: _favoriteIds.contains(listing.id),
                               onToggleFavorite: () => _toggleFavorite(listing.id),
+                              onOpen: () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.listingDetails,
+                                arguments: listing.id,
+                              ),
                             );
                           },
                         ),
@@ -201,12 +216,14 @@ class _ListingCard extends StatefulWidget {
   final bool isTablet;
   final bool isFavorite;
   final VoidCallback onToggleFavorite;
+  final VoidCallback onOpen;
 
   const _ListingCard({
     required this.listing,
     required this.isTablet,
     required this.isFavorite,
     required this.onToggleFavorite,
+    required this.onOpen,
   });
 
   @override
@@ -215,141 +232,181 @@ class _ListingCard extends StatefulWidget {
 
 class _ListingCardState extends State<_ListingCard> {
   bool _pressed = false;
+  bool _hover = false;
 
-  void _set(bool v) => setState(() => _pressed = v);
+  void _setPressed(bool v) => setState(() => _pressed = v);
+  void _setHover(bool v) => setState(() => _hover = v);
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
 
-    final cardW = widget.isTablet ? 260.0 : 200.0;
+    final cardW = widget.isTablet ? 270.0 : 210.0;
     final radius = BorderRadius.circular(widget.isTablet ? 26 : 22);
 
     final title = widget.listing.name.trim().isEmpty ? "Listing" : widget.listing.name.trim();
+    final subtitle = _compactLocation(widget.listing.city, widget.listing.country);
 
-    return GestureDetector(
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
-      onTap: () {
-        // Wire this to listing details when you’re ready.
-      },
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        scale: _pressed ? 0.992 : 1.0,
-        child: ClipRRect(
-          borderRadius: radius,
-          child: Stack(
-            children: [
-              // Image background
-              Positioned.fill(
-                child: widget.listing.imageUrl != null
-                    ? Image.network(
-                        widget.listing.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: scheme.surfaceVariant.withOpacity(0.7),
+    return MouseRegion(
+      onEnter: (_) => _setHover(true),
+      onExit: (_) => _setHover(false),
+      child: GestureDetector(
+        onTapDown: (_) => _setPressed(true),
+        onTapUp: (_) => _setPressed(false),
+        onTapCancel: () => _setPressed(false),
+        onTap: widget.onOpen,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutCubic,
+          scale: _pressed ? 0.992 : 1.0,
+          child: ClipRRect(
+            borderRadius: radius,
+            child: Stack(
+              children: [
+                // Background image
+                Positioned.fill(
+                  child: widget.listing.imageUrl != null
+                      ? Image.network(
+                          widget.listing.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: scheme.surfaceVariant.withOpacity(0.7),
+                          ),
+                          loadingBuilder: (context, child, evt) {
+                            if (evt == null) return child;
+                            return Container(color: scheme.surfaceVariant.withOpacity(0.7));
+                          },
+                        )
+                      : Container(color: scheme.surfaceVariant.withOpacity(0.7)),
+                ),
+
+                // Vignette for readability
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.10),
+                          Colors.black.withOpacity(0.55),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Glass border + depth
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: radius,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(isDark ? 0.12 : 0.18),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.34 : 0.14),
+                          blurRadius: 28,
+                          offset: const Offset(0, 18),
                         ),
-                        loadingBuilder: (context, child, evt) {
-                          if (evt == null) return child;
-                          return Container(color: scheme.surfaceVariant.withOpacity(0.7));
-                        },
-                      )
-                    : Container(color: scheme.surfaceVariant.withOpacity(0.7)),
-              ),
-
-              // Vignette gradient for legibility
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.10),
-                        Colors.black.withOpacity(0.52),
                       ],
                     ),
                   ),
                 ),
-              ),
 
-              // Glass border + glow
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: radius,
-                    border: Border.all(
-                      color: Colors.white.withOpacity(isDark ? 0.12 : 0.18),
-                      width: 1,
+                // Specular highlight
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: _SpecularHighlight(radius: radius),
+                  ),
+                ),
+
+                // Bottom glass info
+                Positioned(
+                  left: 12,
+                  right: 12,
+                  bottom: 12,
+                  child: _GlassFooter(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: widget.isTablet ? 14.8 : 13.6,
+                                  color: Colors.white,
+                                  letterSpacing: -0.2,
+                                  height: 1.05,
+                                ),
+                              ),
+                              if (subtitle.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: widget.isTablet ? 12.2 : 11.8,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white.withOpacity(0.82),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 10),
+                              _RatingPill(
+                                rating: widget.listing.avgRating,
+                                reviews: widget.listing.reviewsCount,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 160),
+                          curve: Curves.easeOutCubic,
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity((_hover || _pressed) ? 0.18 : 0.12),
+                            border: Border.all(color: Colors.white.withOpacity(0.16)),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.30 : 0.14),
-                        blurRadius: 26,
-                        offset: const Offset(0, 18),
-                      ),
-                    ],
                   ),
                 ),
-              ),
 
-              // Bottom glass content
-              Positioned(
-                left: 12,
-                right: 12,
-                bottom: 12,
-                child: _GlassFooter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: widget.isTablet ? 14.5 : 13.5,
-                          color: Colors.white,
-                          letterSpacing: -0.2,
-                          height: 1.05,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: _RatingPill(
-                          rating: widget.listing.avgRating,
-                          reviews: widget.listing.reviewsCount,
-                        ),
-                      ),
-                    ],
+                // Favorite button (tap only, no sliding)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: _FavoriteButton(
+                    active: widget.isFavorite,
+                    onTap: widget.onToggleFavorite,
                   ),
                 ),
-              ),
 
-              // Favorite button
-              Positioned(
-                top: 10,
-                right: 10,
-                child: _FavoriteButton(
-                  active: widget.isFavorite,
-                  onTap: widget.onToggleFavorite,
-                ),
-              ),
-
-              // Subtle top highlight
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: _SpecularHighlight(radius: radius),
-                ),
-              ),
-
-              // Fixed width to keep layout consistent in horizontal list
-              SizedBox(width: cardW),
-            ],
+                // Fixed width for horizontal list
+                SizedBox(width: cardW),
+              ],
+            ),
           ),
         ),
       ),
@@ -361,10 +418,7 @@ class _FavoriteButton extends StatefulWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _FavoriteButton({
-    required this.active,
-    required this.onTap,
-  });
+  const _FavoriteButton({required this.active, required this.onTap});
 
   @override
   State<_FavoriteButton> createState() => _FavoriteButtonState();
@@ -385,7 +439,8 @@ class _FavoriteButtonState extends State<_FavoriteButton> {
     final border = widget.active
         ? Colors.red.withOpacity(0.9)
         : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
-    final iconColor = widget.active ? Colors.white : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
+    final iconColor =
+        widget.active ? Colors.white : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
 
     return GestureDetector(
       onTapDown: (_) => _set(true),
@@ -453,10 +508,7 @@ class _RatingPill extends StatelessWidget {
   final double rating;
   final int reviews;
 
-  const _RatingPill({
-    required this.rating,
-    required this.reviews,
-  });
+  const _RatingPill({required this.rating, required this.reviews});
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +542,7 @@ class _RatingPill extends StatelessWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            "(${displayReviews})",
+            "($displayReviews)",
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
@@ -525,6 +577,7 @@ class _Listing {
   factory _Listing.fromJson(Map json) {
     final avg = (json["avg_rating"] as num?)?.toDouble() ?? 0.0;
     final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
+
     return _Listing(
       id: (json["id"] ?? "").toString(),
       name: (json["name"] ?? json["title"] ?? "").toString(),
@@ -585,7 +638,7 @@ class _ListingSkeleton extends StatelessWidget {
     final isTablet = w >= 700;
 
     final radius = BorderRadius.circular(isTablet ? 26 : 22);
-    final cardW = isTablet ? 260.0 : 200.0;
+    final cardW = isTablet ? 270.0 : 210.0;
 
     return ClipRRect(
       borderRadius: radius,
@@ -611,7 +664,7 @@ class _ListingSkeleton extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
-                  height: 84,
+                  height: 92,
                   color: Colors.white.withOpacity(0.10),
                 ),
               ),
@@ -653,10 +706,7 @@ class _GlassLink extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _GlassLink({
-    required this.label,
-    required this.onTap,
-  });
+  const _GlassLink({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -701,8 +751,9 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
     return Container(
-      width: 220,
+      width: 240,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -722,7 +773,10 @@ class _ErrorState extends StatelessWidget {
               fontSize: 12,
             ),
           ),
-          TextButton(onPressed: onRetry, child: Text(t(currentLangSync(), "common.try_again"))),
+          TextButton(
+            onPressed: onRetry,
+            child: Text(t(currentLangSync(), "common.try_again")),
+          ),
         ],
       ),
     );
@@ -736,13 +790,15 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
     return Container(
-      width: 220,
+      width: 240,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: scheme.surfaceVariant.withOpacity(0.6),
         borderRadius: BorderRadius.circular(16),
       ),
+      padding: const EdgeInsets.all(14),
       child: Text(
         label,
         style: const TextStyle(fontWeight: FontWeight.w700),
@@ -750,4 +806,13 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+String _compactLocation(String city, String country) {
+  final c = city.trim();
+  final k = country.trim();
+  if (c.isEmpty && k.isEmpty) return "";
+  if (c.isEmpty) return k;
+  if (k.isEmpty) return c;
+  return "$c, $k";
 }
