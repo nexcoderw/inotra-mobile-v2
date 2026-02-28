@@ -3,6 +3,7 @@ import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "package:inotra/features/main/presentation/widgets/trip_packages_preview.dart";
 import "package:inotra/features/main/presentation/widgets/static_ad_banner.dart";
+import "package:inotra/features/main/presentation/widgets/explore_hero_heading.dart";
 
 class ExploreTab extends StatelessWidget {
   const ExploreTab({super.key});
@@ -18,32 +19,7 @@ class ExploreTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            RichText(
-              textAlign: TextAlign.center,
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.1,
-                  height: 1.18,
-                  color: scheme.onSurface,
-                  fontFamily: "DM Sans",
-                ),
-                children: [
-                  TextSpan(text: t(lang, "explore.hero_prefix")),
-                  TextSpan(
-                    text: t(lang, "explore.hero_rwanda"),
-                    style: TextStyle(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.3,
-                      fontFamily: "DM Sans",
-                    ),
-                  ),
-                  TextSpan(text: t(lang, "explore.hero_suffix")),
-                ],
-              ),
-            ),
+            const ExploreHeroHeading(),
             const SizedBox(height: 36),
             TripPackagesPreview(),
             const SizedBox(height: 24),
