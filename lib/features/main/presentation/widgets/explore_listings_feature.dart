@@ -265,7 +265,7 @@ class _ListingCardState extends State<_ListingCard> {
                 top: 10,
                 right: 10,
                 child: _RoundGlassButton(
-                  icon: HugeIcons.strokeRoundedBookmark,
+                  icon: HugeIcons.strokeRoundedBookmark01,
                   onTap: () {
                     // placeholder save action
                   },
