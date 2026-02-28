@@ -169,6 +169,16 @@ class _TripPackagesPreviewState extends State<TripPackagesPreview> {
                                           color: scheme.onSurface.withOpacity(0.7),
                                         ),
                                       ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "${p.durationDays} ${t(lang, "packages.days")}"
+                                        " • ${p.activities} ${t(lang, "packages.activities")}",
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: scheme.onSurface.withOpacity(0.68),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -189,20 +199,26 @@ class _Package {
   final String? title;
   final String? subtitle;
   final String? imageUrl;
+  final int durationDays;
+  final int activities;
 
   _Package({
     required this.id,
     required this.title,
     required this.subtitle,
     required this.imageUrl,
+    required this.durationDays,
+    required this.activities,
   });
 
   static _Package fromJson(Map<String, dynamic> json) {
     return _Package(
       id: json["id"]?.toString() ?? "",
-      title: json["name"] as String? ?? json["title"] as String?,
+      title: json["title"] as String? ?? json["name"] as String?,
       subtitle: json["location"] as String? ?? json["description"] as String?,
-      imageUrl: (json["image"] ?? json["cover_image"]) as String?,
+      imageUrl: (json["cover_url"] ?? json["image"] ?? json["cover_image"]) as String?,
+      durationDays: (json["duration_days"] as num?)?.toInt() ?? 0,
+      activities: (json["activities_count"] as num?)?.toInt() ?? 0,
     );
   }
 }
