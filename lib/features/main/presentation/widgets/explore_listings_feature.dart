@@ -161,8 +161,6 @@ class _ListingCardState extends State<_ListingCard> {
       widget.listing.country.trim(),
     ].where((e) => e.isNotEmpty).join(", ");
 
-    final category = widget.listing.category.trim();
-
     return GestureDetector(
       onTapDown: (_) => _set(true),
       onTapUp: (_) => _set(false),
@@ -282,15 +280,12 @@ class _ListingCardState extends State<_ListingCard> {
                         ),
 
                       const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          if (category.isNotEmpty) _CategoryChip(label: category),
-                          const Spacer(),
-                          _RatingPill(
-                            rating: widget.listing.avgRating,
-                            reviews: widget.listing.reviewsCount,
-                          ),
-                        ],
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: _RatingPill(
+                          rating: widget.listing.avgRating,
+                          reviews: widget.listing.reviewsCount,
+                        ),
                       ),
                     ],
                   ),
@@ -714,7 +709,6 @@ class _GlassLink extends StatelessWidget {
 
 class _Listing {
   final String name;
-  final String category;
   final String city;
   final String country;
   final String? imageUrl;
@@ -723,7 +717,6 @@ class _Listing {
 
   const _Listing({
     required this.name,
-    required this.category,
     required this.city,
     required this.country,
     required this.imageUrl,
@@ -736,7 +729,6 @@ class _Listing {
     final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
     return _Listing(
       name: (json["name"] ?? json["title"] ?? "").toString(),
-      category: (json["category_name"] ?? json["category"] ?? "").toString(),
       city: (json["city"] ?? "").toString(),
       country: (json["country"] ?? "").toString(),
       imageUrl: json["first_image_url"] as String?,
