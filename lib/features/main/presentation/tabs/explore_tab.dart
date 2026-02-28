@@ -23,6 +23,7 @@ class ExploreTab extends StatelessWidget {
                 letterSpacing: -0.1,
                 height: 1.18,
                 color: scheme.onSurface,
+                fontFamily: "DM Sans",
               ),
               children: [
                 TextSpan(text: t(lang, "explore.hero_prefix")),
@@ -32,6 +33,7 @@ class ExploreTab extends StatelessWidget {
                     color: scheme.primary,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.3,
+                    fontFamily: "DM Sans",
                   ),
                 ),
                 TextSpan(text: t(lang, "explore.hero_suffix")),
