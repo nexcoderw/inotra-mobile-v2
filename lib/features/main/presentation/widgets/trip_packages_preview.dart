@@ -158,7 +158,7 @@ class _Carousel extends StatelessWidget {
   final List<_Package> items;
   final bool isTablet;
   final void Function(String id) onOpen;
-  final Lang lang;
+  final String lang;
 
   const _Carousel({
     required this.pageCtrl,
