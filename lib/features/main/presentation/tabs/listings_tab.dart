@@ -104,18 +104,21 @@ class _ListingsTabState extends State<ListingsTab> {
 
     try {
       final uri = Api.url(
-        "${PlaceEndpoints.list}?page=$_page&page_size=10${_query.isNotEmpty ? "&search=$_query" : ""}",
+        "${PlaceEndpoints.list}?page=$_page&page_size=10&limit=10${_query.isNotEmpty ? "&search=$_query" : ""}",
       );
       final resp = await http.get(uri);
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body);
-        final resultsRaw = decoded is Map
-            ? (decoded["results"] ?? decoded["data"] ?? decoded.values.firstWhere(
+        List<dynamic> results = const [];
+        if (decoded is Map) {
+          final dynamic candidate =
+              decoded["results"] ?? decoded["data"] ?? decoded.values.firstWhere(
                   (v) => v is List,
-                  orElse: () => const [],
-                ))
-            : decoded;
-        final results = (resultsRaw as List?) ?? [];
+                  orElse: () => const []);
+          results = candidate is List ? candidate : const [];
+        } else if (decoded is List) {
+          results = decoded;
+        }
         final incoming =
             results.whereType<Map>().map((e) => _Listing.fromJson(e)).toList();
         final existing = _items.map((e) => e.id).toSet();
