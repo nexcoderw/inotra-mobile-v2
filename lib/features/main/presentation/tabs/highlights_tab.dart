@@ -242,7 +242,8 @@ class _HighlightsTabState extends State<HighlightsTab> {
               HighlightCard(
                 imageUrl: item.coverUrl,
                 title: item.caption ?? t(lang, "highlights.title"),
-                meta: _metaLine(item, lang),
+                meta: null,
+                entityName: _entityName(item),
                 liked: item.liked,
                 likes: item.likes,
                 comments: item.comments,
@@ -311,6 +312,8 @@ class _Highlight {
     int? comments,
     int? shares,
     bool? liked,
+    String? placeName,
+    String? eventName,
   }) {
     return _Highlight(
       id: id,
@@ -320,6 +323,8 @@ class _Highlight {
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
       liked: liked ?? this.liked,
+      placeName: placeName ?? this.placeName,
+      eventName: eventName ?? this.eventName,
     );
   }
 
@@ -350,7 +355,7 @@ HighlightComment _commentFromJson(Map<String, dynamic> json) {
   );
 }
 
-String? _metaLine(_Highlight h, String lang) {
+String? _entityName(_Highlight h) {
   if (h.placeName != null && h.placeName!.isNotEmpty) return h.placeName;
   if (h.eventName != null && h.eventName!.isNotEmpty) return h.eventName;
   return null;
