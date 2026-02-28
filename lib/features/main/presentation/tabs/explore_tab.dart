@@ -15,7 +15,7 @@ class ExploreTab extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 120, 24, 80),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 80),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
