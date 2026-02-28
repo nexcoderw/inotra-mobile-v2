@@ -156,10 +156,6 @@ class _ListingCardState extends State<_ListingCard> {
     final radius = BorderRadius.circular(widget.isTablet ? 26 : 22);
 
     final title = widget.listing.name.trim().isEmpty ? "Listing" : widget.listing.name.trim();
-    final location = [
-      widget.listing.city.trim(),
-      widget.listing.country.trim(),
-    ].where((e) => e.isNotEmpty).join(", ");
 
     return GestureDetector(
       onTapDown: (_) => _set(true),
@@ -251,35 +247,7 @@ class _ListingCardState extends State<_ListingCard> {
                           height: 1.05,
                         ),
                       ),
-                      const SizedBox(height: 8),
-
-                      // Location row (kept minimal and friendly)
-                      if (location.isNotEmpty)
-                        Row(
-                          children: [
-                            HugeIcon(
-                              icon: HugeIcons.strokeRoundedMapPin,
-                              size: 14,
-                              strokeWidth: 2,
-                              color: Colors.white.withOpacity(0.92),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                location,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white.withOpacity(0.86),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: _RatingPill(
