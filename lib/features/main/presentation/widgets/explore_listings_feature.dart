@@ -4,6 +4,7 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
+import "package:shared_preferences/shared_preferences.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
@@ -21,11 +22,49 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
   bool _loading = true;
   String? _error;
   List<_Listing> _items = const [];
+  Set<String> _favoriteIds = {};
+
+  static const _favKey = "explore_listing_favs";
+  static const _expiryMs = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _loadFavorites();
+    await _load();
+  }
+
+  Future<void> _loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_favKey);
+    if (raw == null) return;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final kept = decoded.whereType<Map>().where((m) {
+          final ts = m["ts"] as int? ?? 0;
+          return now - ts < _expiryMs;
+        }).toList();
+        _favoriteIds = kept.map((m) => (m["id"] ?? "").toString()).toSet();
+        await prefs.setString(_favKey, jsonEncode(kept));
+        setState(() {});
+      }
+    } catch (_) {
+      // ignore invalid cache
+    }
+  }
+
+  Future<void> _saveFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final payload =
+        _favoriteIds.map((id) => {"id": id, "ts": now}).toList(growable: false);
+    await prefs.setString(_favKey, jsonEncode(payload));
   }
 
   Future<void> _load() async {
@@ -50,6 +89,30 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _toggleFavorite(String id) async {
+    final lang = currentLangSync();
+    final added = !_favoriteIds.contains(id);
+    setState(() {
+      if (added) {
+        _favoriteIds.add(id);
+      } else {
+        _favoriteIds.remove(id);
+      }
+    });
+    await _saveFavorites();
+    if (!mounted) return;
+    final msg = added
+        ? "Listing added to favorites"
+        : "Listing removed from favorites";
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -85,8 +148,7 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
               _GlassLink(
                 label: t(lang, "explore.listings_hint"),
                 onTap: () {
-                  // You can wire this to your listings page route later.
-                  // Navigator.pushNamed(context, AppRoutes.listings);
+                  // Hook to listings route when available.
                 },
               ),
             ],
@@ -120,7 +182,12 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
                           separatorBuilder: (_, __) => const SizedBox(width: 12),
                           itemBuilder: (context, i) {
                             final listing = _items[i];
-                            return _ListingCard(listing: listing, isTablet: isTablet);
+                            return _ListingCard(
+                              listing: listing,
+                              isTablet: isTablet,
+                              isFavorite: _favoriteIds.contains(listing.id),
+                              onToggleFavorite: () => _toggleFavorite(listing.id),
+                            );
                           },
                         ),
         ),
@@ -132,10 +199,14 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
 class _ListingCard extends StatefulWidget {
   final _Listing listing;
   final bool isTablet;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
 
   const _ListingCard({
     required this.listing,
     required this.isTablet,
+    required this.isFavorite,
+    required this.onToggleFavorite,
   });
 
   @override
@@ -163,7 +234,6 @@ class _ListingCardState extends State<_ListingCard> {
       onTapCancel: () => _set(false),
       onTap: () {
         // Wire this to listing details when you’re ready.
-        // Navigator.pushNamed(context, AppRoutes.listingDetails, arguments: widget.listing.id);
       },
       child: AnimatedScale(
         duration: const Duration(milliseconds: 140),
@@ -260,15 +330,13 @@ class _ListingCardState extends State<_ListingCard> {
                 ),
               ),
 
-              // Optional "save" affordance (user friendly)
+              // Favorite button
               Positioned(
                 top: 10,
                 right: 10,
-                child: _RoundGlassButton(
-                  icon: HugeIcons.strokeRoundedBookmark01,
-                  onTap: () {
-                    // placeholder save action
-                  },
+                child: _FavoriteButton(
+                  active: widget.isFavorite,
+                  onTap: widget.onToggleFavorite,
                 ),
               ),
 
@@ -282,6 +350,71 @@ class _ListingCardState extends State<_ListingCard> {
               // Fixed width to keep layout consistent in horizontal list
               SizedBox(width: cardW),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteButton extends StatefulWidget {
+  final bool active;
+  final VoidCallback onTap;
+
+  const _FavoriteButton({
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  State<_FavoriteButton> createState() => _FavoriteButtonState();
+}
+
+class _FavoriteButtonState extends State<_FavoriteButton> {
+  bool _pressed = false;
+  void _set(bool v) => setState(() => _pressed = v);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    final bg = widget.active
+        ? Colors.red
+        : Colors.white.withOpacity(isDark ? 0.10 : 0.16);
+    final border = widget.active
+        ? Colors.red.withOpacity(0.9)
+        : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
+    final iconColor = widget.active ? Colors.white : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
+
+    return GestureDetector(
+      onTapDown: (_) => _set(true),
+      onTapUp: (_) => _set(false),
+      onTapCancel: () => _set(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.96 : 1,
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: bg,
+                border: Border.all(color: border),
+              ),
+              child: Center(
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedBookmark01,
+                  size: 12,
+                  strokeWidth: 2,
+                  color: iconColor,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -316,31 +449,6 @@ class _GlassFooter extends StatelessWidget {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
-  final String label;
-  const _CategoryChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        color: Colors.black.withOpacity(0.22),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: Colors.white.withOpacity(0.92),
-        ),
-      ),
-    );
-  }
-}
-
 class _RatingPill extends StatelessWidget {
   final double rating;
   final int reviews;
@@ -352,7 +460,6 @@ class _RatingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final displayRating = rating <= 0 ? "0.0" : rating.toStringAsFixed(1);
     final displayReviews = reviews < 0 ? 0 : reviews;
 
@@ -391,67 +498,6 @@ class _RatingPill extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _RoundGlassButton extends StatefulWidget {
-  final dynamic icon; // supports HugeIcons constants
-  final VoidCallback onTap;
-
-  const _RoundGlassButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  State<_RoundGlassButton> createState() => _RoundGlassButtonState();
-}
-
-class _RoundGlassButtonState extends State<_RoundGlassButton> {
-  bool _pressed = false;
-  void _set(bool v) => setState(() => _pressed = v);
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = scheme.brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        scale: _pressed ? 0.96 : 1,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(isDark ? 0.10 : 0.16),
-                border: Border.all(color: Colors.white.withOpacity(isDark ? 0.14 : 0.18)),
-              ),
-              child: widget.icon is IconData
-                  ? Icon(
-                      widget.icon as IconData,
-                      size: 20,
-                      color: scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86),
-                    )
-                  : HugeIcon(
-                      icon: widget.icon,
-                      size: 18,
-                      strokeWidth: 2,
-                      color: scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86),
-                    ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -543,91 +589,6 @@ class _ListingSkeleton extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorState({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return _GlassPanel(
-      child: SizedBox(
-        width: 220,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.cloud_off_rounded, color: scheme.error),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: scheme.error,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: onRetry,
-              child: Text(t(currentLangSync(), "common.try_again")),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final String label;
-  const _EmptyState({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassPanel(
-      child: SizedBox(
-        width: 220,
-        child: Center(
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w800),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassPanel extends StatelessWidget {
-  final Widget child;
-  const _GlassPanel({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
 class _GlassPill extends StatelessWidget {
   final Widget child;
   const _GlassPill({required this.child});
@@ -657,24 +618,40 @@ class _GlassPill extends StatelessWidget {
 class _GlassLink extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
-  const _GlassLink({required this.label, required this.onTap});
+
+  const _GlassLink({
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return InkWell(
-      onTap: onTap,
+    return ClipRRect(
       borderRadius: BorderRadius.circular(999),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w900,
-            color: scheme.primary,
-            letterSpacing: -0.1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: scheme.surface.withOpacity(0.50),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -682,33 +659,61 @@ class _GlassLink extends StatelessWidget {
   }
 }
 
-class _Listing {
-  final String name;
-  final String city;
-  final String country;
-  final String? imageUrl;
-  final double avgRating;
-  final int reviewsCount;
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.message, required this.onRetry});
 
-  const _Listing({
-    required this.name,
-    required this.city,
-    required this.country,
-    required this.imageUrl,
-    required this.avgRating,
-    required this.reviewsCount,
-  });
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: scheme.surfaceVariant.withOpacity(0.6),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.cloud_off_rounded, color: scheme.error),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: scheme.error,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+          TextButton(onPressed: onRetry, child: Text(t(currentLangSync(), "common.try_again"))),
+        ],
+      ),
+    );
+  }
+}
 
-  factory _Listing.fromJson(Map json) {
-    final avg = (json["avg_rating"] as num?)?.toDouble() ?? 0.0;
-    final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
-    return _Listing(
-      name: (json["name"] ?? json["title"] ?? "").toString(),
-      city: (json["city"] ?? "").toString(),
-      country: (json["country"] ?? "").toString(),
-      imageUrl: json["first_image_url"] as String?,
-      avgRating: avg,
-      reviewsCount: reviews,
+class _EmptyState extends StatelessWidget {
+  final String label;
+  const _EmptyState({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 220,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: scheme.surfaceVariant.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w700),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 }
