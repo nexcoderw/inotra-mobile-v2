@@ -152,7 +152,14 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                         onChanged: _onSearchChanged,
                         decoration: InputDecoration(
                           hintText: t(lang, "packages.search_hint"),
-                          prefixIcon: const Icon(Icons.search),
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.only(left: 10, right: 6),
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedSearch01,
+                              size: 16,
+                              strokeWidth: 2,
+                            ),
+                          ),
                           suffixIcon: _searchCtrl.text.isNotEmpty
                               ? IconButton(
                                   icon: const Icon(Icons.close_rounded),
@@ -168,6 +175,11 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                             borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide.none,
                           ),
+                        ),
+                        style: const TextStyle(
+                          fontFamily: "DM Sans",
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
