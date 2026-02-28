@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:convert";
 import "dart:ui";
 
@@ -29,6 +30,7 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
   String _query = "";
   String? _error;
   bool _showBackToTop = false;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -41,6 +43,7 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
   void dispose() {
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -80,7 +83,9 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
         final items =
             results.whereType<Map<String, dynamic>>().map(_Package.fromJson).toList();
         setState(() {
-          _packages.addAll(items);
+          final existing = _packages.map((e) => e.id).toSet();
+          final unique = items.where((e) => !existing.contains(e.id)).toList();
+          _packages.addAll(unique);
           _hasMore = items.length >= 10;
           if (_hasMore) _page += 1;
         });
@@ -95,8 +100,25 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
   }
 
   void _onSearchChanged(String v) {
+    setState(() {}); // refresh clear icon visibility
     _query = v.trim();
-    _fetchPage(reset: true);
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (_query.isEmpty) {
+        _fetchPage(reset: true);
+        return;
+      }
+      if (_query.length < 3) {
+        setState(() {
+          _packages.clear();
+          _hasMore = false;
+          _error = null;
+          _loading = false;
+        });
+        return;
+      }
+      _fetchPage(reset: true);
+    });
   }
 
   @override
@@ -131,6 +153,15 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                         decoration: InputDecoration(
                           hintText: t(lang, "packages.search_hint"),
                           prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _searchCtrl.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.close_rounded),
+                                  onPressed: () {
+                                    _searchCtrl.clear();
+                                    _onSearchChanged("");
+                                  },
+                                )
+                              : null,
                           filled: true,
                           fillColor: scheme.surfaceVariant.withOpacity(0.6),
                           border: OutlineInputBorder(
