@@ -2,6 +2,7 @@ import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
@@ -258,9 +259,10 @@ class _ListingCardState extends State<_ListingCard> {
                       if (location.isNotEmpty)
                         Row(
                           children: [
-                            Icon(
-                              Icons.place_rounded,
+                            HugeIcon(
+                              icon: HugeIcons.strokeRoundedMapPin,
                               size: 14,
+                              strokeWidth: 2,
                               color: Colors.white.withOpacity(0.92),
                             ),
                             const SizedBox(width: 6),
@@ -279,11 +281,17 @@ class _ListingCardState extends State<_ListingCard> {
                           ],
                         ),
 
-                      if (category.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        // Category chip (NO ICON as requested)
-                        _CategoryChip(label: category),
-                      ],
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          if (category.isNotEmpty) _CategoryChip(label: category),
+                          const Spacer(),
+                          _RatingPill(
+                            rating: widget.listing.avgRating,
+                            reviews: widget.listing.reviewsCount,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -365,6 +373,61 @@ class _CategoryChip extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: Colors.white.withOpacity(0.92),
         ),
+      ),
+    );
+  }
+}
+
+class _RatingPill extends StatelessWidget {
+  final double rating;
+  final int reviews;
+
+  const _RatingPill({
+    required this.rating,
+    required this.reviews,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final displayRating = rating <= 0 ? "0.0" : rating.toStringAsFixed(1);
+    final displayReviews = reviews < 0 ? 0 : reviews;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedStar,
+            size: 14,
+            strokeWidth: 2,
+            color: Colors.amber.shade300,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            displayRating,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: Colors.white.withOpacity(0.95),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            "(${displayReviews})",
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withOpacity(0.80),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -655,6 +718,8 @@ class _Listing {
   final String city;
   final String country;
   final String? imageUrl;
+  final double avgRating;
+  final int reviewsCount;
 
   const _Listing({
     required this.name,
@@ -662,15 +727,21 @@ class _Listing {
     required this.city,
     required this.country,
     required this.imageUrl,
+    required this.avgRating,
+    required this.reviewsCount,
   });
 
   factory _Listing.fromJson(Map json) {
+    final avg = (json["avg_rating"] as num?)?.toDouble() ?? 0.0;
+    final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
     return _Listing(
       name: (json["name"] ?? json["title"] ?? "").toString(),
       category: (json["category_name"] ?? json["category"] ?? "").toString(),
       city: (json["city"] ?? "").toString(),
       country: (json["country"] ?? "").toString(),
       imageUrl: json["first_image_url"] as String?,
+      avgRating: avg,
+      reviewsCount: reviews,
     );
   }
 }
