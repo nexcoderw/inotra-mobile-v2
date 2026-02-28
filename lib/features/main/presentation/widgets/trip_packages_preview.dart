@@ -355,11 +355,6 @@ class _PackageCard extends StatelessWidget {
                             icon: Icons.schedule_rounded,
                             label: "${pkg.durationDays} $daysLabel",
                           ),
-                          const SizedBox(width: 8),
-                          _MetaChip(
-                            icon: Icons.local_activity_rounded,
-                            label: "${pkg.activities} $activitiesLabel",
-                          ),
                           const Spacer(),
                           _MiniCTA(),
                         ],
@@ -807,7 +802,6 @@ class _Package {
   final String? subtitle;
   final String? imageUrl;
   final int durationDays;
-  final int activities;
 
   _Package({
     required this.id,
@@ -815,7 +809,6 @@ class _Package {
     required this.subtitle,
     required this.imageUrl,
     required this.durationDays,
-    required this.activities,
   });
 
   static _Package fromJson(Map<String, dynamic> json) {
@@ -825,7 +818,6 @@ class _Package {
       subtitle: json["location"] as String? ?? json["description"] as String?,
       imageUrl: (json["cover_url"] ?? json["image"] ?? json["cover_image"]) as String?,
       durationDays: (json["duration_days"] as num?)?.toInt() ?? 0,
-      activities: (json["activities_count"] as num?)?.toInt() ?? 0,
     );
   }
 }
