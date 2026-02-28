@@ -503,6 +503,40 @@ class _RatingPill extends StatelessWidget {
   }
 }
 
+class _Listing {
+  final String id;
+  final String name;
+  final String city;
+  final String country;
+  final String? imageUrl;
+  final double avgRating;
+  final int reviewsCount;
+
+  const _Listing({
+    required this.id,
+    required this.name,
+    required this.city,
+    required this.country,
+    required this.imageUrl,
+    required this.avgRating,
+    required this.reviewsCount,
+  });
+
+  factory _Listing.fromJson(Map json) {
+    final avg = (json["avg_rating"] as num?)?.toDouble() ?? 0.0;
+    final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
+    return _Listing(
+      id: (json["id"] ?? "").toString(),
+      name: (json["name"] ?? json["title"] ?? "").toString(),
+      city: (json["city"] ?? "").toString(),
+      country: (json["country"] ?? "").toString(),
+      imageUrl: json["first_image_url"] as String?,
+      avgRating: avg,
+      reviewsCount: reviews,
+    );
+  }
+}
+
 class _SpecularHighlight extends StatelessWidget {
   final BorderRadius radius;
   const _SpecularHighlight({required this.radius});
