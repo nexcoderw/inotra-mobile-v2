@@ -295,26 +295,21 @@ class _PackageCard extends StatelessWidget {
                   ),
                 ),
 
-              // Dark vignette for readability.
+              // Soft bottom gradient only for text legibility.
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      stops: const [0.0, 0.5, 1.0],
                       colors: [
-                        Colors.black.withOpacity(0.10),
-                        Colors.black.withOpacity(0.45),
+                        Colors.black.withOpacity(0.40),
+                        Colors.black.withOpacity(0.12),
+                        Colors.transparent,
                       ],
                     ),
                   ),
-                ),
-              ),
-
-              // Glass highlight (top) and footer glass (bottom).
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: _GlassOverlay(radius: radius),
                 ),
               ),
 
