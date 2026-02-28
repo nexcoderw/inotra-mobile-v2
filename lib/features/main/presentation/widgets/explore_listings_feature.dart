@@ -397,7 +397,7 @@ class _RatingPill extends StatelessWidget {
 }
 
 class _RoundGlassButton extends StatefulWidget {
-  final IconData icon;
+  final dynamic icon; // supports HugeIcons constants
   final VoidCallback onTap;
 
   const _RoundGlassButton({
@@ -437,11 +437,18 @@ class _RoundGlassButtonState extends State<_RoundGlassButton> {
                 color: Colors.white.withOpacity(isDark ? 0.10 : 0.16),
                 border: Border.all(color: Colors.white.withOpacity(isDark ? 0.14 : 0.18)),
               ),
-              child: Icon(
-                widget.icon,
-                size: 20,
-                color: scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86),
-              ),
+              child: widget.icon is IconData
+                  ? Icon(
+                      widget.icon as IconData,
+                      size: 20,
+                      color: scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86),
+                    )
+                  : HugeIcon(
+                      icon: widget.icon,
+                      size: 18,
+                      strokeWidth: 2,
+                      color: scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86),
+                    ),
             ),
           ),
         ),
