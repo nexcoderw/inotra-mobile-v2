@@ -229,7 +229,7 @@ class _ReviewTile extends StatelessWidget {
                 children: [
                   Text(
                     review.author,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: isTablet ? 14 : 13,
                     ),
