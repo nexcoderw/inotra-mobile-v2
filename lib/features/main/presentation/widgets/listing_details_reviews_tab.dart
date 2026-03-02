@@ -2,7 +2,6 @@ import "dart:async";
 import "dart:convert";
 
 import "package:flutter/material.dart";
-import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
@@ -800,8 +799,8 @@ class _EmptyStateCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedMessage02,
+          Icon(
+            Icons.chat_bubble_outline_rounded,
             size: 18,
             color: scheme.onSurface.withOpacity(0.45),
           ),
