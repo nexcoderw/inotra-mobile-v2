@@ -11,7 +11,6 @@ import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../widgets/page_header.dart";
 import "../widgets/listing_details_shared.dart";
 import "../widgets/listing_details_overview_tab.dart";
 import "../widgets/listing_details_map_tab.dart";
@@ -30,7 +29,9 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
   PlaceDetails? _place;
   bool _loading = true;
   String? _error;
+
   bool _ctaBusy = false;
+  bool _saved = false;
 
   @override
   void initState() {
@@ -82,93 +83,43 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
+        backgroundColor: scheme.surface,
         body: SafeArea(
+          top: false,
           child: _loading
               ? const _PageSkeleton()
               : _error != null
-                  ? _ErrorState(
-                      message: _error!,
-                      onRetry: _fetch,
-                    )
+                  ? _ErrorState(message: _error!, onRetry: _fetch)
                   : _place == null
                       ? _ErrorState(
                           message: t(lang, "listings.no_data"),
                           onRetry: _fetch,
                         )
-                      : Column(
+                      : Stack(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                              child: PageHeader(
-                                title: _place!.name,
-                                onBack: () => Navigator.maybePop(context),
+                            // HERO
+                            Positioned.fill(
+                              child: _HeroPager(images: _place!.images),
+                            ),
+
+                            // TOP BAR (BACK)
+                            Positioned(
+                              left: 16,
+                              top: MediaQuery.of(context).padding.top + 14,
+                              child: _RoundIconButton(
                                 icon: HugeIcons.strokeRoundedArrowLeft01,
+                                onTap: () => Navigator.maybePop(context),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: _HeroCarousel(images: _place!.images),
-                            ),
-                            const SizedBox(height: 12),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _place!.name,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      ListingRatingChip(
-                                        rating: _place!.rating ?? 0,
-                                        reviews: _place!.reviewsCount ?? 0,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      if (_place!.categoryName.isNotEmpty)
-                                        ListingPill(
-                                          icon: HugeIcons.strokeRoundedHotelBell,
-                                          label: _place!.categoryName,
-                                        ),
-                                      const Spacer(),
-                                      ListingPill(
-                                        icon: HugeIcons.strokeRoundedMapsLocation02,
-                                        label: _place!.city.isNotEmpty
-                                            ? "${_place!.city}, ${_place!.country}"
-                                            : _place!.country,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            TabBar(
-                              labelColor: scheme.primary,
-                              unselectedLabelColor: scheme.onSurface.withOpacity(0.6),
-                              indicatorColor: scheme.primary,
-                              isScrollable: true,
-                              tabs: [
-                                Tab(text: t(lang, "listings.tab_overview")),
-                                Tab(text: t(lang, "listings.tab_map")),
-                                Tab(text: t(lang, "listings.tab_reviews")),
-                                Tab(text: t(lang, "listings.tab_transport")),
-                              ],
-                            ),
-                            Expanded(
-                              child: TabBarView(
-                                children: [
-                                  ListingOverviewTab(place: _place!),
-                                  ListingMapTab(place: _place!),
-                                  const ListingReviewsTab(),
-                                  ListingTransportTab(place: _place!),
-                                ],
+
+                            // BOTTOM SHEET CONTENT
+                            Align(
+                              alignment: Alignment.bottomCenter,
+                              child: _DetailsSheet(
+                                place: _place!,
+                                saved: _saved,
+                                onToggleSaved: () =>
+                                    setState(() => _saved = !_saved),
                               ),
                             ),
                           ],
@@ -186,6 +137,7 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                           setState(() => _ctaBusy = true);
                           await Future.delayed(const Duration(milliseconds: 900));
                           if (!mounted) return;
+
                           toastification.show(
                             context: context,
                             type: ToastificationType.info,
@@ -194,11 +146,506 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                             alignment: Alignment.topCenter,
                             autoCloseDuration: const Duration(seconds: 3),
                           );
+
                           if (mounted) setState(() => _ctaBusy = false);
                         },
                 ),
               )
             : null,
+      ),
+    );
+  }
+}
+
+/* ----------------------------- SHEET ----------------------------- */
+
+class _DetailsSheet extends StatelessWidget {
+  final PlaceDetails place;
+  final bool saved;
+  final VoidCallback onToggleSaved;
+
+  const _DetailsSheet({
+    required this.place,
+    required this.saved,
+    required this.onToggleSaved,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
+    final media = MediaQuery.of(context);
+
+    final maxH = media.size.height;
+    final sheetMax = maxH * 0.72; // close to screenshot
+    final sheetMin = maxH * 0.58;
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOut,
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, t, _) {
+        return SizedBox(
+          height: lerpDouble(sheetMin, sheetMax, 1)!,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: scheme.surface.withOpacity(0.92),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 26,
+                      offset: const Offset(0, -10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: scheme.onSurface.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // TITLE + SAVE
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              place.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.4,
+                                height: 1.05,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          _RoundIconButton(
+                            icon: saved
+                                ? HugeIcons.strokeRoundedBookmark02
+                                : HugeIcons.strokeRoundedBookmark01,
+                            onTap: onToggleSaved,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // SEGMENTED TABS
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _PillTabBar(
+                        labels: [
+                          t(lang, "listings.tab_overview"),
+                          t(lang, "listings.tab_map"),
+                          t(lang, "listings.tab_reviews"),
+                          t(lang, "listings.tab_transport"),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // LOCATION + RATING
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedMapsLocation02,
+                            size: 18,
+                            color: scheme.onSurface.withOpacity(0.65),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              place.city.isNotEmpty
+                                  ? "${place.city}, ${place.country}"
+                                  : place.country,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: scheme.onSurface.withOpacity(0.62),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          _RatingCompact(
+                            rating: place.rating ?? 0,
+                            reviews: place.reviewsCount ?? 0,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // THUMBNAILS ROW
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _ThumbRow(images: place.images),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // TAB CONTENT
+                    Expanded(
+                      child: TabBarView(
+                        physics: const BouncingScrollPhysics(),
+                        children: [
+                          ListingOverviewTab(place: place),
+                          ListingMapTab(place: place),
+                          const ListingReviewsTab(),
+                          ListingTransportTab(place: place),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/* ----------------------------- HERO PAGER ----------------------------- */
+
+class _HeroPager extends StatefulWidget {
+  final List<String> images;
+  const _HeroPager({required this.images});
+
+  @override
+  State<_HeroPager> createState() => _HeroPagerState();
+}
+
+class _HeroPagerState extends State<_HeroPager> {
+  int _index = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final imgs = widget.images.isNotEmpty ? widget.images : [""];
+    final topPad = MediaQuery.of(context).padding.top;
+
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: PageView.builder(
+            itemCount: imgs.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            itemBuilder: (_, i) {
+              final url = imgs[i].trim();
+              if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
+              return Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _HeroPlaceholder(scheme: scheme),
+                loadingBuilder: (_, child, evt) =>
+                    evt == null ? child : _HeroPlaceholder(scheme: scheme),
+              );
+            },
+          ),
+        ),
+
+        // subtle fade at bottom to match screenshot readability
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 220,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.28),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // dots indicator (centered, small)
+        Positioned(
+          left: 0,
+          right: 0,
+          top: topPad + 64,
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(
+                imgs.length,
+                (i) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: _index == i ? 18 : 8,
+                  height: 8,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    color: _index == i
+                        ? Colors.white.withOpacity(0.92)
+                        : Colors.white.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroPlaceholder extends StatelessWidget {
+  final ColorScheme scheme;
+  const _HeroPlaceholder({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: scheme.surfaceVariant.withOpacity(0.7),
+      child: Center(
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedImageNotFound01,
+          color: scheme.onSurface.withOpacity(0.35),
+          size: 34,
+        ),
+      ),
+    );
+  }
+}
+
+/* ----------------------------- PILL TAB BAR ----------------------------- */
+
+class _PillTabBar extends StatelessWidget {
+  final List<String> labels;
+  const _PillTabBar({required this.labels});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: scheme.surfaceVariant.withOpacity(0.35),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: TabBar(
+        isScrollable: true,
+        dividerColor: Colors.transparent,
+        indicator: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        labelColor: scheme.onSurface,
+        unselectedLabelColor: scheme.onSurface.withOpacity(0.55),
+        labelStyle: const TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+        tabAlignment: TabAlignment.start,
+        tabs: labels
+            .map(
+              (t) => Tab(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Text(t),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+/* ----------------------------- THUMB ROW ----------------------------- */
+
+class _ThumbRow extends StatelessWidget {
+  final List<String> images;
+  const _ThumbRow({required this.images});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final list = images.where((e) => e.trim().isNotEmpty).toList();
+    final shown = list.take(4).toList();
+    final extra = math.max(0, list.length - shown.length);
+
+    return Row(
+      children: [
+        ...shown.map(
+          (url) => Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                width: 54,
+                height: 54,
+                color: scheme.surfaceVariant.withOpacity(0.35),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _thumbFallback(scheme),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (extra > 0)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: scheme.surfaceVariant.withOpacity(0.35),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (shown.isNotEmpty)
+                    Image.network(
+                      shown.last,
+                      fit: BoxFit.cover,
+                      color: Colors.black.withOpacity(0.35),
+                      colorBlendMode: BlendMode.darken,
+                      errorBuilder: (_, __, ___) => _thumbFallback(scheme),
+                    )
+                  else
+                    _thumbFallback(scheme),
+                  Center(
+                    child: Text(
+                      "+$extra",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _thumbFallback(ColorScheme scheme) {
+    return Center(
+      child: HugeIcon(
+        icon: HugeIcons.strokeRoundedImageNotFound01,
+        size: 18,
+        color: scheme.onSurface.withOpacity(0.35),
+      ),
+    );
+  }
+}
+
+/* ----------------------------- RATING (COMPACT) ----------------------------- */
+
+class _RatingCompact extends StatelessWidget {
+  final double rating;
+  final int reviews;
+  const _RatingCompact({required this.rating, required this.reviews});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.star_rounded, size: 18, color: Colors.amber.shade600),
+        const SizedBox(width: 4),
+        Text(
+          rating.toStringAsFixed(1),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: scheme.onSurface.withOpacity(0.82),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          "($reviews)",
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: scheme.onSurface.withOpacity(0.55),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/* ----------------------------- ROUND ICON BUTTON ----------------------------- */
+
+class _RoundIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _RoundIconButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: scheme.surface.withOpacity(0.86),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          child: HugeIcon(
+            icon: icon,
+            size: 22,
+            color: scheme.onSurface.withOpacity(0.85),
+          ),
+        ),
       ),
     );
   }
@@ -240,7 +687,7 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
         curve: Curves.easeOut,
         scale: _pressed ? 0.992 : 1,
         child: Container(
-          height: 54,
+          height: 58,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             gradient: LinearGradient(
@@ -251,6 +698,13 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
                 scheme.primary.withOpacity(0.88),
               ],
             ),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withOpacity(0.22),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
           child: Center(
             child: AnimatedSwitcher(
@@ -272,14 +726,15 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
                           size: 18,
                           color: Colors.white,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Text(
-                          widget.label,
+                          widget.label.toUpperCase(),
                           key: const ValueKey("label"),
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
-                            fontSize: 12,
+                            fontSize: 13,
                             color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -353,95 +808,6 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
   }
 }
 
-/* ----------------------------- HERO CAROUSEL ----------------------------- */
-
-class _HeroCarousel extends StatefulWidget {
-  final List<String> images;
-  const _HeroCarousel({required this.images});
-
-  @override
-  State<_HeroCarousel> createState() => _HeroCarouselState();
-}
-
-class _HeroCarouselState extends State<_HeroCarousel> {
-  int _index = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(20);
-    final imgs = widget.images.isNotEmpty ? widget.images : [null];
-
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: radius,
-          child: Container(
-            height: 210,
-            decoration: BoxDecoration(
-              color: scheme.surfaceVariant.withOpacity(0.6),
-            ),
-            child: PageView.builder(
-              itemCount: imgs.length,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (context, i) {
-                final url = imgs[i];
-                if (url == null || url.trim().isEmpty) {
-                  return _PlaceholderImage(scheme: scheme);
-                }
-                return Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _PlaceholderImage(scheme: scheme),
-                  loadingBuilder: (_, child, evt) =>
-                      evt == null ? child : _PlaceholderImage(scheme: scheme),
-                );
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            imgs.length,
-            (i) => AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: _index == i ? 18 : 8,
-              height: 8,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              decoration: BoxDecoration(
-                color:
-                    _index == i ? scheme.primary : scheme.onSurface.withOpacity(0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PlaceholderImage extends StatelessWidget {
-  final ColorScheme scheme;
-  const _PlaceholderImage({required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: scheme.surfaceVariant.withOpacity(0.7),
-      child: Center(
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedImageNotFound01,
-          color: scheme.onSurface.withOpacity(0.35),
-          size: 32,
-        ),
-      ),
-    );
-  }
-}
-
 /* ----------------------------- STATES ----------------------------- */
 
 class _ErrorState extends StatelessWidget {
@@ -507,31 +873,13 @@ class _PageSkeleton extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Container(
-                height: 210,
+                height: 240,
                 decoration: BoxDecoration(
                   color: scheme.surfaceVariant.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
               const SizedBox(height: 16),
-              Container(
-                height: 16,
-                width: 260,
-                decoration: BoxDecoration(
-                  color: scheme.surfaceVariant.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                height: 16,
-                width: 180,
-                decoration: BoxDecoration(
-                  color: scheme.surfaceVariant.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              const SizedBox(height: 24),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
