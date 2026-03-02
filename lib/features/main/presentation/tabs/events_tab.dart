@@ -1,5 +1,6 @@
 import "dart:async";
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -48,7 +49,8 @@ class _EventsTabState extends State<EventsTab> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200 &&
+    if (_scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 200 &&
         !_loading &&
         _hasMore) {
       _fetchPage(reset: false);
@@ -77,7 +79,9 @@ class _EventsTabState extends State<EventsTab> {
         final decoded = jsonDecode(resp.body);
         List results = const [];
         if (decoded is Map) {
-          results = (decoded["results"] ?? decoded["data"] ?? const []) as List? ?? const [];
+          results =
+              (decoded["results"] ?? decoded["data"] ?? const []) as List? ??
+                  const [];
         } else if (decoded is List) {
           results = decoded;
         }
@@ -86,7 +90,8 @@ class _EventsTabState extends State<EventsTab> {
             .map((m) => _EventItem.fromJson(Map<String, dynamic>.from(m)))
             .toList();
         final existing = _events.map((e) => e.id).toSet();
-        final unique = incoming.where((e) => !existing.contains(e.id)).toList();
+        final unique =
+            incoming.where((e) => !existing.contains(e.id)).toList();
         setState(() {
           _events.addAll(unique);
           _hasMore = incoming.length >= 10;
@@ -105,7 +110,7 @@ class _EventsTabState extends State<EventsTab> {
   Future<void> _onRefresh() async => _fetchPage(reset: true);
 
   void _onSearchChanged(String v) {
-    setState(() {}); // refresh clear icon
+    setState(() {});
     _query = v.trim();
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
@@ -130,6 +135,14 @@ class _EventsTabState extends State<EventsTab> {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    // Responsive: 1 column on phone, 2 on tablet
+    final isTablet = screenWidth >= 700;
+    final hPad = isTablet ? 20.0 : 16.0;
+    final crossCount = isTablet ? 2 : 1;
+    // Card aspect ratio: tall poster — ~0.62 width/height ratio (portrait)
+    final cardAspect = isTablet ? 0.64 : 0.62;
 
     return SafeArea(
       child: Stack(
@@ -139,18 +152,24 @@ class _EventsTabState extends State<EventsTab> {
             child: CustomScrollView(
               controller: _scrollCtrl,
               slivers: [
+                // Title
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 12),
                     child: Text(
                       t(lang, "nav.events"),
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
+
+                // Search bar
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 14),
                     child: TextField(
                       controller: _searchCtrl,
                       onChanged: _onSearchChanged,
@@ -182,68 +201,83 @@ class _EventsTabState extends State<EventsTab> {
                         ),
                       ),
                       style: const TextStyle(
-                        fontFamily: "DM Sans",
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ),
+
+                // Skeleton (initial load)
                 if (_loading && _events.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                      child: Column(
-                        children: List.generate(
-                          3,
-                          (_) => const Padding(
-                            padding: EdgeInsets.only(bottom: 12),
-                            child: _EventSkeleton(),
-                          ),
-                        ),
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 14),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossCount,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: cardAspect,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (_, __) => const _EventCardSkeleton(),
+                        childCount: 4,
                       ),
                     ),
                   ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final showLoader = _loading && _events.isNotEmpty;
-                      if (index >= _events.length) {
-                        return showLoader
-                            ? const Padding(
-                                padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
-                                child: _EventSkeleton(),
-                              )
-                            : const SizedBox.shrink();
-                      }
-                      final evt = _events[index];
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                        child: _EventCard(
-                          event: evt,
-                          isTablet: MediaQuery.sizeOf(context).width >= 700,
-                          onTap: () => Navigator.pushNamed(
-                            context,
-                            AppRoutes.eventDetails,
-                            arguments: evt.id,
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: _events.length + ((_loading && _events.isNotEmpty) ? 1 : 0),
+
+                // Grid of event cards
+                if (_events.isNotEmpty)
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 14),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossCount,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: cardAspect,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          if (index >= _events.length) {
+                            return const _EventCardSkeleton();
+                          }
+                          final evt = _events[index];
+                          return _EventPosterCard(
+                            event: evt,
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.eventDetails,
+                              arguments: evt.id,
+                            ),
+                          );
+                        },
+                        childCount: _events.length +
+                            ((_loading && _events.isNotEmpty) ? 2 : 0),
+                      ),
+                    ),
                   ),
-                ),
+
+                // Error state
                 if (_error != null)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 16),
                       child: Column(
                         children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedWifiError01,
+                            color: scheme.error,
+                            size: 26,
+                          ),
+                          const SizedBox(height: 8),
                           Text(
                             _error!,
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               color: scheme.error,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -255,28 +289,45 @@ class _EventsTabState extends State<EventsTab> {
                       ),
                     ),
                   ),
+
+                // Empty state
                 if (!_loading && _events.isEmpty && _error == null)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Center(
-                        child: Text(
-                          t(lang, "common.coming_soon"),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
+                      padding: EdgeInsets.all(hPad),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 24),
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedCalendarRemove02,
+                            color: scheme.onSurface.withOpacity(0.35),
+                            size: 36,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            t(lang, "common.coming_soon"),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurface.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: 60)),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
               ],
             ),
           ),
+
+          // Back to top FAB
           if (_showBackToTop)
             Positioned(
               right: 16,
               bottom: 18,
-              child: FloatingActionButton(
-                mini: true,
+              child: FloatingActionButton.small(
                 onPressed: () => _scrollCtrl.animateTo(
                   0,
                   duration: const Duration(milliseconds: 320),
@@ -290,6 +341,392 @@ class _EventsTabState extends State<EventsTab> {
     );
   }
 }
+
+/* ─────────────────────────────── POSTER CARD ─────────────────────────────── */
+
+class _EventPosterCard extends StatefulWidget {
+  final _EventItem event;
+  final VoidCallback onTap;
+
+  const _EventPosterCard({required this.event, required this.onTap});
+
+  @override
+  State<_EventPosterCard> createState() => _EventPosterCardState();
+}
+
+class _EventPosterCardState extends State<_EventPosterCard> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = currentLangSync();
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(22);
+
+    final statusInfo = _resolveStatus(widget.event, lang, scheme);
+    final priceLabel = widget.event.minPrice <= 0
+        ? t(lang, "events.free")
+        : "From Rwf ${_formatPrice(widget.event.minPrice)}";
+    final locationLabel = widget.event.location().isNotEmpty
+        ? widget.event.location()
+        : "—";
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.97 : 1.0,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // ── Full-bleed banner image ──
+              _BannerImage(url: widget.event.bannerUrl),
+
+              // ── Top status pill ──
+              Positioned(
+                top: 12,
+                left: 12,
+                child: _StatusPill(
+                  label: statusInfo.label,
+                  bgColor: statusInfo.bgColor,
+                  textColor: statusInfo.textColor,
+                  borderColor: statusInfo.borderColor,
+                ),
+              ),
+
+              // ── Bottom frosted glass bar ──
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _FrostedBar(
+                  title: widget.event.title,
+                  locationLabel: locationLabel,
+                  priceLabel: priceLabel,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatPrice(double v) {
+    if (v >= 1000000) return "${(v / 1000000).toStringAsFixed(1)}M";
+    if (v >= 1000) return "${(v / 1000).toStringAsFixed(0)}k";
+    return v.toStringAsFixed(0);
+  }
+}
+
+/* ─────────────────────────────── BANNER IMAGE ─────────────────────────────── */
+
+class _BannerImage extends StatelessWidget {
+  final String? url;
+  const _BannerImage({this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    if (url != null && url!.trim().isNotEmpty) {
+      return Image.network(
+        url!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
+        loadingBuilder: (_, child, evt) =>
+            evt == null ? child : _Placeholder(scheme: scheme),
+      );
+    }
+    return _Placeholder(scheme: scheme);
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  final ColorScheme scheme;
+  const _Placeholder({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: scheme.surfaceVariant.withOpacity(0.55),
+      child: Center(
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedImageNotFound01,
+          color: scheme.onSurface.withOpacity(0.3),
+          size: 36,
+        ),
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────── FROSTED BOTTOM BAR ─────────────────────────────── */
+
+class _FrostedBar extends StatelessWidget {
+  final String title;
+  final String locationLabel;
+  final String priceLabel;
+
+  const _FrostedBar({
+    required this.title,
+    required this.locationLabel,
+    required this.priceLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.45),
+          ),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Title
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 7),
+              // Bottom row: venue + price
+              Row(
+                children: [
+                  // Location chip
+                  Expanded(
+                    child: _BottomChip(
+                      icon: HugeIcons.strokeRoundedMapsLocation02,
+                      label: locationLabel,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Price chip
+                  _BottomChip(
+                    icon: HugeIcons.strokeRoundedTag01,
+                    label: priceLabel,
+                    shrink: true,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomChip extends StatelessWidget {
+  final dynamic icon; // HugeIcons value
+  final String label;
+  final bool shrink;
+
+  const _BottomChip({
+    required this.icon,
+    required this.label,
+    this.shrink = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final child = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        HugeIcon(
+          icon: icon,
+          color: Colors.white,
+          size: 12,
+        ),
+        const SizedBox(width: 5),
+        shrink
+            ? Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              )
+            : Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+      ],
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.22), width: 1),
+      ),
+      child: child,
+    );
+  }
+}
+
+/* ─────────────────────────────── STATUS PILL ─────────────────────────────── */
+
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final Color bgColor;
+  final Color textColor;
+  final Color borderColor;
+
+  const _StatusPill({
+    required this.label,
+    required this.bgColor,
+    required this.textColor,
+    required this.borderColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: borderColor, width: 1),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────── SKELETON ─────────────────────────────── */
+
+class _EventCardSkeleton extends StatelessWidget {
+  const _EventCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(22);
+    final shimmer = scheme.surfaceVariant.withOpacity(0.65);
+    final shimmerDark = scheme.surfaceVariant.withOpacity(0.40);
+
+    return ClipRRect(
+      borderRadius: radius,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background shimmer
+          Container(color: shimmer),
+
+          // Top-left pill skeleton
+          Positioned(
+            top: 12,
+            left: 12,
+            child: Container(
+              width: 90,
+              height: 26,
+              decoration: BoxDecoration(
+                color: shimmerDark,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+
+          // Bottom bar skeleton
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              color: scheme.surfaceVariant.withOpacity(0.55),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title line
+                  Container(
+                    height: 13,
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(right: 40),
+                    decoration: BoxDecoration(
+                      color: shimmerDark,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Bottom chips row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: shimmerDark,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 80,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          color: shimmerDark,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────── MODEL ─────────────────────────────── */
 
 class _EventItem {
   final String id;
@@ -315,7 +752,8 @@ class _EventItem {
   });
 
   String location() {
-    final parts = [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
+    final parts =
+        [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
     return parts.join(" • ");
   }
 
@@ -329,16 +767,18 @@ class _EventItem {
       }
     }
 
-    final start = parseDt(json["start_at"]?.toString() ?? json["start_date"]?.toString());
-    final end = parseDt(json["end_at"]?.toString() ?? json["end_date"]?.toString());
+    final start =
+        parseDt(json["start_at"]?.toString() ?? json["start_date"]?.toString());
+    final end =
+        parseDt(json["end_at"]?.toString() ?? json["end_date"]?.toString());
 
     return _EventItem(
       id: (json["id"] ?? "").toString(),
       title: (json["title"] ?? json["name"] ?? "Event").toString(),
       bannerUrl: (json["banner_url"] ??
-              json["cover_url"] ??
-              json["image"] ??
-              json["first_image_url"]) as String?,
+          json["cover_url"] ??
+          json["image"] ??
+          json["first_image_url"]) as String?,
       startAt: start,
       endAt: end,
       venue: (json["venue_name"] ?? "").toString(),
@@ -349,396 +789,80 @@ class _EventItem {
   }
 }
 
-class _EventCard extends StatefulWidget {
-  final _EventItem event;
-  final bool isTablet;
-  final VoidCallback onTap;
+/* ─────────────────────────────── STATUS HELPERS ─────────────────────────────── */
 
-  const _EventCard({
-    required this.event,
-    required this.isTablet,
-    required this.onTap,
-  });
-
-  @override
-  State<_EventCard> createState() => _EventCardState();
-}
-
-class _EventCardState extends State<_EventCard> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final lang = currentLangSync();
-    final isDark = scheme.brightness == Brightness.dark;
-    final radius = BorderRadius.circular(widget.isTablet ? 24 : 22);
-    final height = widget.isTablet ? 112.0 : 104.0;
-
-    final status = _eventStatus(widget.event, scheme, lang);
-    final dateText = _dateLabel(widget.event, lang);
-
-    final priceLabel =
-        widget.event.minPrice <= 0 ? t(lang, "events.free") : "${_formatCompactPrice(widget.event.minPrice)} RWF";
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOutCubic,
-        scale: _pressed ? 0.992 : 1,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: radius,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.18 : 0.08),
-                blurRadius: 14,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: Material(
-              color: scheme.surface,
-              child: InkWell(
-                onTap: widget.onTap,
-                child: SizedBox(
-                  height: height,
-                  child: Row(
-                    children: [
-                      _EventThumb(
-                        url: widget.event.bannerUrl,
-                        size: widget.isTablet ? 110 : 96,
-                        radius: BorderRadius.circular(widget.isTablet ? 24 : 22),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8, top: 10, bottom: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      widget.event.title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontFamily: "DM Sans",
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _StatusPill(
-                                    label: status.label,
-                                    color: status.color,
-                                    textColor: status.textColor,
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedCalendar01,
-                                    size: 14,
-                                    strokeWidth: 2,
-                                    color: scheme.onSurface.withOpacity(0.72),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      dateText,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: "DM Sans",
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: scheme.onSurface.withOpacity(0.72),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedMapPin,
-                                    size: 13,
-                                    strokeWidth: 2,
-                                    color: scheme.onSurface.withOpacity(0.70),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      widget.event.location(),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontFamily: "DM Sans",
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: scheme.onSurface.withOpacity(0.68),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  _PricePill(label: priceLabel, fontSize: 14),
-                                  const Spacer(),
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedArrowRight02,
-                                    size: 14,
-                                    strokeWidth: 2,
-                                    color: scheme.onSurface.withOpacity(0.70),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatCompactPrice(double value) {
-    if (value >= 1000000) return "${(value / 1000000).toStringAsFixed(1)}M";
-    if (value >= 1000) return "${(value / 1000).toStringAsFixed(1)}K";
-    return value.toStringAsFixed(0);
-  }
-}
-
-class _StatusPill extends StatelessWidget {
+class _StatusInfo {
   final String label;
-  final Color color;
+  final Color bgColor;
   final Color textColor;
+  final Color borderColor;
 
-  const _StatusPill({
+  const _StatusInfo({
     required this.label,
-    required this.color,
+    required this.bgColor,
     required this.textColor,
+    required this.borderColor,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.35)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: textColor,
-        ),
-      ),
-    );
-  }
 }
 
-class _PricePill extends StatelessWidget {
-  final String label;
-  final double fontSize;
-  const _PricePill({required this.label, this.fontSize = 13});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: scheme.primary.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: scheme.primary.withOpacity(0.18)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: "DM Sans",
-          fontSize: fontSize,
-          fontWeight: FontWeight.w900,
-          color: scheme.primary,
-        ),
-      ),
-    );
-  }
-}
-
-class _EventThumb extends StatelessWidget {
-  final String? url;
-  final double size;
-  final BorderRadius radius;
-
-  const _EventThumb({
-    required this.url,
-    required this.size,
-    required this.radius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return ClipRRect(
-      borderRadius: radius,
-      child: Container(
-        width: size,
-        height: size,
-        color: scheme.surfaceVariant.withOpacity(0.55),
-        child: url != null && url!.isNotEmpty
-            ? Image.network(
-                url!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: scheme.surfaceVariant.withOpacity(0.55)),
-              )
-            : Center(
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedCalendar01,
-                  size: 20,
-                  strokeWidth: 2,
-                  color: scheme.onSurface.withOpacity(0.55),
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-class _EventSkeleton extends StatelessWidget {
-  const _EventSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isTablet = MediaQuery.sizeOf(context).width >= 700;
-    final radius = BorderRadius.circular(isTablet ? 24 : 22);
-    final height = isTablet ? 112.0 : 104.0;
-
-    return ClipRRect(
-      borderRadius: radius,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: scheme.surfaceVariant.withOpacity(0.55),
-          borderRadius: radius,
-          border: Border.all(color: scheme.onSurface.withOpacity(0.06)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: isTablet ? 110 : 96,
-              height: isTablet ? 110 : 96,
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: scheme.surfaceVariant.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(isTablet ? 20 : 18),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    height: 12,
-                    width: 140,
-                    decoration: BoxDecoration(
-                      color: scheme.onSurface.withOpacity(0.10),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 10,
-                    width: 120,
-                    decoration: BoxDecoration(
-                      color: scheme.onSurface.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    height: 10,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      color: scheme.onSurface.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EventStatus {
-  final String label;
-  final Color color;
-  final Color textColor;
-  const _EventStatus(this.label, this.color, this.textColor);
-}
-
-_EventStatus _eventStatus(_EventItem e, ColorScheme scheme, String lang) {
+_StatusInfo _resolveStatus(_EventItem e, String lang, ColorScheme scheme) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
 
+  // Ended
   if (e.endAt != null && e.endAt!.isBefore(now)) {
-    return _EventStatus(
-      t(lang, "events.status_ended"),
-      scheme.error,
-      Colors.white,
+    return _StatusInfo(
+      label: t(lang, "events.status_ended"),
+      bgColor: Colors.red.withOpacity(0.55),
+      textColor: Colors.white,
+      borderColor: Colors.red.withOpacity(0.4),
     );
   }
+
   if (e.startAt != null) {
-    final startDay = DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+    final startDay =
+        DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+
+    // Happening today
     if (startDay == today) {
-      return _EventStatus(t(lang, "events.status_happening"), scheme.primary, Colors.white);
+      return _StatusInfo(
+        label: t(lang, "events.status_happening"),
+        bgColor: Colors.green.withOpacity(0.55),
+        textColor: Colors.white,
+        borderColor: Colors.green.withOpacity(0.4),
+      );
     }
+
+    // Tomorrow
     final tomorrow = today.add(const Duration(days: 1));
     if (startDay == tomorrow) {
-      return _EventStatus(t(lang, "events.status_tomorrow"), scheme.primary, Colors.white);
+      return _StatusInfo(
+        label: t(lang, "events.status_tomorrow"),
+        bgColor: Colors.white.withOpacity(0.22),
+        textColor: Colors.white,
+        borderColor: Colors.white.withOpacity(0.35),
+      );
     }
-  }
-  return _EventStatus(
-    _dateLabel(e, lang),
-    scheme.primary.withOpacity(0.12),
-    scheme.onSurface,
-  );
-}
 
-String _dateLabel(_EventItem e, String lang) {
-  final df = DateFormat("EEE, dd MMM");
-  final dt = e.startAt ?? e.endAt;
-  if (dt == null) return t(lang, "events.status_ended");
-  return df.format(dt);
+    // Future: show relative or formatted date
+    final diff = startDay.difference(today).inDays;
+    final df = DateFormat("dd MMM, h:mm a");
+    final label = diff <= 30
+        ? "In $diff day${diff == 1 ? '' : 's'}, ${DateFormat('h:mm a').format(e.startAt!)}"
+        : df.format(e.startAt!);
+
+    return _StatusInfo(
+      label: label,
+      bgColor: Colors.black.withOpacity(0.40),
+      textColor: Colors.white,
+      borderColor: Colors.white.withOpacity(0.22),
+    );
+  }
+
+  return _StatusInfo(
+    label: t(lang, "events.status_ended"),
+    bgColor: Colors.red.withOpacity(0.55),
+    textColor: Colors.white,
+    borderColor: Colors.red.withOpacity(0.4),
+  );
 }
