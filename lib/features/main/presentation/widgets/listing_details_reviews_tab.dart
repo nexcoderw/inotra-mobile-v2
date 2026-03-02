@@ -53,7 +53,10 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
                 ? (decoded["results"] ?? decoded["data"] ?? const [])
                 : decoded as List?) ??
             const [];
-        final items = results.whereType<Map>().map(_Review.fromJson).toList()
+        final items = results
+            .whereType<Map>()
+            .map((m) => _Review.fromJson(Map<String, dynamic>.from(m)))
+            .toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
         setState(() => _reviews = items);
       } else {
@@ -111,8 +114,8 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
     final width = MediaQuery.sizeOf(context).width;
     final isTablet = width >= 700;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,21 +145,20 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
             _ErrorBanner(message: _error!, onRetry: _fetch)
           else if (_reviews.isEmpty && !_loading)
             _EmptyState(label: t(lang, "listings.reviews_empty")),
-          Expanded(
-            child: _reviews.isNotEmpty
-                ? ListView.separated(
-                    padding: EdgeInsets.zero,
-                    itemCount: _reviews.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 14,
-                      thickness: 1,
-                      color: scheme.onSurface.withOpacity(0.08),
-                    ),
-                    itemBuilder: (_, i) => _ReviewTile(review: _reviews[i]),
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 12),
+          if (_reviews.isNotEmpty)
+            ListView.separated(
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              itemCount: _reviews.length,
+              separatorBuilder: (_, __) => Divider(
+                height: 14,
+                thickness: 1,
+                color: scheme.onSurface.withOpacity(0.08),
+              ),
+              itemBuilder: (_, i) => _ReviewTile(review: _reviews[i]),
+            ),
+          const SizedBox(height: 14),
           authed
               ? _ReviewComposer(
                   controller: _controller,
