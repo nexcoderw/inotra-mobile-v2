@@ -1,36 +1,49 @@
 import "package:flutter/material.dart";
 
-import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../widgets/page_header.dart";
 
 class AiChatTab extends StatelessWidget {
   const AiChatTab({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final lang = currentLangSync();
+    final scheme = Theme.of(context).colorScheme;
+
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              t(currentLangSync(), "nav.ai_chat"),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(t(currentLangSync(), "ai.placeholder")),
+            PageHeader(title: t(lang, "nav.ai_chat")),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      t(lang, "nav.ai_chat"),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: scheme.onSurface.withOpacity(0.92),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      t(lang, "common.coming_soon"),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface.withOpacity(0.72),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.aiChatConversations),
-              icon: const Icon(Icons.chat_bubble_outline),
-              label: Text(t(currentLangSync(), "ai.open_conversations")),
             ),
           ],
         ),
