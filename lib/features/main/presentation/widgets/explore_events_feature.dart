@@ -39,7 +39,7 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
     });
 
     try {
-      final uri = Api.url("${EventEndpoints.list}?page=1&page_size=4");
+      final uri = Api.url("${EventEndpoints.list}?page=1&page_size=3&limit=3");
       final resp = await http.get(uri);
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
@@ -438,7 +438,7 @@ class _EventItem {
   final String location;
   final double minPrice;
 
-  const _EventItem({
+  _EventItem({
     required this.id,
     required this.title,
     required this.imageUrl,
