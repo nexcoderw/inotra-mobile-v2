@@ -2,17 +2,15 @@ import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "explore_listings_feature.dart"
-    show _ErrorState, _EmptyState, _GlassPill, _GlassLink, _GlassFooter, _SpecularHighlight, _ListingSkeleton;
 
 class ExploreEventsFeature extends StatefulWidget {
   const ExploreEventsFeature({super.key});
@@ -91,7 +89,6 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
                     fontWeight: FontWeight.w900,
                     color: scheme.onSurface,
                     letterSpacing: -0.2,
-                    fontFamily: "DM Sans",
                   ),
                 ),
               ),
@@ -163,176 +160,148 @@ class _EventListTile extends StatefulWidget {
 
 class _EventListTileState extends State<_EventListTile> {
   bool _pressed = false;
-  void _set(bool v) => setState(() => _pressed = v);
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = scheme.brightness == Brightness.dark;
 
-    final radius = BorderRadius.circular(widget.isTablet ? 22 : 20);
-    final h = widget.isTablet ? 104.0 : 96.0;
+    // Dimensions close to screenshot proportions
+    final radius = BorderRadius.circular(widget.isTablet ? 30 : 28);
+    final h = widget.isTablet ? 128.0 : 118.0;
 
     final title = widget.item.title.trim().isNotEmpty ? widget.item.title.trim() : "Event";
-    final loc = widget.item.location.trim();
+    final subtitle = widget.item.location().trim().isNotEmpty ? widget.item.location().trim() : "—";
+    final priceLabel =
+        widget.item.minPrice <= 0 ? "Free" : "${_formatCompactPrice(widget.item.minPrice)} RWF";
+
+    // Right pill label: keep "Today" to match screenshot.
+    // If you want it dynamic, swap to widget.item.dateLabel (but screenshot uses Today).
+    final pillLabel = "Today";
+
+    // Clean light look (like image) + still okay on dark theme
+    final isDark = scheme.brightness == Brightness.dark;
+    final cardColor = isDark ? scheme.surface : const Color(0xFFFFFFFF);
+    final borderColor = isDark ? scheme.onSurface.withOpacity(0.10) : const Color(0xFFEDEDED);
+
+    // Blue outer glow like screenshot
+    final glowColor = isDark ? scheme.primary.withOpacity(0.45) : const Color(0xFF2D57FF).withOpacity(0.35);
+
+    // Soft shadow under card
+    final shadowColor = Colors.black.withOpacity(isDark ? 0.35 : 0.10);
 
     return GestureDetector(
-      onTapDown: (_) => _set(true),
-      onTapUp: (_) => _set(false),
-      onTapCancel: () => _set(false),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
       onTap: widget.onTap,
       child: AnimatedScale(
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
-        scale: _pressed ? 0.994 : 1,
-        child: ClipRRect(
-          borderRadius: radius,
-          child: Stack(
-            children: [
-              // Glass base
-              Positioned.fill(
-                child: DecoratedBox(
+        scale: _pressed ? 0.992 : 1,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            boxShadow: [
+              // Blue glow (outer)
+              BoxShadow(
+                color: glowColor,
+                blurRadius: 34,
+                spreadRadius: 10,
+                offset: const Offset(0, 18),
+              ),
+              // Main subtle shadow
+              BoxShadow(
+                color: shadowColor,
+                blurRadius: 26,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: radius,
+            child: Material(
+              color: cardColor,
+              child: InkWell(
+                onTap: widget.onTap,
+                splashColor: scheme.primary.withOpacity(0.06),
+                highlightColor: scheme.primary.withOpacity(0.03),
+                child: Container(
+                  height: h,
+                  padding: EdgeInsets.all(widget.isTablet ? 16 : 14),
                   decoration: BoxDecoration(
-                    color: scheme.surface.withOpacity(isDark ? 0.55 : 0.75),
+                    color: cardColor,
                     borderRadius: radius,
-                    border: Border.all(color: scheme.onSurface.withOpacity(isDark ? 0.10 : 0.08)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.20 : 0.10),
-                        blurRadius: 26,
-                        offset: const Offset(0, 14),
-                      ),
-                    ],
+                    border: Border.all(color: borderColor, width: 1),
                   ),
-                ),
-              ),
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: const SizedBox.expand(),
-                ),
-              ),
-
-              // Subtle accent gradient
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          scheme.primary.withOpacity(isDark ? 0.18 : 0.10),
-                          scheme.surface.withOpacity(0.0),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Content row
-              SizedBox(
-                height: h,
-                child: Padding(
-                  padding: EdgeInsets.all(widget.isTablet ? 14 : 12),
                   child: Row(
                     children: [
-                      _EventThumbnail(
+                      // Poster (left)
+                      _EventPosterThumb(
                         imageUrl: widget.item.imageUrl,
-                        size: widget.isTablet ? 70 : 64,
-                        radius: 16,
+                        size: widget.isTablet ? 86 : 78,
+                        radius: widget.isTablet ? 22 : 20,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: widget.isTablet ? 16 : 14),
 
-                      // Texts
+                      // Text area
                       Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: widget.isTablet ? 14.5 : 13.5,
-                                fontWeight: FontWeight.w900,
-                                color: scheme.onSurface,
-                                letterSpacing: -0.2,
-                                height: 1.05,
-                                fontFamily: "DM Sans",
-                              ),
-                            ),
-                            const SizedBox(height: 8),
+                            // Top row: title + pill
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                HugeIcon(
-                                  icon: HugeIcons.strokeRoundedCalendar01,
-                                  size: 14,
-                                  strokeWidth: 2,
-                                  color: scheme.onSurface.withOpacity(0.72),
-                                ),
-                                const SizedBox(width: 6),
                                 Expanded(
-                                  child: Text(
-                                    widget.item.dateLabel,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: scheme.onSurface.withOpacity(0.72),
-                                      fontFamily: "DM Sans",
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (loc.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedMapPin,
-                                    size: 13,
-                                    strokeWidth: 2,
-                                    color: scheme.onSurface.withOpacity(0.70),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 2),
                                     child: Text(
-                                      loc,
+                                      title,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: scheme.onSurface.withOpacity(0.68),
-                                        fontFamily: "DM Sans",
+                                        fontSize: widget.isTablet ? 20 : 18,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.3,
+                                        color: isDark ? scheme.onSurface : const Color(0xFF111111),
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                _PriceChip(
-                                  price: widget.item.minPrice,
-                                  isFree: widget.item.minPrice <= 0,
                                 ),
-                                const Spacer(),
-                                _TrailingGlass(
-                                  active: _pressed,
-                                  child: Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 18,
-                                    color: scheme.onSurface.withOpacity(0.85),
-                                  ),
-                                ),
+                                const SizedBox(width: 10),
+                                _TodayPill(label: pillLabel),
                               ],
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            // Subtitle (grey, like "Mundi Center")
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: widget.isTablet ? 18 : 16,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? scheme.onSurface.withOpacity(0.60)
+                                    : const Color(0xFF9A9A9A),
+                              ),
+                            ),
+
+                            const Spacer(),
+
+                            // Price (green)
+                            Text(
+                              priceLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: widget.isTablet ? 22 : 20,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.2,
+                                color: const Color(0xFF0B3B2A), // close to screenshot
+                              ),
                             ),
                           ],
                         ),
@@ -341,27 +310,66 @@ class _EventListTileState extends State<_EventListTile> {
                   ),
                 ),
               ),
-
-              // Specular highlight
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: _SpecularHighlight(radius: radius),
-                ),
-              ),
-            ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  String _formatCompactPrice(double value) {
+    // 25000 -> 25k (like screenshot)
+    final v = value.round();
+    if (v >= 1000) {
+      final k = (v / 1000);
+      // show 25k not 25.0k
+      final s = (k % 1 == 0) ? k.toStringAsFixed(0) : k.toStringAsFixed(1);
+      return "${s}k";
+    }
+    return v.toString();
+  }
+}
+
+class _TodayPill extends StatelessWidget {
+  final String label;
+  const _TodayPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    // light green pill like screenshot
+    final bg = isDark ? scheme.surfaceVariant.withOpacity(0.65) : const Color(0xFFDCE9E2);
+    final border = isDark ? scheme.onSurface.withOpacity(0.12) : const Color(0xFF0B3B2A);
+    final text = isDark ? scheme.onSurface : const Color(0xFF0B3B2A);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: border.withOpacity(isDark ? 0.25 : 0.45), width: 1.2),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+          color: text,
+          letterSpacing: -0.2,
         ),
       ),
     );
   }
 }
 
-class _EventThumbnail extends StatelessWidget {
+class _EventPosterThumb extends StatelessWidget {
   final String? imageUrl;
   final double size;
   final double radius;
 
-  const _EventThumbnail({
+  const _EventPosterThumb({
     required this.imageUrl,
     required this.size,
     required this.radius,
@@ -370,59 +378,39 @@ class _EventThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Container(
         width: size,
         height: size,
-        color: scheme.surfaceVariant.withOpacity(0.55),
-        child: imageUrl != null && imageUrl!.isNotEmpty
+        decoration: BoxDecoration(
+          color: isDark ? scheme.surfaceVariant.withOpacity(0.45) : const Color(0xFFF0F0F0),
+        ),
+        child: (imageUrl != null && imageUrl!.trim().isNotEmpty)
             ? Image.network(
                 imageUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: scheme.surfaceVariant.withOpacity(0.55)),
+                errorBuilder: (_, __, ___) => Container(
+                  color: isDark ? scheme.surfaceVariant.withOpacity(0.45) : const Color(0xFFF0F0F0),
+                  child: Icon(Icons.image_not_supported_rounded, color: scheme.onSurface.withOpacity(0.45)),
+                ),
                 loadingBuilder: (context, child, evt) {
                   if (evt == null) return child;
-                  return Container(color: scheme.surfaceVariant.withOpacity(0.55));
+                  return Container(
+                    color: isDark ? scheme.surfaceVariant.withOpacity(0.45) : const Color(0xFFF0F0F0),
+                  );
                 },
               )
-            : Center(
+            : Container(
+                color: isDark ? scheme.surfaceVariant.withOpacity(0.45) : const Color(0xFFF0F0F0),
                 child: Icon(
                   Icons.celebration_rounded,
-                  size: 20,
+                  size: 22,
                   color: scheme.onSurface.withOpacity(0.55),
                 ),
               ),
-      ),
-    );
-  }
-}
-
-class _TrailingGlass extends StatelessWidget {
-  final bool active;
-  final Widget child;
-  const _TrailingGlass({required this.active, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          curve: Curves.easeOutCubic,
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(active ? 0.70 : 0.55),
-            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-            shape: BoxShape.circle,
-          ),
-          child: Center(child: child),
-        ),
       ),
     );
   }
@@ -434,46 +422,56 @@ class _EventItem {
   final String id;
   final String title;
   final String? imageUrl;
-  final String dateLabel;
-  final String location;
+  final DateTime? startAt;
+  final DateTime? endAt;
+  final String venue;
+  final String city;
+  final String country;
   final double minPrice;
 
   _EventItem({
     required this.id,
     required this.title,
     required this.imageUrl,
-    required this.dateLabel,
-    required this.location,
+    required this.startAt,
+    required this.endAt,
+    required this.venue,
+    required this.city,
+    required this.country,
     required this.minPrice,
   });
 
+  String location() {
+    final parts = [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
+    return parts.join(" • ");
+  }
+
   factory _EventItem.fromJson(Map<String, dynamic> json) {
-    final startRaw = (json["start_at"] ?? json["start_date"] ?? json["date"] ?? "").toString();
-    String dateLabel = startRaw;
-    if (startRaw.isNotEmpty) {
+    DateTime? parseDt(String? raw) {
+      if (raw == null || raw.isEmpty) return null;
       try {
-        final dt = DateTime.parse(startRaw).toLocal();
-        dateLabel = DateFormat("EEE, dd MMM • HH:mm").format(dt);
-      } catch (_) {}
+        return DateTime.parse(raw).toLocal();
+      } catch (_) {
+        return null;
+      }
     }
 
-    final venue = (json["venue_name"] ?? "").toString();
-    final city = (json["city"] ?? "").toString();
-    final country = (json["country"] ?? "").toString();
-    final locParts = [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
-    final loc = locParts.join(" • ");
-    final minPrice = (json["min_ticket_price"] as num?)?.toDouble() ?? 0.0;
+    final start = parseDt(json["start_at"]?.toString() ?? json["start_date"]?.toString());
+    final end = parseDt(json["end_at"]?.toString() ?? json["end_date"]?.toString());
 
     return _EventItem(
       id: (json["id"] ?? "").toString(),
       title: (json["title"] ?? json["name"] ?? "Upcoming event").toString(),
-      imageUrl: (json["cover_url"] ??
+      imageUrl: (json["banner_url"] ??
+              json["cover_url"] ??
               json["image"] ??
-              json["first_image_url"] ??
-              json["banner_url"]) as String?,
-      dateLabel: dateLabel.isEmpty ? "Soon" : dateLabel,
-      location: loc,
-      minPrice: minPrice,
+              json["first_image_url"]) as String?,
+      startAt: start,
+      endAt: end,
+      venue: (json["venue_name"] ?? "").toString(),
+      city: (json["city"] ?? "").toString(),
+      country: (json["country"] ?? "").toString(),
+      minPrice: (json["min_ticket_price"] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -489,92 +487,102 @@ class _EventListSkeleton extends StatelessWidget {
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
 
-    final radius = BorderRadius.circular(isTablet ? 22 : 20);
-    final h = isTablet ? 104.0 : 96.0;
+    final radius = BorderRadius.circular(isTablet ? 30 : 28);
+    final h = isTablet ? 128.0 : 118.0;
+    final isDark = scheme.brightness == Brightness.dark;
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: SizedBox(
-        height: h,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
+    final cardColor = isDark ? scheme.surface : const Color(0xFFFFFFFF);
+    final borderColor = isDark ? scheme.onSurface.withOpacity(0.10) : const Color(0xFFEDEDED);
+    final glowColor = isDark ? scheme.primary.withOpacity(0.35) : const Color(0xFF2D57FF).withOpacity(0.22);
+    final shadowColor = Colors.black.withOpacity(isDark ? 0.30 : 0.08);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: glowColor,
+            blurRadius: 30,
+            spreadRadius: 8,
+            offset: const Offset(0, 16),
+          ),
+          BoxShadow(
+            color: shadowColor,
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Container(
+          height: h,
+          padding: EdgeInsets.all(isTablet ? 16 : 14),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: radius,
+            border: Border.all(color: borderColor),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: isTablet ? 86 : 78,
+                height: isTablet ? 86 : 78,
                 decoration: BoxDecoration(
                   color: scheme.surfaceVariant.withOpacity(0.55),
-                  borderRadius: radius,
-                  border: Border.all(color: scheme.onSurface.withOpacity(0.06)),
+                  borderRadius: BorderRadius.circular(isTablet ? 22 : 20),
                 ),
               ),
-            ),
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: const SizedBox.expand(),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(isTablet ? 14 : 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: isTablet ? 70 : 64,
-                    height: isTablet ? 70 : 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.10),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.10)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              SizedBox(width: isTablet ? 16 : 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Container(
-                          height: 14,
-                          width: 220,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(999),
+                        Expanded(
+                          child: Container(
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: scheme.surfaceVariant.withOpacity(0.55),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(width: 10),
                         Container(
-                          height: 12,
-                          width: 160,
+                          width: 86,
+                          height: 36,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.10),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          height: 12,
-                          width: 140,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.10),
+                            color: scheme.surfaceVariant.withOpacity(0.45),
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.10),
-                      border: Border.all(color: Colors.white.withOpacity(0.10)),
+                    const SizedBox(height: 12),
+                    Container(
+                      height: 16,
+                      width: 180,
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceVariant.withOpacity(0.45),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
-                  ),
-                ],
+                    const Spacer(),
+                    Container(
+                      height: 20,
+                      width: 110,
+                      decoration: BoxDecoration(
+                        color: scheme.surfaceVariant.withOpacity(0.55),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -614,91 +622,11 @@ class _GlassButton extends StatelessWidget {
                   color: scheme.primary,
                   fontWeight: FontWeight.w900,
                   fontSize: 12.5,
-                  fontFamily: "DM Sans",
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PriceChip extends StatelessWidget {
-  final double price;
-  final bool isFree;
-
-  const _PriceChip({required this.price, required this.isFree});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final label = isFree ? "Free" : "From ${price.toStringAsFixed(0)}";
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedTicketStar,
-            size: 13,
-            strokeWidth: 2,
-            color: isFree ? Colors.greenAccent.shade100 : scheme.primary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Colors.white.withOpacity(0.92),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SpecularHighlight extends StatelessWidget {
-  final BorderRadius radius;
-  const _SpecularHighlight({required this.radius});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: radius,
-      child: Stack(
-        children: [
-          Positioned(
-            top: -60,
-            left: -40,
-            child: Transform.rotate(
-              angle: -0.25,
-              child: Container(
-                width: 220,
-                height: 160,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(80),
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.12),
-                      Colors.white.withOpacity(0.0),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -730,7 +658,6 @@ class _ErrorState extends StatelessWidget {
             style: TextStyle(
               color: scheme.error,
               fontWeight: FontWeight.w800,
-              fontFamily: "DM Sans",
             ),
           ),
           const SizedBox(height: 10),
@@ -764,7 +691,6 @@ class _EmptyState extends StatelessWidget {
         label,
         style: const TextStyle(
           fontWeight: FontWeight.w800,
-          fontFamily: "DM Sans",
         ),
         textAlign: TextAlign.center,
       ),
