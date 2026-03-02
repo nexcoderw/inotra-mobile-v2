@@ -395,7 +395,7 @@ class _DetailsSheet extends StatelessWidget {
                         children: [
                           ListingOverviewTab(place: place),
                           ListingMapTab(place: place),
-                          const ListingReviewsTab(),
+                                  ListingReviewsTab(place: _place!),
                           ListingTransportTab(place: place),
                         ],
                       ),
