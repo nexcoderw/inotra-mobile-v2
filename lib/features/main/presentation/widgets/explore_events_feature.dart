@@ -11,7 +11,8 @@ import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "explore_listings_feature.dart" show _ErrorState, _EmptyState, _GlassPill, _GlassLink, _GlassFooter, _SpecularHighlight, _ListingSkeleton;
+import "explore_listings_feature.dart"
+    show _ErrorState, _EmptyState, _GlassPill, _GlassLink, _GlassFooter, _SpecularHighlight, _ListingSkeleton;
 
 class ExploreEventsFeature extends StatefulWidget {
   const ExploreEventsFeature({super.key});
@@ -172,7 +173,7 @@ class _EventListTileState extends State<_EventListTile> {
     final radius = BorderRadius.circular(widget.isTablet ? 22 : 20);
     final h = widget.isTablet ? 104.0 : 96.0;
 
-    final title = widget.item.name.trim().isNotEmpty ? widget.item.name.trim() : "Event";
+    final title = widget.item.title.trim().isNotEmpty ? widget.item.title.trim() : "Event";
     final loc = widget.item.location.trim();
 
     return GestureDetector(
@@ -315,19 +316,25 @@ class _EventListTileState extends State<_EventListTile> {
                                 ],
                               ),
                             ],
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                _PriceChip(
+                                  price: widget.item.minPrice,
+                                  isFree: widget.item.minPrice <= 0,
+                                ),
+                                const Spacer(),
+                                _TrailingGlass(
+                                  active: _pressed,
+                                  child: Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 18,
+                                    color: scheme.onSurface.withOpacity(0.85),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      // Trailing arrow (glass)
-                      _TrailingGlass(
-                        active: _pressed,
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 18,
-                          color: scheme.onSurface.withOpacity(0.85),
                         ),
                       ),
                     ],
@@ -425,34 +432,48 @@ class _TrailingGlass extends StatelessWidget {
 
 class _EventItem {
   final String id;
-  final String name;
+  final String title;
   final String? imageUrl;
   final String dateLabel;
   final String location;
+  final double minPrice;
 
   const _EventItem({
     required this.id,
-    required this.name,
+    required this.title,
     required this.imageUrl,
     required this.dateLabel,
     required this.location,
+    required this.minPrice,
   });
 
   factory _EventItem.fromJson(Map<String, dynamic> json) {
-    final date = (json["start_date"] ?? json["date"] ?? json["created_at"] ?? "").toString();
+    final startRaw = (json["start_at"] ?? json["start_date"] ?? json["date"] ?? "").toString();
+    String dateLabel = startRaw;
+    if (startRaw.isNotEmpty) {
+      try {
+        final dt = DateTime.parse(startRaw).toLocal();
+        dateLabel = DateFormat("EEE, dd MMM • HH:mm").format(dt);
+      } catch (_) {}
+    }
+
+    final venue = (json["venue_name"] ?? "").toString();
     final city = (json["city"] ?? "").toString();
     final country = (json["country"] ?? "").toString();
-    final loc = [city, country].where((e) => e.trim().isNotEmpty).join(", ");
+    final locParts = [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
+    final loc = locParts.join(" • ");
+    final minPrice = (json["min_ticket_price"] as num?)?.toDouble() ?? 0.0;
 
     return _EventItem(
       id: (json["id"] ?? "").toString(),
-      name: (json["name"] ?? json["title"] ?? "Upcoming event").toString(),
+      title: (json["title"] ?? json["name"] ?? "Upcoming event").toString(),
       imageUrl: (json["cover_url"] ??
               json["image"] ??
               json["first_image_url"] ??
               json["banner_url"]) as String?,
-      dateLabel: date.isEmpty ? "Soon" : date,
+      dateLabel: dateLabel.isEmpty ? "Soon" : dateLabel,
       location: loc,
+      minPrice: minPrice,
     );
   }
 }
@@ -599,6 +620,47 @@ class _GlassButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PriceChip extends StatelessWidget {
+  final double price;
+  final bool isFree;
+
+  const _PriceChip({required this.price, required this.isFree});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final label = isFree ? "Free" : "From ${price.toStringAsFixed(0)}";
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedTicketStar,
+            size: 13,
+            strokeWidth: 2,
+            color: isFree ? Colors.greenAccent.shade100 : scheme.primary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: Colors.white.withOpacity(0.92),
+            ),
+          ),
+        ],
       ),
     );
   }
