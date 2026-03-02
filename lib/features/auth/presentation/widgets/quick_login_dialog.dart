@@ -36,6 +36,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   final _password = TextEditingController();
   bool _busy = false;
   final _formKey = GlobalKey<FormState>();
+  bool _showPassword = false;
 
   @override
   void dispose() {
@@ -73,19 +74,26 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
           theme: "light",
         );
 
-        if (!mounted) return;
-        toastification.show(
-          context: context,
-          type: ToastificationType.success,
-          style: ToastificationStyle.fillColored,
-          title: Text(t(lang, "auth.signed_in")),
-          description: Text(t(lang, "auth.welcome_back")),
-          alignment: Alignment.topCenter,
-          autoCloseDuration: const Duration(seconds: 3),
-        );
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.success,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(lang, "auth.signed_in")),
+        description: Text(t(lang, "auth.welcome_back")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
 
-        Navigator.of(context).pop(); // close dialog, stay on same page
-        return;
+      Navigator.of(context).pop(); // close dialog, stay on same page
+      // Refresh current route so authenticated header/state shows immediately.
+      if (mounted) {
+        // ignore: use_build_context_synchronously
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(pageBuilder: (_, __, ___) => Navigator.of(context).widget),
+        );
+      }
+      return;
       }
 
       final detail = _extractError(resp.body);
@@ -183,8 +191,9 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                     hint: t(lang, "auth.password"),
                     keyboardType: TextInputType.visiblePassword,
                     enabled: !_busy,
-                    obscure: true,
+                    obscure: !_showPassword,
                     prefixIcon: HugeIcons.strokeRoundedLockPassword,
+                    onToggleObscure: () => setState(() => _showPassword = !_showPassword),
                     validator: (v) =>
                         (v == null || v.isEmpty) ? t(lang, "auth.required_field") : null,
                   ),
@@ -256,6 +265,7 @@ class _GlassField extends StatefulWidget {
   final bool enabled;
   final bool obscure;
   final dynamic prefixIcon;
+  final VoidCallback? onToggleObscure;
   final String? Function(String?) validator;
 
   const _GlassField({
@@ -266,6 +276,7 @@ class _GlassField extends StatefulWidget {
     this.enabled = true,
     this.obscure = false,
     required this.prefixIcon,
+    this.onToggleObscure,
   });
 
   @override
@@ -323,6 +334,16 @@ class _GlassFieldState extends State<_GlassField> {
                     color: scheme.onSurface.withOpacity(0.75),
                   ),
                 ),
+                suffixIcon: widget.onToggleObscure == null
+                    ? null
+                    : IconButton(
+                        icon: Icon(
+                          widget.obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          size: 18,
+                          color: scheme.onSurface.withOpacity(0.65),
+                        ),
+                        onPressed: widget.onToggleObscure,
+                      ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
               ),
