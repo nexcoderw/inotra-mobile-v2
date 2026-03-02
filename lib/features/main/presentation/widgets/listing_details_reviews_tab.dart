@@ -562,8 +562,8 @@ class _GlassIconButton extends StatelessWidget {
             border: Border.all(color: Colors.white.withOpacity(0.10)),
           ),
           child: Center(
-            child: HugeIcon(
-              icon: icon,
+            child: Icon(
+              icon,
               size: 18,
               color: scheme.onSurface.withOpacity(0.90),
             ),
@@ -621,7 +621,7 @@ class _PrimaryGlassButton extends StatelessWidget {
                 ),
               )
             else
-              HugeIcon(icon: icon, size: 16, color: scheme.onPrimary),
+              Icon(icon: icon, size: 16, color: scheme.onPrimary),
             const SizedBox(width: 8),
             Text(
               label,
@@ -781,7 +781,7 @@ class _ErrorGlassBanner extends StatelessWidget {
           const SizedBox(width: 10),
           _PrimaryGlassButton(
             label: "Retry",
-            icon: HugeIcons.strokeRoundedRefreshCw02,
+            icon: Icons.refresh_rounded,
             onTap: onRetry,
           ),
         ],
