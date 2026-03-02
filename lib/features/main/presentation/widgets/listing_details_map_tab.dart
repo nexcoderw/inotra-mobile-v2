@@ -45,9 +45,9 @@ class ListingMapTab extends StatelessWidget {
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedMap,
+                  children: [
+                    HugeIcon(
+                    icon: HugeIcons.strokeRoundedMapsLocation02,
                     size: 34,
                     color: scheme.onSurface.withOpacity(0.55),
                   ),
