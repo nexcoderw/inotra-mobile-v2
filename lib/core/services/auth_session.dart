@@ -90,6 +90,17 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
     value = const AuthSessionState(status: AuthStatus.signedOut, displayName: "Guest");
   }
 
+  /// Returns true when the current session is authenticated and has a non-empty access token.
+  bool get hasValidToken =>
+      value.isAuthenticated && (value.accessToken != null && value.accessToken!.isNotEmpty);
+
+  /// If the token is missing/empty, clears the session and returns false.
+  Future<bool> ensureValid() async {
+    if (hasValidToken) return true;
+    await expireSession();
+    return false;
+  }
+
   /// Clears tokens and user data when the session is no longer valid (e.g., expired).
   Future<void> expireSession() async {
     await signOut();
