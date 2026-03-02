@@ -56,7 +56,14 @@ class ListingMapTab extends StatelessWidget {
               const Divider(height: 0),
               ...availableMaps.map((m) {
                 return ListTile(
-                  leading: Image(image: m.icon, width: 28, height: 28, errorBuilder: (_, __, ___) => const Icon(Icons.map)),
+                  leading: m.icon == null
+                      ? const Icon(Icons.map)
+                      : Image(
+                          image: m.icon!,
+                          width: 28,
+                          height: 28,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.map),
+                        ),
                   title: Text(m.mapName),
                   onTap: () async {
                     Navigator.pop(context);
