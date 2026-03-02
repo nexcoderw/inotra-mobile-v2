@@ -417,8 +417,8 @@ class _Listing {
   });
 
   factory _Listing.fromJson(Map<String, dynamic> json) {
-    final avg = (json["avg_rating"] as num?)?.toDouble() ?? 0.0;
-    final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
+    final avg = _toDoubleOrNull(json["avg_rating"]) ?? 0.0;
+    final reviews = _toIntOrZero(json["reviews_count"]);
 
     DateTime? createdAt;
     final rawCreated = json["created_at"];
@@ -449,6 +449,13 @@ double? _toDoubleOrNull(dynamic v) {
   if (v is num) return v.toDouble();
   if (v is String) return double.tryParse(v);
   return null;
+}
+
+int _toIntOrZero(dynamic v) {
+  if (v == null) return 0;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt() ?? 0;
+  return 0;
 }
 
 /* ----------------------------- UI WIDGETS ----------------------------- */
