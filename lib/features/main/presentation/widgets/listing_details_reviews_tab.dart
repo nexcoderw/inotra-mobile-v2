@@ -11,6 +11,7 @@ import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 
 class ListingReviewsTab extends StatefulWidget {
   final String placeId;
@@ -215,7 +216,7 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
                 else
                   _GlassIconButton(
                     tooltip: "Refresh",
-                    icon: HugeIcons.strokeRoundedRefreshCw02,
+                    icon: Icons.refresh_rounded,
                     onTap: _fetch,
                   ),
               ],
@@ -416,7 +417,7 @@ class _ReviewComposerGlass extends StatelessWidget {
               if (rating != 0)
                 _GlassIconButton(
                   tooltip: "Clear rating",
-                  icon: HugeIcons.strokeRoundedX,
+                  icon: Icons.close_rounded,
                   onTap: submitting ? () {} : () => onRatingChanged(0),
                 ),
             ],
@@ -478,7 +479,7 @@ class _ReviewComposerGlass extends StatelessWidget {
                 label: submitting
                     ? t(lang, "auth.processing")
                     : t(lang, "listings.reviews_submit"),
-                icon: HugeIcons.strokeRoundedSend01,
+                icon: Icons.send_rounded,
                 loading: submitting,
                 onTap: submitting ? null : onSubmit,
               ),
@@ -559,8 +560,8 @@ class _GlassIconButton extends StatelessWidget {
             border: Border.all(color: Colors.white.withOpacity(0.10)),
           ),
           child: Center(
-            child: HugeIcon(
-              icon: icon,
+            child: Icon(
+              icon,
               size: 18,
               color: scheme.onSurface.withOpacity(0.90),
             ),
@@ -618,8 +619,8 @@ class _PrimaryGlassButton extends StatelessWidget {
                 ),
               )
             else
-              HugeIcon(
-                icon: icon,
+              Icon(
+                icon,
                 size: 16,
                 color: scheme.onPrimary,
               ),
@@ -788,7 +789,7 @@ class _ErrorGlassBanner extends StatelessWidget {
           const SizedBox(width: 10),
           _PrimaryGlassButton(
             label: "Retry",
-            icon: HugeIcons.strokeRoundedRefreshCw02,
+            icon: Icons.refresh_rounded,
             onTap: onRetry,
           ),
         ],
