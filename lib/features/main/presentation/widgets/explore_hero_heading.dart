@@ -10,10 +10,14 @@ class ExploreHeroHeading extends StatelessWidget {
     final asset =
         isDark ? "assets/images/welcome-dark.svg" : "assets/images/welcome-light.svg";
 
-    return Center(
+    final width = MediaQuery.sizeOf(context).width;
+    final height = width * 0.56; // keep a cinematic ratio while preventing infinite height
+
+    return SizedBox(
+      width: width,
+      height: height,
       child: SvgPicture.asset(
         asset,
-        width: double.infinity,
         fit: BoxFit.contain,
       ),
     );
