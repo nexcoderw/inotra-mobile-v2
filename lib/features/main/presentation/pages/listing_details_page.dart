@@ -7,6 +7,7 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:toastification/toastification.dart";
+import "package:shared_preferences/shared_preferences.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
@@ -34,11 +35,83 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
 
   bool _ctaBusy = false;
   bool _saved = false;
+  static const _favKey = "listing_favorites";
+  static const _expiryMs = Duration(days: 7).inMilliseconds;
+  Set<String> _favorites = {};
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+  }
+
+  Future<void> _loadFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_favKey);
+    if (raw == null) return;
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        final kept = decoded.whereType<Map>().where((m) {
+          final ts = m["ts"] as int? ?? 0;
+          return now - ts < _expiryMs;
+        }).toList();
+        _favorites
+          ..clear()
+          ..addAll(kept.map((m) => (m["id"] ?? "").toString()));
+        await prefs.setString(_favKey, jsonEncode(kept));
+        if (_place != null) _saved = _favorites.contains(_place!.id);
+      }
+    } catch (_) {
+      // ignore cache errors
+    }
+  }
+
+  Future<void> _saveFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final payload = _favorites.map((id) => {"id": id, "ts": now}).toList();
+    await prefs.setString(_favKey, jsonEncode(payload));
+  }
+
+  bool _isFavorite(String id) => _favorites.contains(id);
+
+  Future<void> _toggleFavorite() async {
+    if (_place == null) return;
+    final id = _place!.id;
+    final added = !_favorites.contains(id);
+
+    setState(() {
+      if (added) {
+        _favorites.add(id);
+      } else {
+        _favorites.remove(id);
+      }
+      _saved = added;
+    });
+
+    await _saveFavorites();
+    if (!mounted) return;
+
+    final msg = added
+        ? "Listing added to favorites"
+        : "Listing removed from favorites";
+
+    toastification.show(
+      context: context,
+      type: added ? ToastificationType.success : ToastificationType.info,
+      style: ToastificationStyle.fillColored,
+      title: Text(msg),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 2),
+    );
+  }
+
+  Future<void> _init() async {
+    await _loadFavorite();
+    await _fetch();
   }
 
   Future<void> _fetch() async {
@@ -64,6 +137,7 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
         final decoded = jsonDecode(resp.body);
         if (decoded is Map) {
           _place = PlaceDetails.fromJson(Map<String, dynamic>.from(decoded));
+          if (_place != null) _saved = _isFavorite(_place!.id);
         } else {
           _error = "Invalid response";
         }
@@ -120,8 +194,7 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                               child: _DetailsSheet(
                                 place: _place!,
                                 saved: _saved,
-                                onToggleSaved: () =>
-                                    setState(() => _saved = !_saved),
+                                onToggleSaved: _toggleFavorite,
                               ),
                             ),
                           ],
