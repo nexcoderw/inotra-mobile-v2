@@ -303,7 +303,7 @@ class _ReviewComposer extends StatelessWidget {
                     ),
                   )
                 : HugeIcon(
-                    icon: HugeIcons.strokeRoundedSend02,
+                    icon: HugeIcons.strokeRoundedSend01,
                     size: 14,
                     color: scheme.onPrimary,
                   ),
