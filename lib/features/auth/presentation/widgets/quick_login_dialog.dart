@@ -1,4 +1,6 @@
 import "dart:convert";
+import "dart:math" as math;
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -182,7 +184,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                     keyboardType: TextInputType.visiblePassword,
                     enabled: !_busy,
                     obscure: true,
-                    prefixIcon: HugeIcons.strokeRoundedLock02,
+                    prefixIcon: HugeIcons.strokeRoundedLockPassword,
                     validator: (v) =>
                         (v == null || v.isEmpty) ? t(lang, "auth.required_field") : null,
                   ),
@@ -196,6 +198,16 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                   ),
 
                   const SizedBox(height: 12),
+                  _GoogleButton(
+                    busy: _busy,
+                    onTap: _busy
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            Navigator.pushNamed(context, AppRoutes.login);
+                          },
+                  ),
+
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -454,7 +466,7 @@ class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderState
           children: List.generate(3, (i) {
             final phase = i * 0.18;
             final v = (t - phase);
-            final pulse = (0.5 + 0.5 * (1 - (v * 2 * 3.14159).cos())).clamp(0.0, 1.0);
+            final pulse = (0.5 + 0.5 * (1 - math.cos(v * 2 * math.pi))).clamp(0.0, 1.0);
             final size = 6 + 4 * pulse;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
