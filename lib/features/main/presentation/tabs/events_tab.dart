@@ -386,7 +386,10 @@ class _EventPosterCardState extends State<_EventPosterCard> {
             fit: StackFit.expand,
             children: [
               // ── Full-bleed banner image ──
-              _BannerImage(url: widget.event.bannerUrl),
+              _BannerImage(
+                url: widget.event.bannerUrl,
+                grayscale: statusInfo.isEnded,
+              ),
 
               // ── Top status pill ──
               Positioned(
@@ -429,19 +432,25 @@ class _EventPosterCardState extends State<_EventPosterCard> {
 
 class _BannerImage extends StatelessWidget {
   final String? url;
-  const _BannerImage({this.url});
+  final bool grayscale;
+  const _BannerImage({this.url, this.grayscale = false});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     if (url != null && url!.trim().isNotEmpty) {
-      return Image.network(
-        url!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
-        loadingBuilder: (_, child, evt) =>
-            evt == null ? child : _Placeholder(scheme: scheme),
+      return ColorFiltered(
+        colorFilter: grayscale
+            ? const ColorFilter.mode(Colors.white, BlendMode.saturation)
+            : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
+        child: Image.network(
+          url!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
+          loadingBuilder: (_, child, evt) =>
+              evt == null ? child : _Placeholder(scheme: scheme),
+        ),
       );
     }
     return _Placeholder(scheme: scheme);
@@ -796,12 +805,14 @@ class _StatusInfo {
   final Color bgColor;
   final Color textColor;
   final Color borderColor;
+  final bool isEnded;
 
   const _StatusInfo({
     required this.label,
     required this.bgColor,
     required this.textColor,
     required this.borderColor,
+    this.isEnded = false,
   });
 }
 
@@ -816,6 +827,7 @@ _StatusInfo _resolveStatus(_EventItem e, String lang, ColorScheme scheme) {
       bgColor: Colors.red.withOpacity(0.55),
       textColor: Colors.white,
       borderColor: Colors.red.withOpacity(0.4),
+      isEnded: true,
     );
   }
 
