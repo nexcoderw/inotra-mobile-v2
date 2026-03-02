@@ -2,7 +2,6 @@ import "package:flutter/material.dart";
 
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../widgets/page_header.dart";
 
 class AiChatTab extends StatelessWidget {
   const AiChatTab({super.key});
@@ -18,7 +17,6 @@ class AiChatTab extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            PageHeader(title: t(lang, "nav.ai_chat")),
             Expanded(
               child: Center(
                 child: Column(
