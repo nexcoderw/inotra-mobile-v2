@@ -369,76 +369,6 @@ class _PackageCard extends StatelessWidget {
   }
 }
 
-class _GlassOverlay extends StatelessWidget {
-  final BorderRadius radius;
-  const _GlassOverlay({required this.radius});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Frosted glass pass.
-        ClipRRect(
-          borderRadius: radius,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: radius,
-                color: Colors.white.withOpacity(0.06),
-              ),
-            ),
-          ),
-        ),
-
-        // Border + subtle inner light.
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: radius,
-              border: Border.all(
-                color: Colors.white.withOpacity(0.16),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.20),
-                  blurRadius: 26,
-                  offset: const Offset(0, 18),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Specular highlight
-        Positioned(
-          top: -60,
-          left: -60,
-          child: Transform.rotate(
-            angle: -0.35,
-            child: Container(
-              width: 220,
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(60),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.20),
-                    Colors.white.withOpacity(0.0),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _GlassFooter extends StatelessWidget {
   final Widget child;
   const _GlassFooter({required this.child});
@@ -549,32 +479,6 @@ class _Dots extends StatelessWidget {
             ),
           );
         }),
-      ),
-    );
-  }
-}
-
-class _GlassPill extends StatelessWidget {
-  final Widget child;
-  const _GlassPill({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-          ),
-          child: child,
-        ),
       ),
     );
   }
