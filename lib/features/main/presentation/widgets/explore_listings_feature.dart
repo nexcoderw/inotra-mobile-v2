@@ -573,8 +573,8 @@ class _Listing {
   });
 
   factory _Listing.fromJson(Map json) {
-    final avg = (json["avg_rating"] as num?)?.toDouble() ?? 0.0;
-    final reviews = (json["reviews_count"] as num?)?.toInt() ?? 0;
+    final avg = _toDouble(json["avg_rating"]);
+    final reviews = _toInt(json["reviews_count"]);
 
     return _Listing(
       id: (json["id"] ?? "").toString(),
@@ -586,6 +586,20 @@ class _Listing {
       reviewsCount: reviews,
     );
   }
+}
+
+double _toDouble(dynamic v) {
+  if (v == null) return 0.0;
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? 0.0;
+  return 0.0;
+}
+
+int _toInt(dynamic v) {
+  if (v == null) return 0;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt() ?? 0;
+  return 0;
 }
 
 class _SpecularHighlight extends StatelessWidget {
