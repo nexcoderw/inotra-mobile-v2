@@ -223,7 +223,6 @@ class _ListingsTabState extends State<ListingsTab> {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final scheme = Theme.of(context).colorScheme;
 
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
@@ -244,7 +243,6 @@ class _ListingsTabState extends State<ListingsTab> {
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
-                        fontFamily: "DM Sans",
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -348,7 +346,6 @@ class _ListingsTabState extends State<ListingsTab> {
                           t(lang, "packages.empty"),
                           style: const TextStyle(
                             fontWeight: FontWeight.w700,
-                            fontFamily: "DM Sans",
                           ),
                         ),
                       ),
@@ -616,7 +613,6 @@ class _ListingCardState extends State<_ListingCard> {
                                     color: Colors.white,
                                     letterSpacing: -0.25,
                                     height: 1.05,
-                                    fontFamily: "DM Sans",
                                   ),
                                 ),
                                 if (location.isNotEmpty) ...[
@@ -638,7 +634,6 @@ class _ListingCardState extends State<_ListingCard> {
                                             fontSize: widget.isTablet ? 12.5 : 12,
                                             fontWeight: FontWeight.w700,
                                             color: Colors.white.withOpacity(0.82),
-                                            fontFamily: "DM Sans",
                                           ),
                                         ),
                                       ),
@@ -931,7 +926,6 @@ class _GlassSearchField extends StatelessWidget {
             ),
           ),
           style: const TextStyle(
-            fontFamily: "DM Sans",
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -974,7 +968,6 @@ class _GlassChip extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
                   color: Colors.white.withOpacity(0.92),
-                  fontFamily: "DM Sans",
                 ),
               ),
             ],
@@ -1011,7 +1004,6 @@ class _MiniMeta extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w800,
               color: Colors.white.withOpacity(0.92),
-              fontFamily: "DM Sans",
             ),
           ),
         ],
@@ -1142,7 +1134,6 @@ class _RatingPill extends StatelessWidget {
               fontSize: 11,
               fontWeight: FontWeight.w800,
               color: Colors.white.withOpacity(0.95),
-              fontFamily: "DM Sans",
             ),
           ),
           const SizedBox(width: 6),
@@ -1152,7 +1143,6 @@ class _RatingPill extends StatelessWidget {
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               color: Colors.white.withOpacity(0.80),
-              fontFamily: "DM Sans",
             ),
           ),
         ],
@@ -1230,7 +1220,6 @@ class _ErrorPanel extends StatelessWidget {
             style: TextStyle(
               color: scheme.error,
               fontWeight: FontWeight.w800,
-              fontFamily: "DM Sans",
             ),
           ),
           const SizedBox(height: 10),

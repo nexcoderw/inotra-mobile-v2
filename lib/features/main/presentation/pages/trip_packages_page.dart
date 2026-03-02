@@ -179,7 +179,6 @@ class _TripPackagesPageState extends State<TripPackagesPage> {
                           ),
                         ),
                         style: const TextStyle(
-                          fontFamily: "DM Sans",
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
