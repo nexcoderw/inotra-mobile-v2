@@ -66,16 +66,16 @@ class ListingMapTab extends StatelessWidget {
 
     if (availableMaps.isEmpty) {
       // Safe fallback: try Google directions (may open browser if app not available)
-      await launcher.MapLauncher.showDirections(
-        mapType: launcher.MapType.google,
-        destination: coords,
-        destinationTitle: title,
-      );
-      return;
-    }
+          await launcher.MapLauncher.showDirections(
+            mapType: launcher.MapType.google,
+            destination: coords,
+            destinationTitle: title,
+          );
+          return;
+        }
 
-    showModalBottomSheet(
-      context: context,
+        showModalBottomSheet(
+          context: context,
       showDragHandle: true,
       backgroundColor: scheme.surface,
       builder: (_) {
