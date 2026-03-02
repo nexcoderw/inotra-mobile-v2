@@ -4,6 +4,8 @@ import "package:hugeicons/hugeicons.dart";
 
 import "package:inotra/i18n/lang.dart";
 import "package:inotra/i18n/translations.dart";
+import "package:inotra/core/config/app_routes.dart";
+import "package:inotra/core/services/auth_session.dart";
 import "highlight_comment.dart";
 
 class HighlightCommentsSheet extends StatefulWidget {
