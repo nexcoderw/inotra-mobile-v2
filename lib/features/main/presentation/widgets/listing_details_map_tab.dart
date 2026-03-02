@@ -11,12 +11,46 @@ class ListingMapTab extends StatelessWidget {
   final PlaceDetails place;
   const ListingMapTab({super.key, required this.place});
 
+  Widget _mapAppLeadingIcon(ColorScheme scheme, launcher.AvailableMap m) {
+    // map_launcher may expose icon as String in some versions.
+    // If it's an asset path, we can load it via Image.asset.
+    final dynamic iconDyn = m.icon;
+
+    if (iconDyn is String && iconDyn.trim().isNotEmpty) {
+      // Most common: packaged asset path.
+      // If it fails, we fallback to HugeIcon via errorBuilder.
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.asset(
+          iconDyn,
+          width: 28,
+          height: 28,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => HugeIcon(
+            icon: HugeIcons.strokeRoundedMapsLocation02,
+            size: 22,
+            color: scheme.onSurface.withOpacity(0.70),
+          ),
+        ),
+      );
+    }
+
+    // Fallback: HugeIcons
+    return HugeIcon(
+      icon: HugeIcons.strokeRoundedMapsLocation02,
+      size: 22,
+      color: scheme.onSurface.withOpacity(0.70),
+    );
+  }
+
   Future<void> _openExternalMaps(BuildContext context) async {
+    final lang = currentLangSync();
+    final scheme = Theme.of(context).colorScheme;
+
     final lat = place.latitude;
     final lng = place.longitude;
 
     if (lat == null || lng == null) {
-      final lang = currentLangSync();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(lang, "listings.no_data"))),
       );
@@ -31,7 +65,7 @@ class ListingMapTab extends StatelessWidget {
     if (!context.mounted) return;
 
     if (availableMaps.isEmpty) {
-      // Very rare, but safe fallback: open Google Maps in browser
+      // Safe fallback: try Google directions (may open browser if app not available)
       await launcher.MapLauncher.showDirections(
         mapType: launcher.MapType.google,
         destination: coords,
@@ -43,6 +77,7 @@ class ListingMapTab extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      backgroundColor: scheme.surface,
       builder: (_) {
         return SafeArea(
           child: Column(
@@ -50,21 +85,38 @@ class ListingMapTab extends StatelessWidget {
             children: [
               const SizedBox(height: 6),
               ListTile(
-                title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text("${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}"),
+                leading: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMapsLocation02,
+                  size: 22,
+                  color: scheme.primary,
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withOpacity(0.92),
+                  ),
+                ),
+                subtitle: Text(
+                  "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface.withOpacity(0.70),
+                  ),
+                ),
               ),
-              const Divider(height: 0),
+              Divider(height: 0, color: scheme.onSurface.withOpacity(0.08)),
               ...availableMaps.map((m) {
                 return ListTile(
-                  leading: m.icon == null
-                      ? const Icon(Icons.map)
-                      : Image(
-                          image: m.icon!,
-                          width: 28,
-                          height: 28,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.map),
-                        ),
-                  title: Text(m.mapName),
+                  leading: _mapAppLeadingIcon(scheme, m),
+                  title: Text(
+                    m.mapName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface.withOpacity(0.90),
+                    ),
+                  ),
                   onTap: () async {
                     Navigator.pop(context);
                     await m.showMarker(
@@ -90,15 +142,14 @@ class ListingMapTab extends StatelessWidget {
 
     final lat = place.latitude;
     final lng = place.longitude;
-
     final hasCoords = lat != null && lng != null;
 
     final camera = hasCoords
         ? CameraPosition(target: LatLng(lat!, lng!), zoom: 15)
         : const CameraPosition(target: LatLng(0, 0), zoom: 1);
 
-    final marker = hasCoords
-        ? {
+    final markers = hasCoords
+        ? <Marker>{
             Marker(
               markerId: const MarkerId("place"),
               position: LatLng(lat!, lng!),
@@ -149,7 +200,7 @@ class ListingMapTab extends StatelessWidget {
                         child: hasCoords
                             ? GoogleMap(
                                 initialCameraPosition: camera,
-                                markers: marker,
+                                markers: markers,
                                 zoomControlsEnabled: false,
                                 myLocationButtonEnabled: false,
                                 mapToolbarEnabled: false,
@@ -216,11 +267,15 @@ class ListingMapTab extends StatelessWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.open_in_new, size: 18, color: scheme.onSurface),
+                                HugeIcon(
+                                  icon: HugeIcons.strokeRoundedArrowUpRight01,
+                                  size: 18,
+                                  color: scheme.onSurface.withOpacity(0.85),
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   t(lang, "listings.open_in_maps"),
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                  style: const TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ],
                             ),
