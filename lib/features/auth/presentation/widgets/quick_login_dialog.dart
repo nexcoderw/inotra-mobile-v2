@@ -74,26 +74,19 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
           theme: "light",
         );
 
-      if (!mounted) return;
-      toastification.show(
-        context: context,
-        type: ToastificationType.success,
-        style: ToastificationStyle.fillColored,
-        title: Text(t(lang, "auth.signed_in")),
-        description: Text(t(lang, "auth.welcome_back")),
-        alignment: Alignment.topCenter,
-        autoCloseDuration: const Duration(seconds: 3),
-      );
-
-      Navigator.of(context).pop(); // close dialog, stay on same page
-      // Refresh current route so authenticated header/state shows immediately.
-      if (mounted) {
-        // ignore: use_build_context_synchronously
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(pageBuilder: (_, __, ___) => Navigator.of(context).widget),
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: Text(t(lang, "auth.signed_in")),
+          description: Text(t(lang, "auth.welcome_back")),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 3),
         );
-      }
-      return;
+
+        Navigator.of(context).pop(); // close dialog, stay on same page
+        return;
       }
 
       final detail = _extractError(resp.body);
