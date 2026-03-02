@@ -171,6 +171,42 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                           ],
                         ),
         ),
+        bottomNavigationBar: (_place != null && !_loading && _error == null)
+            ? SafeArea(
+                minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: SizedBox(
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: scheme.primary,
+                      foregroundColor: scheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(t(lang, "common.coming_soon")),
+                        ),
+                      );
+                    },
+                    icon: HugeIcon(
+                      icon: HugeIcons.strokeRoundedCalendarCheckIn01,
+                      size: 18,
+                      color: scheme.onPrimary,
+                    ),
+                    label: Text(
+                      t(lang, "listings.reserve_cta"),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }
