@@ -7,6 +7,7 @@ import "package:share_plus/share_plus.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/highlight_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/highlights/highlight_card.dart";
@@ -40,6 +41,20 @@ class _HighlightsTabState extends State<HighlightsTab> {
     super.dispose();
   }
 
+  Future<bool> _handleUnauthorized(int status) async {
+    if (status == 401) {
+      await AuthSession.instance.expireSession();
+      if (!mounted) return true;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (_) => false,
+      );
+      return true;
+    }
+    return false;
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -55,6 +70,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
           "Accept": "application/json",
         },
       );
+      if (await _handleUnauthorized(resp.statusCode)) return;
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
         final results = (decoded["results"] as List? ?? [])
@@ -84,6 +100,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
         "Authorization": "Bearer $token",
         "Accept": "application/json",
       });
+      if (await _handleUnauthorized(resp.statusCode)) return;
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         setState(() {
           final liked = !item.liked;
@@ -106,6 +123,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
         "Authorization": "Bearer $token",
         "Accept": "application/json",
       });
+      if (await _handleUnauthorized(resp.statusCode)) return;
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         setState(() {
           _items[index] = item.copyWith(shares: item.shares + 1);
@@ -131,6 +149,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
       },
       body: jsonEncode({"comment": text.trim()}),
     );
+    if (await _handleUnauthorized(resp.statusCode)) return false;
     return resp.statusCode >= 200 && resp.statusCode < 300;
   }
 
