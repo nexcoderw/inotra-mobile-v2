@@ -108,6 +108,8 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
     final authed = AuthSession.instance.value.isAuthenticated;
+    final width = MediaQuery.sizeOf(context).width;
+    final isTablet = width >= 700;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
@@ -118,9 +120,9 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
             children: [
               Text(
                 t(lang, "listings.reviews_title"),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 16,
+                  fontSize: isTablet ? 18 : 16,
                 ),
               ),
               const Spacer(),
@@ -140,20 +142,21 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
             _ErrorBanner(message: _error!, onRetry: _fetch)
           else if (_reviews.isEmpty && !_loading)
             _EmptyState(label: t(lang, "listings.reviews_empty")),
-          if (_reviews.isNotEmpty)
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _reviews.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 14,
-                  thickness: 1,
-                  color: scheme.onSurface.withOpacity(0.08),
-                ),
-                itemBuilder: (_, i) => _ReviewTile(review: _reviews[i]),
-              ),
-            ),
-          const SizedBox(height: 14),
+          Expanded(
+            child: _reviews.isNotEmpty
+                ? ListView.separated(
+                    padding: EdgeInsets.zero,
+                    itemCount: _reviews.length,
+                    separatorBuilder: (_, __) => Divider(
+                      height: 14,
+                      thickness: 1,
+                      color: scheme.onSurface.withOpacity(0.08),
+                    ),
+                    itemBuilder: (_, i) => _ReviewTile(review: _reviews[i]),
+                  )
+                : const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 12),
           authed
               ? _ReviewComposer(
                   controller: _controller,
@@ -195,6 +198,8 @@ class _ReviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final isTablet = width >= 700;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -203,13 +208,19 @@ class _ReviewTile extends StatelessWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: scheme.primary.withOpacity(0.12),
-              child: Text(
-                review.initials,
-                style: TextStyle(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              backgroundImage:
+                  review.avatarUrl != null && review.avatarUrl!.isNotEmpty
+                      ? NetworkImage(review.avatarUrl!)
+                      : null,
+              child: (review.avatarUrl == null || review.avatarUrl!.isEmpty)
+                  ? Text(
+                      review.initials,
+                      style: TextStyle(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -220,7 +231,7 @@ class _ReviewTile extends StatelessWidget {
                     review.author,
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
-                      fontSize: 13,
+                      fontSize: isTablet ? 14 : 13,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -234,6 +245,22 @@ class _ReviewTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (review.rating != null)
+              Row(
+                children: List.generate(
+                  5,
+                  (i) => Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: Icon(
+                      Icons.star_rounded,
+                      size: isTablet ? 16 : 14,
+                      color: i < review.rating!.round()
+                          ? Colors.amber
+                          : Colors.grey.withOpacity(0.3),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -303,7 +330,7 @@ class _ReviewComposer extends StatelessWidget {
                     ),
                   )
                 : HugeIcon(
-                    icon: HugeIcons.strokeRoundedSend01,
+                    icon: HugeIcons.strokeRoundedSent,
                     size: 14,
                     color: scheme.onPrimary,
                   ),
@@ -402,12 +429,16 @@ class _Review {
   final String author;
   final String comment;
   final DateTime createdAt;
+  final int? rating;
+  final String? avatarUrl;
 
   _Review({
     required this.id,
     required this.author,
     required this.comment,
     required this.createdAt,
+    this.rating,
+    this.avatarUrl,
   });
 
   String get initials {
@@ -438,6 +469,8 @@ class _Review {
       author: (json["author"] ?? json["user_name"] ?? "Anonymous").toString(),
       comment: (json["comment"] ?? json["text"] ?? "").toString(),
       createdAt: parseDate(json["created_at"]?.toString()),
+      rating: (json["rating"] as num?)?.toInt(),
+      avatarUrl: (json["user_avatar_url"] ?? "").toString(),
     );
   }
 }
