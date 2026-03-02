@@ -165,7 +165,7 @@ const translations = {
     "banner.title": "Exclusive deals await",
     "banner.subtitle": "Plan your next escape with curated trips across Rwanda and beyond.",
     "banner.cta": "Discover",
-    "explore.listings_title": "Featured listings",
+    "explore.listings_title": "Featured Listings",
     "explore.listings_hint": "See all",
     "explore.hero_prefix": "Discover the wonders of ",
     "explore.hero_rwanda": "Rwanda!",

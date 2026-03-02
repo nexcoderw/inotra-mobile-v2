@@ -144,20 +144,18 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _GlassPill(
-                child: Text(
-                  t(lang, "explore.listings_title"),
-                  style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
-                    fontWeight: FontWeight.w900,
-                    color: scheme.onSurface,
-                    letterSpacing: -0.2,
-                  ),
+              Text(
+                t(lang, "explore.listings_title"),
+                style: TextStyle(
+                  fontSize: isTablet ? 14 : 12,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.onSurface,
+                  letterSpacing: -0.2,
                 ),
               ),
-              _GlassLink(
+              _GlassButton(
                 label: t(lang, "explore.listings_hint"),
-                onTap: () => Navigator.pushNamed(context, AppRoutes.listings),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.tripPackages),
               ),
             ],
           ),
@@ -702,11 +700,11 @@ class _GlassPill extends StatelessWidget {
   }
 }
 
-class _GlassLink extends StatelessWidget {
+class _GlassButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _GlassLink({required this.label, required this.onTap});
+  const _GlassButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
