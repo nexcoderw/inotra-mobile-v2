@@ -1,16 +1,19 @@
 import "dart:convert";
-import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../widgets/main_scaffold.dart";
+import "../widgets/page_header.dart";
 
 class EventDetailsPage extends StatefulWidget {
   final String? eventId;
@@ -22,6 +25,7 @@ class EventDetailsPage extends StatefulWidget {
 
 class _EventDetailsPageState extends State<EventDetailsPage> {
   bool _loading = true;
+  bool _authBusy = false;
   String? _error;
   _EventDetail? _event;
 
@@ -32,8 +36,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   }
 
   Future<void> _fetch() async {
-    final id = widget.eventId ??
-        ModalRoute.of(context)?.settings.arguments as String?;
+    final id = widget.eventId ?? ModalRoute.of(context)?.settings.arguments as String?;
     if (id == null || id.isEmpty) {
       setState(() {
         _loading = false;
@@ -50,7 +53,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     try {
       final uri = Api.url(EventEndpoints.detail(id));
       final resp = await http.get(uri, headers: {"Accept": "application/json"});
-
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
         _event = _EventDetail.fromJson(decoded);
@@ -64,16 +66,6 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     }
   }
 
-  // Plug your real actions here
-  void _onOpenMap(_EventDetail e) {
-    // TODO: integrate maps launcher in your project
-    // Example: open Google Maps with lat/lng or query address
-  }
-
-  void _onPrimaryAction(_EventDetail e) {
-    // TODO: navigate to ticket purchase / booking
-  }
-
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
@@ -84,357 +76,243 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
 
     return MainScaffold(
       title: t(lang, "events.details_title"),
-      child: Stack(
-        children: [
-          // Body
-          Positioned.fill(
-            child: _loading
-                ? const _PremiumLoader()
-                : (_error != null || e == null)
-                    ? _PremiumError(
-                        message: _error ?? t(lang, "common.coming_soon"),
-                        onRetry: _fetch,
-                      )
-                    : CustomScrollView(
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _BannerCard(event: e),
-                                  const SizedBox(height: 14),
-
-                                  // Title + meta chips
-                                  Text(
-                                    e.title,
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: -0.4,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-
-                                  Wrap(
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: [
-                                      _MetaChip(
-                                        icon: HugeIcons.strokeRoundedCalendar02,
-                                        label: e.dateRange.isNotEmpty
-                                            ? e.dateRange
-                                            : t(lang, "listings.no_data"),
-                                      ),
-                                      _MetaChip(
-                                        icon: HugeIcons.strokeRoundedMapsLocation02,
-                                        label: e.venue.isNotEmpty
-                                            ? e.venue
-                                            : (e.city.isNotEmpty
-                                                ? e.city
-                                                : t(lang, "listings.no_data")),
-                                      ),
-                                      if (e.country.isNotEmpty)
-                                        _MetaChip(
-                                          icon:
-                                              HugeIcons.strokeRoundedGlobalSearch,
-                                          label: e.country,
-                                        ),
-                                    ],
-                                  ),
-
-                                  const SizedBox(height: 16),
-
-                                  // Overview
-                                  if (e.description.isNotEmpty) ...[
-                                    _SectionHeader(
-                                      title: t(lang, "listings.overview_title"),
-                                      icon: HugeIcons.strokeRoundedNote01,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    _GlassCard(
-                                      child: Text(
-                                        e.description,
-                                        style: TextStyle(
-                                          height: 1.55,
-                                          fontWeight: FontWeight.w600,
-                                          color: scheme.onSurface
-                                              .withOpacity(0.86),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                  ],
-
-                                  // Address
-                                  _SectionHeader(
-                                    title: t(lang, "listings.address"),
-                                    icon: HugeIcons.strokeRoundedMapsLocation02,
-                                    trailing: (e.lat != null && e.lng != null)
-                                        ? Text(
-                                            "${e.lat!.toStringAsFixed(6)}, ${e.lng!.toStringAsFixed(6)}",
-                                            style: TextStyle(
-                                              color: scheme.onSurface
-                                                  .withOpacity(0.65),
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  _InfoRowCard(
-                                    icon: HugeIcons.strokeRoundedMapsLocation02,
-                                    title: e.address.isNotEmpty
-                                        ? e.address
-                                        : t(lang, "listings.no_data"),
-                                    subtitle: e.venue.isNotEmpty ? e.venue : null,
-                                    onTap: (e.lat != null && e.lng != null) ||
-                                            e.address.isNotEmpty
-                                        ? () => _onOpenMap(e)
-                                        : null,
-                                    trailing: (e.lat != null && e.lng != null) ||
-                                            e.address.isNotEmpty
-                                        ? _MiniPill(
-                                            label: t(lang, "listings.map_placeholder"),
-                                            icon: HugeIcons.strokeRoundedNavigation03,
-                                          )
-                                        : _MiniPill(
-                                            label: t(lang, "listings.no_data"),
-                                            icon: HugeIcons.strokeRoundedInformationCircle,
-                                          ),
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  // Tickets
-                                  if (e.tickets.isNotEmpty) ...[
-                                    _SectionHeader(
-                                      title: t(lang, "events.tickets"),
-                                      icon: HugeIcons.strokeRoundedTicket02,
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Column(
-                                      children: e.tickets.map((tkt) {
-                                        return Padding(
-                                          padding:
-                                              const EdgeInsets.only(bottom: 10),
-                                          child: _TicketCard(ticket: tkt),
-                                        );
-                                      }).toList(),
-                                    ),
-                                    const SizedBox(height: 88), // room for bottom bar
-                                  ] else ...[
-                                    const SizedBox(height: 88),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-          ),
-
-          // Bottom glass action bar
-          if (hasData)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 14,
-              child: SafeArea(
-                top: false,
-                child: _BottomGlassBar(
-                  child: Row(
+      showAppBar: false,
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null || e == null)
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: _PrimaryButton(
-                          label: e.tickets.isNotEmpty ? "Buy tickets" : "Attend",
-                          icon: HugeIcons.strokeRoundedTicket02,
-                          onTap: () => _onPrimaryAction(e),
+                      HugeIcon(
+                        icon: HugeIcons.strokeRoundedWifiError01,
+                        size: 28,
+                        color: scheme.error,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _error ?? t(lang, "common.coming_soon"),
+                        style: TextStyle(
+                          color: scheme.error,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      _IconActionButton(
-                        tooltip: "Open map",
-                        icon: HugeIcons.strokeRoundedNavigation03,
-                        onTap: () => _onOpenMap(e),
-                        enabled: (e.lat != null && e.lng != null) ||
-                            e.address.isNotEmpty,
-                      ),
-                      const SizedBox(width: 10),
-                      _IconActionButton(
-                        tooltip: "Close",
-                        icon: HugeIcons.strokeRoundedCancel02,
-                        onTap: () => Navigator.of(context).maybePop(),
-                      ),
+                      const SizedBox(height: 8),
+                      TextButton(onPressed: _fetch, child: Text(t(lang, "common.try_again"))),
                     ],
                   ),
+                )
+              : SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        PageHeader(
+                          title: t(lang, "events.details_title"),
+                          onBack: () => Navigator.maybePop(context),
+                        ),
+
+                        _StatusPill(status: _resolveStatus(e, lang, scheme)),
+                        const SizedBox(height: 12),
+
+                        _BannerImage(url: e.bannerUrl),
+                        const SizedBox(height: 14),
+
+                        Text(
+                          e.title,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+
+                        _MetaRow(
+                          icon: HugeIcons.strokeRoundedCalendar02,
+                          label: e.dateRange.isNotEmpty ? e.dateRange : t(lang, "listings.no_data"),
+                        ),
+                        const SizedBox(height: 6),
+                        _MetaRow(
+                          icon: HugeIcons.strokeRoundedMapsLocation02,
+                          label: e.venue.isNotEmpty
+                              ? e.venue
+                              : (e.city.isNotEmpty ? e.city : t(lang, "listings.no_data")),
+                        ),
+                        if (e.country.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          _MetaRow(
+                            icon: HugeIcons.strokeRoundedGlobalSearch,
+                            label: e.country,
+                          ),
+                        ],
+
+                        const SizedBox(height: 16),
+
+                        if (e.description.isNotEmpty) ...[
+                          Text(
+                            t(lang, "listings.overview_title"),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            e.description,
+                            style: TextStyle(
+                              height: 1.5,
+                              color: scheme.onSurface.withOpacity(0.82),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        Text(
+                          t(lang, "listings.address"),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          t(lang, "listings.map_placeholder"),
+                          style: TextStyle(
+                            color: scheme.onSurface.withOpacity(0.65),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _InfoCard(
+                          icon: HugeIcons.strokeRoundedMapsLocation02,
+                          label:
+                              e.address.isNotEmpty ? e.address : t(lang, "listings.no_data"),
+                          trailing: (e.lat != null && e.lng != null)
+                              ? Text(
+                                  "${e.lat!.toStringAsFixed(6)}, ${e.lng!.toStringAsFixed(6)}",
+                                  style: TextStyle(
+                                    color: scheme.onSurface.withOpacity(0.65),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                )
+                              : Text(
+                                  t(lang, "listings.map_placeholder"),
+                                  style: TextStyle(
+                                    color: scheme.onSurface.withOpacity(0.55),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        if (e.tickets.isNotEmpty) ...[
+                          Text(
+                            t(lang, "events.tickets"),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Column(
+                            children: e.tickets
+                                .map(
+                                  (tkt) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: _InfoCard(
+                                      icon: HugeIcons.strokeRoundedTicket02,
+                                      label: tkt.label,
+                                      trailing: Text(
+                                        tkt.priceLabel,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: scheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+
+                        _buildCta(context, lang, scheme, e),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-        ],
-      ),
+    );
+  }
+
+  Widget _buildCta(
+    BuildContext context,
+    String lang,
+    ColorScheme scheme,
+    _EventDetail e,
+  ) {
+    final status = _resolveStatus(e, lang, scheme);
+    final authed = AuthSession.instance.value.isAuthenticated;
+
+    if (status.ended) return const SizedBox.shrink();
+
+    if (!authed) {
+      return _PrimaryCtaButton(
+        label: t(lang, "listings.login_to_proceed"),
+        icon: HugeIcons.strokeRoundedLogin03,
+        filled: false,
+        busy: _authBusy,
+        onTap: () async {
+          setState(() => _authBusy = true);
+          await QuickLoginDialog.show(context);
+          setState(() => _authBusy = false);
+          if (AuthSession.instance.value.isAuthenticated) {
+            if (mounted) await _fetch();
+          }
+        },
+      );
+    }
+
+    return _PrimaryCtaButton(
+      label: t(lang, "events.buy_ticket"),
+      icon: HugeIcons.strokeRoundedTicket02,
+      onTap: () {
+        toastification.show(
+          context: context,
+          type: ToastificationType.info,
+          title: Text(t(lang, "common.coming_soon")),
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+      },
     );
   }
 }
 
-/* ----------------------------- Premium UI ----------------------------- */
-
-class _PremiumLoader extends StatelessWidget {
-  const _PremiumLoader();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: _GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.4,
-                color: scheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              "Loading…",
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withOpacity(0.85),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PremiumError extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _PremiumError({
-    required this.message,
-    required this.onRetry,
-  });
+class _BannerImage extends StatelessWidget {
+  final String? url;
+  const _BannerImage({this.url});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: _GlassCard(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedWifiError01,
-                size: 30,
-                color: scheme.error,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: scheme.onSurface.withOpacity(0.85),
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 10),
-              _SecondaryButton(
-                label: "Try again",
-                icon: HugeIcons.strokeRoundedRotate360,
-                onTap: onRetry,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BannerCard extends StatelessWidget {
-  final _EventDetail event;
-  const _BannerCard({required this.event});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    final url = (event.bannerUrl ?? "").trim();
-    final hasUrl = url.isNotEmpty;
+    final hasUrl = url != null && url!.trim().isNotEmpty;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        height: 220,
-        width: double.infinity,
-        color: scheme.surfaceVariant.withOpacity(0.45),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (hasUrl)
-              Image.network(
-                url,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _BannerFallback(scheme: scheme),
-                loadingBuilder: (_, child, evt) =>
-                    evt == null ? child : _BannerFallback(scheme: scheme),
-              )
-            else
-              _BannerFallback(scheme: scheme),
-
-            // Subtle dark overlay (NOT gradient)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.18),
-              ),
-            ),
-
-            // Bottom glass label
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: _GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Row(
-                  children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedSparkles,
-                      size: 18,
-                      color: scheme.primary,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        "Event highlight",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: scheme.onSurface.withOpacity(0.88),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      borderRadius: BorderRadius.circular(18),
+      child: hasUrl
+          ? Image.network(
+              url!.trim(),
+              height: 220,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _BannerFallback(scheme: scheme),
+              loadingBuilder: (_, child, evt) =>
+                  evt == null ? child : _BannerFallback(scheme: scheme),
+            )
+          : _BannerFallback(scheme: scheme),
     );
   }
 }
@@ -446,11 +324,13 @@ class _BannerFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: scheme.surfaceVariant.withOpacity(0.55),
+      height: 220,
+      width: double.infinity,
+      color: scheme.surfaceVariant.withOpacity(0.6),
       child: Center(
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedImageNotFound01,
-          size: 40,
+          size: 36,
           color: scheme.onSurface.withOpacity(0.35),
         ),
       ),
@@ -458,496 +338,201 @@ class _BannerFallback extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
+class _MetaRow extends StatelessWidget {
   final dynamic icon;
-  final Widget? trailing;
-
-  const _SectionHeader({
-    required this.title,
-    required this.icon,
-    this.trailing,
-  });
+  final String label;
+  const _MetaRow({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
     return Row(
       children: [
-        HugeIcon(
-          icon: icon,
-          size: 18,
-          color: scheme.onSurface.withOpacity(0.78),
-        ),
-        const SizedBox(width: 10),
+        HugeIcon(icon: icon, size: 16, color: scheme.onSurface.withOpacity(0.75)),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              letterSpacing: -0.2,
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withOpacity(0.85),
             ),
           ),
         ),
-        if (trailing != null) trailing!,
       ],
     );
   }
 }
 
-class _MetaChip extends StatelessWidget {
+class _InfoCard extends StatelessWidget {
   final dynamic icon;
   final String label;
-
-  const _MetaChip({required this.icon, required this.label});
+  final Widget? trailing;
+  const _InfoCard({required this.icon, required this.label, this.trailing});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
-    return _GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      borderRadius: 999,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: scheme.surfaceVariant.withOpacity(0.45),
+      ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: icon,
-            size: 16,
-            color: scheme.onSurface.withOpacity(0.78),
-          ),
-          const SizedBox(width: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 240),
+          HugeIcon(icon: icon, size: 18, color: scheme.onSurface.withOpacity(0.75)),
+          const SizedBox(width: 10),
+          Expanded(
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withOpacity(0.86),
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface.withOpacity(0.85),
               ),
             ),
           ),
+          if (trailing != null) trailing!,
         ],
       ),
     );
   }
 }
 
-class _InfoRowCard extends StatelessWidget {
+class _PrimaryCtaButton extends StatelessWidget {
+  final String label;
   final dynamic icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
   final VoidCallback? onTap;
+  final bool busy;
+  final bool filled;
 
-  const _InfoRowCard({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return _GlassCard(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  color: scheme.surface.withOpacity(0.22),
-                  border: Border.all(color: Colors.white.withOpacity(0.10)),
-                ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: icon,
-                    size: 18,
-                    color: scheme.onSurface.withOpacity(0.78),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        color: scheme.onSurface.withOpacity(0.88),
-                      ),
-                    ),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface.withOpacity(0.62),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: 10),
-                trailing!,
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TicketCard extends StatelessWidget {
-  final _Ticket ticket;
-  const _TicketCard({required this.ticket});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return _GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: scheme.surface.withOpacity(0.22),
-                border: Border.all(color: Colors.white.withOpacity(0.10)),
-              ),
-              child: Center(
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedTicket02,
-                  size: 18,
-                  color: scheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ticket.label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: scheme.onSurface.withOpacity(0.88),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ticket.consumable
-                        ? (ticket.consumableDescription?.isNotEmpty == true
-                            ? ticket.consumableDescription!
-                            : "Consumable ticket")
-                        : "Standard ticket",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: scheme.onSurface.withOpacity(0.62),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 10),
-            Text(
-              ticket.priceLabel,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: scheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MiniPill extends StatelessWidget {
-  final String label;
-  final dynamic icon;
-  const _MiniPill({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: scheme.surface.withOpacity(0.20),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          HugeIcon(
-            icon: icon,
-            size: 16,
-            color: scheme.onSurface.withOpacity(0.75),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              color: scheme.onSurface.withOpacity(0.78),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomGlassBar extends StatelessWidget {
-  final Widget child;
-  const _BottomGlassBar({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.18),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withOpacity(0.14)),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 22,
-                spreadRadius: 1,
-                offset: const Offset(0, 12),
-                color: Colors.black.withOpacity(0.20),
-              ),
-            ],
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _PrimaryButton extends StatelessWidget {
-  final String label;
-  final dynamic icon;
-  final VoidCallback onTap;
-
-  const _PrimaryButton({
+  const _PrimaryCtaButton({
     required this.label,
     required this.icon,
     required this.onTap,
+    this.busy = false,
+    this.filled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final bg = filled ? scheme.primary : scheme.surfaceVariant.withOpacity(0.6);
+    final fg = filled ? scheme.onPrimary : scheme.onSurface;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: scheme.primary.withOpacity(0.16),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: scheme.primary.withOpacity(0.26)),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: busy ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: fg,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            HugeIcon(icon: icon, size: 18, color: scheme.primary),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: scheme.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SecondaryButton extends StatelessWidget {
-  final String label;
-  final dynamic icon;
-  final VoidCallback onTap;
-
-  const _SecondaryButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: scheme.surface.withOpacity(0.18),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.14)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HugeIcon(
-              icon: icon,
-              size: 18,
-              color: scheme.onSurface.withOpacity(0.82),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: scheme.onSurface.withOpacity(0.82),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _IconActionButton extends StatelessWidget {
-  final String tooltip;
-  final dynamic icon;
-  final VoidCallback onTap;
-  final bool enabled;
-
-  const _IconActionButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onTap,
-    this.enabled = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: enabled ? onTap : null,
-        child: Opacity(
-          opacity: enabled ? 1 : 0.45,
-          child: Container(
-            height: 48,
-            width: 48,
-            decoration: BoxDecoration(
-              color: scheme.surface.withOpacity(0.18),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.14)),
-            ),
-            child: Center(
-              child: HugeIcon(
+        icon: busy
+            ? SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: fg,
+                ),
+              )
+            : HugeIcon(
                 icon: icon,
-                size: 20,
-                color: scheme.onSurface.withOpacity(0.84),
+                size: 18,
+                color: fg,
               ),
-            ),
-          ),
-        ),
+        label: Text(label),
       ),
     );
   }
 }
 
-class _GlassCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsets padding;
-  final double borderRadius;
-
-  const _GlassCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(14),
-    this.borderRadius = 18,
+class _StatusMeta {
+  final String label;
+  final Color bg;
+  final Color fg;
+  final bool ended;
+  const _StatusMeta({
+    required this.label,
+    required this.bg,
+    required this.fg,
+    this.ended = false,
   });
+}
+
+_StatusMeta _resolveStatus(_EventDetail e, String lang, ColorScheme scheme) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+
+  if (e.endAt != null && e.endAt!.isBefore(now)) {
+    return _StatusMeta(
+      label: t(lang, "events.status_ended"),
+      bg: Colors.red.withOpacity(0.12),
+      fg: Colors.red.shade700,
+      ended: true,
+    );
+  }
+
+  if (e.startAt != null) {
+    final startDay = DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+    if (startDay == today) {
+      return _StatusMeta(
+        label: t(lang, "events.status_happening"),
+        bg: Colors.green.withOpacity(0.14),
+        fg: Colors.green.shade700,
+      );
+    }
+    final tomorrow = today.add(const Duration(days: 1));
+    if (startDay == tomorrow) {
+      return _StatusMeta(
+        label: t(lang, "events.status_tomorrow"),
+        bg: scheme.primary.withOpacity(0.12),
+        fg: scheme.primary,
+      );
+    }
+  }
+
+  return _StatusMeta(
+    label: t(lang, "events.status_happening"),
+    bg: scheme.surfaceVariant.withOpacity(0.6),
+    fg: scheme.onSurface,
+  );
+}
+
+class _StatusPill extends StatelessWidget {
+  final _StatusMeta status;
+  const _StatusPill({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border: Border.all(color: Colors.white.withOpacity(0.14)),
-            boxShadow: [
-              BoxShadow(
-                blurRadius: 18,
-                spreadRadius: 1,
-                offset: const Offset(0, 10),
-                color: Colors.black.withOpacity(0.12),
-              ),
-            ],
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: status.bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: status.fg.withOpacity(0.25)),
+        ),
+        child: Text(
+          status.label,
+          style: TextStyle(
+            color: status.fg,
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
           ),
-          child: child,
         ),
       ),
     );
   }
 }
-
-/* ------------------------------- Models ------------------------------- */
 
 class _Ticket {
   final String id;
@@ -1019,9 +604,7 @@ class _EventDetail {
     if (start == null) return "";
     final df = DateFormat("dd MMM yyyy, h:mm a");
     if (end == null) return df.format(start);
-    final sameDay = start.year == end.year &&
-        start.month == end.month &&
-        start.day == end.day;
+    final sameDay = start.year == end.year && start.month == end.month && start.day == end.day;
     return sameDay
         ? "${df.format(start)} - ${DateFormat("h:mm a").format(end)}"
         : "${df.format(start)} → ${df.format(end)}";
@@ -1049,12 +632,11 @@ class _EventDetail {
             .toList() ??
         [];
 
-    final banner = (json["banner_url"] ?? json["cover_url"] ?? "").toString();
     return _EventDetail(
       id: (json["id"] ?? "").toString(),
       title: (json["title"] ?? json["name"] ?? "").toString(),
       description: (json["description"] ?? "").toString(),
-      bannerUrl: banner.isEmpty ? null : banner,
+      bannerUrl: (json["banner_url"] ?? json["cover_url"] ?? "").toString(),
       startAt: parse(json["start_at"]?.toString()),
       endAt: parse(json["end_at"]?.toString()),
       venue: (json["venue_name"] ?? "").toString(),
