@@ -145,14 +145,14 @@ class ListingMapTab extends StatelessWidget {
     final hasCoords = lat != null && lng != null;
 
     final camera = hasCoords
-        ? CameraPosition(target: LatLng(lat!, lng!), zoom: 15)
+        ? CameraPosition(target: LatLng(lat, lng), zoom: 15)
         : const CameraPosition(target: LatLng(0, 0), zoom: 1);
 
     final markers = hasCoords
         ? <Marker>{
             Marker(
               markerId: const MarkerId("place"),
-              position: LatLng(lat!, lng!),
+              position: LatLng(lat, lng),
               infoWindow: InfoWindow(
                 title: place.name.isNotEmpty ? place.name : t(lang, "listings.address"),
                 snippet: place.address,
@@ -179,7 +179,7 @@ class ListingMapTab extends StatelessWidget {
           ListingInfoRow(
             icon: HugeIcons.strokeRoundedMapsLocation02,
             label: hasCoords
-                ? "${lat!.toStringAsFixed(6)}, ${lng!.toStringAsFixed(6)}"
+                ? "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}"
                 : "--",
           ),
           const SizedBox(height: 16),
