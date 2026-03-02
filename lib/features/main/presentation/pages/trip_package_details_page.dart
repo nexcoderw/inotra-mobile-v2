@@ -12,7 +12,7 @@ class TripPackageDetailsPage extends StatelessWidget {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
     final idLabel = packageId != null
-        ? t(lang, "trips.id_label").replace("{id}", packageId!)
+        ? t(lang, "trips.id_label").replaceFirst("{id}", packageId!)
         : t(lang, "trips.id_placeholder");
 
     return MainScaffold(
