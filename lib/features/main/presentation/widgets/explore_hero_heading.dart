@@ -11,7 +11,7 @@ class ExploreHeroHeading extends StatelessWidget {
         isDark ? "assets/images/welcome-dark.svg" : "assets/images/welcome-light.svg";
 
     final width = MediaQuery.sizeOf(context).width;
-    final height = width * 0.56; // keep a cinematic ratio while preventing infinite height
+    final height = width * 0.24; // reduced height (~50%) to trim top/bottom space
 
     return SizedBox(
       width: width,
