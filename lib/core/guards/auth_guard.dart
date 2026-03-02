@@ -54,21 +54,16 @@ class _GuardedPageState extends State<_GuardedPage> {
   Future<void> _checkGuard() async {
     if (_prompted) return;
     final valid = await AuthSession.instance.ensureValid();
-    if (valid) {
-      if (mounted) setState(() => _allowed = true);
+    // If token/user still valid, allow.
+    if (valid && mounted) {
+      setState(() => _allowed = true);
       return;
     }
 
-    _prompted = true;
-    if (!mounted) return;
-    await AuthDialog.show(
-      context,
-      featureLabel: widget.featureLabel,
-      description: widget.description ??
-          "Sign in or create an account to access ${widget.featureLabel} and keep your experience in sync.",
-    );
-
-    if (mounted) Navigator.of(context).pop(); // Return to previous page
+    // Token missing/expired: sign out but keep user on the same page;
+    // downstream widgets should render guest header automatically.
+    await AuthSession.instance.expireSession();
+    if (mounted) setState(() => _allowed = true);
   }
 
   @override
