@@ -44,25 +44,38 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
       _loading = true;
       _error = null;
     });
+
     try {
       final uri = Api.url(PlaceEndpoints.reviews(widget.placeId));
       final resp = await http.get(uri, headers: {"Accept": "application/json"});
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body);
-        final results = (decoded is Map
-                ? (decoded["results"] ?? decoded["data"] ?? const [])
-                : decoded as List?) ??
-            const [];
-        final items = results
-            .whereType<Map>()
-            .map((m) => _Review.fromJson(Map<String, dynamic>.from(m)))
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        setState(() => _reviews = items);
-      } else {
+
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
         setState(() => _error = "Status ${resp.statusCode}");
+        return;
       }
+
+      final decoded = jsonDecode(resp.body);
+
+      // Enforce proper types
+      List<dynamic> rawList = const [];
+      if (decoded is Map<String, dynamic>) {
+        final v = decoded["results"] ?? decoded["data"];
+        if (v is List) rawList = v;
+      } else if (decoded is List) {
+        rawList = decoded;
+      }
+
+      final List<_Review> items = rawList
+          .whereType<Map<String, dynamic>>()
+          .map<_Review>((m) => _Review.fromJson(m))
+          .toList();
+
+      items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      if (!mounted) return;
+      setState(() => _reviews = items);
     } catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
