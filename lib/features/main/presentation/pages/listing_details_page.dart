@@ -36,7 +36,7 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
   bool _ctaBusy = false;
   bool _saved = false;
   static const _favKey = "listing_favorites";
-  static const _expiryMs = Duration(days: 7).inMilliseconds;
+  static final _expiryMs = const Duration(days: 7).inMilliseconds;
   Set<String> _favorites = {};
 
   @override
