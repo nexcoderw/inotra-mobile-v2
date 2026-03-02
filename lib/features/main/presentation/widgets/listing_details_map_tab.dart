@@ -66,16 +66,21 @@ class ListingMapTab extends StatelessWidget {
 
     if (availableMaps.isEmpty) {
       // Safe fallback: try Google directions (may open browser if app not available)
-          await launcher.MapLauncher.showDirections(
-            mapType: launcher.MapType.google,
-            destination: coords,
-            destinationTitle: title,
-          );
-          return;
-        }
+      await launcher.MapLauncher.showDirections(
+        mapType: launcher.MapType.google,
+        destination: coords,
+        destinationTitle: title,
+      );
+      return;
+    }
 
-        showModalBottomSheet(
-          context: context,
+    final googleMapApp = availableMaps
+        .where((m) => m.mapType == launcher.MapType.google)
+        .cast<launcher.AvailableMap?>()
+        .fold<launcher.AvailableMap?>(null, (prev, curr) => curr ?? prev);
+
+    showModalBottomSheet(
+      context: context,
       showDragHandle: true,
       backgroundColor: scheme.surface,
       builder: (_) {
@@ -107,7 +112,30 @@ class ListingMapTab extends StatelessWidget {
                 ),
               ),
               Divider(height: 0, color: scheme.onSurface.withOpacity(0.08)),
-              ...availableMaps.map((m) {
+
+              // Prefer native Google Maps directions
+              if (googleMapApp != null)
+                ListTile(
+                  leading: _mapAppLeadingIcon(scheme, googleMapApp),
+                  title: Text(
+                    "Google Maps",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface.withOpacity(0.90),
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await launcher.MapLauncher.showDirections(
+                      mapType: launcher.MapType.google,
+                      destination: coords,
+                      destinationTitle: title,
+                    );
+                  },
+                ),
+
+              // Other installed map apps
+              ...availableMaps.where((m) => m != googleMapApp).map((m) {
                 return ListTile(
                   leading: _mapAppLeadingIcon(scheme, m),
                   title: Text(
@@ -126,7 +154,7 @@ class ListingMapTab extends StatelessWidget {
                     );
                   },
                 );
-              }),
+              }).toList(),
               const SizedBox(height: 10),
             ],
           ),
