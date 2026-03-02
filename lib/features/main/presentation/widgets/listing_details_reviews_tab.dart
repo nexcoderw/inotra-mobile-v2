@@ -471,8 +471,15 @@ class _Review {
       author: (json["author"] ?? json["user_name"] ?? "Anonymous").toString(),
       comment: (json["comment"] ?? json["text"] ?? "").toString(),
       createdAt: parseDate(json["created_at"]?.toString()),
-      rating: (json["rating"] as num?)?.toInt(),
+      rating: _toInt(json["rating"]),
       avatarUrl: (json["user_avatar_url"] ?? "").toString(),
     );
   }
+}
+
+int _toInt(dynamic v) {
+  if (v == null) return 0;
+  if (v is num) return v.toInt();
+  if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt() ?? 0;
+  return 0;
 }
