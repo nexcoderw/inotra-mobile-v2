@@ -28,7 +28,7 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
   final _controller = TextEditingController();
 
   // Optional rating (UI only). If your API accepts rating, include it in body.
-  int _selectedRating = 0;
+  int _selectedRating = 5;
 
   late final AnimationController _skeletonCtrl;
 
@@ -114,8 +114,7 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
 
       final body = <String, dynamic>{
         "comment": text,
-        // If your backend supports rating, uncomment:
-        // "rating": _selectedRating == 0 ? null : _selectedRating,
+        "rating": _selectedRating <= 0 ? 1 : _selectedRating,
       };
 
       final resp = await http.post(
