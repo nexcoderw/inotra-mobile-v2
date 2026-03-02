@@ -7,7 +7,6 @@ import "package:share_plus/share_plus.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/highlight_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
-import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/highlights/highlight_card.dart";
@@ -44,12 +43,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
   Future<bool> _handleUnauthorized(int status) async {
     if (status == 401) {
       await AuthSession.instance.expireSession();
-      if (!mounted) return true;
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.login,
-        (_) => false,
-      );
+      // stay on the page; UI will fall back to guest header/state
       return true;
     }
     return false;
