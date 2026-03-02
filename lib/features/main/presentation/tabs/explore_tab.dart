@@ -5,6 +5,7 @@ import "package:inotra/features/main/presentation/widgets/trip_packages_preview.
 import "package:inotra/features/main/presentation/widgets/static_ad_banner.dart";
 import "package:inotra/features/main/presentation/widgets/explore_hero_heading.dart";
 import "package:inotra/features/main/presentation/widgets/explore_listings_feature.dart";
+import "package:inotra/features/main/presentation/widgets/explore_events_feature.dart";
 
 class ExploreTab extends StatelessWidget {
   const ExploreTab({super.key});
@@ -27,6 +28,8 @@ class ExploreTab extends StatelessWidget {
             const StaticAdBanner(),
             const SizedBox(height: 28),
             const ExploreListingsFeature(),
+            const SizedBox(height: 28),
+            const ExploreEventsFeature(),
           ],
         ),
       ),
