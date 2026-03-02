@@ -184,7 +184,7 @@ class _DetailsSheet extends StatelessWidget {
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOut,
       tween: Tween(begin: 0, end: 1),
-      builder: (context, t, _) {
+      builder: (context, anim, _) {
         return SizedBox(
           height: lerpDouble(sheetMin, sheetMax, 1)!,
           child: ClipRRect(
@@ -618,7 +618,7 @@ class _RatingCompact extends StatelessWidget {
 /* ----------------------------- ROUND ICON BUTTON ----------------------------- */
 
 class _RoundIconButton extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final VoidCallback onTap;
 
   const _RoundIconButton({
