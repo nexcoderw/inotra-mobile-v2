@@ -621,7 +621,7 @@ class _PrimaryGlassButton extends StatelessWidget {
                 ),
               )
             else
-              Icon(icon: icon, size: 16, color: scheme.onPrimary),
+              Icon(icon, size: 16, color: scheme.onPrimary),
             const SizedBox(width: 8),
             Text(
               label,
