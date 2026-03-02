@@ -177,8 +177,8 @@ class _DetailsSheet extends StatelessWidget {
     final media = MediaQuery.of(context);
 
     final maxH = media.size.height;
-    final sheetMax = maxH * 0.72; // close to screenshot
-    final sheetMin = maxH * 0.58;
+    final sheetMax = maxH * 0.62;
+    final sheetMin = maxH * 0.52;
 
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 260),
@@ -229,7 +229,7 @@ class _DetailsSheet extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 26,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.4,
                                 height: 1.05,
@@ -347,49 +347,69 @@ class _HeroPagerState extends State<_HeroPager> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final imgs = widget.images.isNotEmpty ? widget.images : [""];
-    final topPad = MediaQuery.of(context).padding.top;
+
+    final media = MediaQuery.of(context);
+    final topPad = media.padding.top;
+
+    // Make image area taller so user sees it clearly
+    final heroHeight = media.size.height * 0.52; // ~52% of screen height
 
     return Stack(
       children: [
-        Positioned.fill(
-          child: PageView.builder(
-            itemCount: imgs.length,
-            onPageChanged: (i) => setState(() => _index = i),
-            itemBuilder: (_, i) {
-              final url = imgs[i].trim();
-              if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
-              return Image.network(
-                url,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _HeroPlaceholder(scheme: scheme),
-                loadingBuilder: (_, child, evt) =>
-                    evt == null ? child : _HeroPlaceholder(scheme: scheme),
-              );
-            },
+        // Background fallback color behind image
+        Container(color: scheme.surface),
+
+        Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            height: heroHeight,
+            width: double.infinity,
+            child: PageView.builder(
+              itemCount: imgs.length,
+              onPageChanged: (i) => setState(() => _index = i),
+              itemBuilder: (_, i) {
+                final url = imgs[i].trim();
+                if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
+
+                return Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high, // sharper
+                  isAntiAlias: true,
+                  errorBuilder: (_, __, ___) => _HeroPlaceholder(scheme: scheme),
+                  loadingBuilder: (_, child, evt) {
+                    if (evt == null) return child;
+                    return _HeroPlaceholder(scheme: scheme);
+                  },
+                );
+              },
+            ),
           ),
         ),
 
-        // subtle fade at bottom to match screenshot readability
+        // Softer bottom fade (reduced so image stays clear)
         Positioned(
           left: 0,
           right: 0,
-          bottom: 0,
-          height: 220,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.28),
-                ],
+          top: heroHeight - 180,
+          height: 180,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.18),
+                  ],
+                ),
               ),
             ),
           ),
         ),
 
-        // dots indicator (centered, small)
+        // Dots indicator - placed nicely under status bar
         Positioned(
           left: 0,
           right: 0,
@@ -406,7 +426,7 @@ class _HeroPagerState extends State<_HeroPager> {
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: _index == i
-                        ? Colors.white.withOpacity(0.92)
+                        ? Colors.white.withOpacity(0.95)
                         : Colors.white.withOpacity(0.35),
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -556,7 +576,7 @@ class _ThumbRow extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   ),

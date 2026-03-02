@@ -24,7 +24,7 @@ class ListingOverviewTab extends StatelessWidget {
           Text(
             t(lang, "listings.overview_title"),
             style: const TextStyle(
-              fontSize: 20,
+              fontSize: 14,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.2,
             ),
@@ -49,7 +49,7 @@ class ListingOverviewTab extends StatelessWidget {
             Text(
               t(lang, "listings.services"),
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 12,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -73,7 +73,7 @@ class ListingOverviewTab extends StatelessWidget {
           Text(
             t(lang, "listings.hours"),
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: 12,
               fontWeight: FontWeight.w900,
             ),
           ),
