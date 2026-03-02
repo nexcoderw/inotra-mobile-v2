@@ -19,7 +19,8 @@ import "../widgets/listing_details_map_tab.dart";
 import "../widgets/listing_details_reviews_tab.dart";
 import "../widgets/listing_details_transport_tab.dart";
 import "../widgets/listing_image_preview.dart";
-import "../../auth/presentation/widgets/quick_login_dialog.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
+import "../../../../core/services/auth_session.dart";
 
 class ListingDetailsPage extends StatefulWidget {
   final String? placeId;
