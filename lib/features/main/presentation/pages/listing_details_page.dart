@@ -19,6 +19,7 @@ import "../widgets/listing_details_map_tab.dart";
 import "../widgets/listing_details_reviews_tab.dart";
 import "../widgets/listing_details_transport_tab.dart";
 import "../widgets/listing_image_preview.dart";
+import "../../auth/presentation/widgets/quick_login_dialog.dart";
 
 class ListingDetailsPage extends StatefulWidget {
   final String? placeId;
@@ -203,28 +204,34 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
         bottomNavigationBar: (_place != null && !_loading && _error == null)
             ? SafeArea(
                 minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: _ReserveCTAButton(
-                  label: t(lang, "listings.reserve_cta"),
-                  busy: _ctaBusy,
-                  onTap: _ctaBusy
-                      ? null
-                      : () async {
-                          setState(() => _ctaBusy = true);
-                          await Future.delayed(const Duration(milliseconds: 900));
-                          if (!mounted) return;
+                child: AuthSession.instance.value.isAuthenticated
+                    ? _ReserveCTAButton(
+                        label: t(lang, "listings.reserve_cta"),
+                        busy: _ctaBusy,
+                        onTap: _ctaBusy
+                            ? null
+                            : () async {
+                                setState(() => _ctaBusy = true);
+                                await Future.delayed(const Duration(milliseconds: 900));
+                                if (!mounted) return;
 
-                          toastification.show(
-                            context: context,
-                            type: ToastificationType.info,
-                            style: ToastificationStyle.fillColored,
-                            title: Text(t(lang, "common.coming_soon")),
-                            alignment: Alignment.topCenter,
-                            autoCloseDuration: const Duration(seconds: 3),
-                          );
+                                toastification.show(
+                                  context: context,
+                                  type: ToastificationType.info,
+                                  style: ToastificationStyle.fillColored,
+                                  title: Text(t(lang, "common.coming_soon")),
+                                  alignment: Alignment.topCenter,
+                                  autoCloseDuration: const Duration(seconds: 3),
+                                );
 
-                          if (mounted) setState(() => _ctaBusy = false);
-                        },
-                ),
+                                if (mounted) setState(() => _ctaBusy = false);
+                              },
+                      )
+                    : _ReserveCTAButton(
+                        label: t(lang, "listings.login_to_proceed"),
+                        busy: false,
+                        onTap: () => QuickLoginDialog.show(context),
+                      ),
               )
             : null,
       ),
