@@ -1,5 +1,7 @@
 import "dart:async";
 import "dart:convert";
+
+import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
@@ -363,13 +365,13 @@ class _HeroBanner extends StatelessWidget {
               child: Row(
                 children: [
                   _GlassIconButton(
-                    tooltip: "Back",
+                    tooltip: t(currentLangSync(), "nav.back"),
                     icon: HugeIcons.strokeRoundedArrowLeft01,
                     onTap: onBack,
                   ),
                   const Spacer(),
                   _GlassIconButton(
-                    tooltip: "Refresh",
+                    tooltip: t(currentLangSync(), "common.try_again"),
                     icon: HugeIcons.strokeRoundedRefresh,
                     onTap: onRefresh,
                   ),
@@ -524,7 +526,7 @@ class _GlassBar extends StatelessWidget {
 
 class _GlassIconButton extends StatelessWidget {
   final String tooltip;
-  final IconData icon;
+  final dynamic icon;
   final VoidCallback onTap;
 
   const _GlassIconButton({
@@ -686,7 +688,7 @@ class _TicketTile extends StatelessWidget {
   }
 }
 
-class _PrimaryCtaButton extends StatelessWidget {
+class _PrimaryCtaButton extends StatefulWidget {
   final String label;
   final dynamic icon;
   final VoidCallback? onTap;
@@ -702,34 +704,181 @@ class _PrimaryCtaButton extends StatelessWidget {
   });
 
   @override
+  State<_PrimaryCtaButton> createState() => _PrimaryCtaButtonState();
+}
+
+class _PrimaryCtaButtonState extends State<_PrimaryCtaButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) {
+    if (!mounted) return;
+    setState(() => _pressed = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final bg = filled ? scheme.primary : scheme.surfaceVariant.withOpacity(0.35);
-    final fg = filled ? scheme.onPrimary : scheme.onSurface;
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: busy ? null : onTap,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: bg,
-          foregroundColor: fg,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          textStyle: const TextStyle(fontWeight: FontWeight.w900),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+    // Filled style (primary pill) OR glass style (outline + blur)
+    final filledBg = scheme.primary;
+    final filledFg = scheme.onPrimary;
+
+    final glassBg = scheme.surface.withOpacity(0.40);
+    final glassBorder = scheme.onSurface.withOpacity(0.10);
+    final glassFg = scheme.onSurface.withOpacity(0.92);
+
+    final disabled = widget.onTap == null || widget.busy;
+
+    Widget content({required Color fg}) {
+      return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: ScaleTransition(scale: anim, child: child),
+        ),
+        child: widget.busy
+            ? const _PremiumDotsLoader(key: ValueKey("dots"))
+            : Row(
+                key: const ValueKey("row"),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.icon != null) ...[
+                    HugeIcon(
+                      icon: widget.icon,
+                      size: 18,
+                      strokeWidth: 2.2,
+                      color: fg,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                      color: fg,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+      );
+    }
+
+    Widget pillBody() {
+      if (widget.filled) {
+        // Primary pill (no extra shadow)
+        return Container(
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: disabled ? filledBg.withOpacity(0.60) : filledBg,
+          ),
+          child: Center(child: content(fg: filledFg)),
+        );
+      }
+
+      // Glass pill (blur + subtle border)
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            height: 50,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: disabled ? glassBg.withOpacity(0.65) : glassBg,
+              border: Border.all(color: glassBorder),
+            ),
+            child: Center(child: content(fg: glassFg)),
           ),
         ),
-        icon: busy
-            ? SizedBox(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-              )
-            : HugeIcon(icon: icon, size: 18, color: fg),
-        label: Text(label),
+      );
+    }
+
+    return GestureDetector(
+      onTapDown: disabled ? null : (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
+      onTap: disabled ? null : widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        scale: _pressed ? 0.992 : 1,
+        child: SizedBox(
+          width: double.infinity,
+          child: pillBody(),
+        ),
       ),
+    );
+  }
+}
+
+class _PremiumDotsLoader extends StatefulWidget {
+  const _PremiumDotsLoader({super.key});
+
+  @override
+  State<_PremiumDotsLoader> createState() => _PremiumDotsLoaderState();
+}
+
+class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value;
+
+        double bump(double phase) {
+          final x = (t - phase) * 2 * math.pi;
+          return (0.5 + 0.5 * (-math.cos(x))).clamp(0.0, 1.0);
+        }
+
+        final b1 = bump(0.0);
+        final b2 = bump(0.18);
+        final b3 = bump(0.36);
+
+        Widget dot(double b) => AnimatedContainer(
+              duration: const Duration(milliseconds: 90),
+              height: 6 + (b * 4),
+              width: 6 + (b * 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.75 + b * 0.25),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            );
+
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            dot(b1),
+            const SizedBox(width: 7),
+            dot(b2),
+            const SizedBox(width: 7),
+            dot(b3),
+          ],
+        );
+      },
     );
   }
 }

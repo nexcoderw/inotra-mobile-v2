@@ -582,7 +582,7 @@ class _RememberMe extends StatelessWidget {
                 color: value ? scheme.primary : Colors.transparent,
               ),
               child: value
-                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  ? const Icon(Icons.check, size: 10, color: Colors.white)
                   : null,
             ),
             const SizedBox(width: 10),
