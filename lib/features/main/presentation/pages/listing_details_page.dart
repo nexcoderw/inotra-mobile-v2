@@ -312,10 +312,8 @@ class _DetailsSheet extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          _RoundIconButton(
-                            icon: saved
-                                ? HugeIcons.strokeRoundedBookmark02
-                                : HugeIcons.strokeRoundedBookmark01,
+                          _FavoriteCircleButton(
+                            active: saved,
                             onTap: onToggleSaved,
                           ),
                         ],
@@ -895,6 +893,76 @@ class _PremiumDotsLoader extends StatefulWidget {
 
   @override
   State<_PremiumDotsLoader> createState() => _PremiumDotsLoaderState();
+}
+
+/* ----------------------------- FAVORITE BUTTON ----------------------------- */
+
+class _FavoriteCircleButton extends StatefulWidget {
+  final bool active;
+  final VoidCallback onTap;
+
+  const _FavoriteCircleButton({
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  State<_FavoriteCircleButton> createState() => _FavoriteCircleButtonState();
+}
+
+class _FavoriteCircleButtonState extends State<_FavoriteCircleButton> {
+  bool _pressed = false;
+
+  void _set(bool v) => setState(() => _pressed = v);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    final bg = widget.active
+        ? Colors.red
+        : Colors.white.withOpacity(isDark ? 0.10 : 0.16);
+    final border = widget.active
+        ? Colors.red.withOpacity(0.9)
+        : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
+    final iconColor = widget.active
+        ? Colors.white
+        : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
+
+    return GestureDetector(
+      onTapDown: (_) => _set(true),
+      onTapUp: (_) => _set(false),
+      onTapCancel: () => _set(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOutCubic,
+        scale: _pressed ? 0.96 : 1,
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: bg,
+                border: Border.all(color: border),
+              ),
+              child: Center(
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedBookmark01,
+                  size: 12,
+                  strokeWidth: 2,
+                  color: iconColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
