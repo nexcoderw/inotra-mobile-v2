@@ -16,6 +16,7 @@ import "../widgets/listing_details_overview_tab.dart";
 import "../widgets/listing_details_map_tab.dart";
 import "../widgets/listing_details_reviews_tab.dart";
 import "../widgets/listing_details_transport_tab.dart";
+import "../widgets/listing_image_preview.dart";
 
 class ListingDetailsPage extends StatefulWidget {
   final String? placeId;
@@ -342,6 +343,8 @@ class _HeroPager extends StatefulWidget {
 
 class _HeroPagerState extends State<_HeroPager> {
   int _index = 0;
+  late final PageController _pageCtrl;
+  Timer? _auto;
 
   @override
   Widget build(BuildContext context) {
@@ -364,25 +367,29 @@ class _HeroPagerState extends State<_HeroPager> {
           child: SizedBox(
             height: heroHeight,
             width: double.infinity,
-            child: PageView.builder(
-              itemCount: imgs.length,
-              onPageChanged: (i) => setState(() => _index = i),
-              itemBuilder: (_, i) {
-                final url = imgs[i].trim();
-                if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
+            child: GestureDetector(
+              onTap: () => _openPreview(context, imgs),
+              child: PageView.builder(
+                controller: _pageCtrl,
+                itemCount: imgs.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (_, i) {
+                  final url = imgs[i].trim();
+                  if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
 
-                return Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high, // sharper
-                  isAntiAlias: true,
-                  errorBuilder: (_, __, ___) => _HeroPlaceholder(scheme: scheme),
-                  loadingBuilder: (_, child, evt) {
-                    if (evt == null) return child;
-                    return _HeroPlaceholder(scheme: scheme);
-                  },
-                );
-              },
+                  return Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high, // sharper
+                    isAntiAlias: true,
+                    errorBuilder: (_, __, ___) => _HeroPlaceholder(scheme: scheme),
+                    loadingBuilder: (_, child, evt) {
+                      if (evt == null) return child;
+                      return _HeroPlaceholder(scheme: scheme);
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -437,6 +444,46 @@ class _HeroPagerState extends State<_HeroPager> {
         ),
       ],
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _pageCtrl = PageController();
+    _startAuto();
+  }
+
+  void _startAuto() {
+    _auto?.cancel();
+    _auto = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      final total = widget.images.isEmpty ? 1 : widget.images.length;
+      if (total <= 1) return;
+      final next = (_index + 1) % total;
+      _pageCtrl.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void _openPreview(BuildContext context, List<String> imgs) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (_) => ListingImagePreview(
+        images: imgs,
+        initialIndex: _index,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _auto?.cancel();
+    _pageCtrl.dispose();
+    super.dispose();
   }
 }
 
