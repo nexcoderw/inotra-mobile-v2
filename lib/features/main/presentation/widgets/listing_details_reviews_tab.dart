@@ -117,6 +117,11 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
         "rating": _selectedRating <= 0 ? 1 : _selectedRating,
       };
 
+      final userId = AuthSession.instance.value.user?["id"];
+      if (userId != null && userId.toString().isNotEmpty) {
+        body["user_id"] = userId.toString();
+      }
+
       final resp = await http.post(
         uri,
         headers: {
