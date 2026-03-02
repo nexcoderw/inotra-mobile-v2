@@ -175,7 +175,7 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
                   : _reviews.isEmpty
                       ? t(lang, "listings.reviews_empty")
                       : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
-              leading: HugeIcons.strokeRoundedMessage02,
+              leading: Icons.rate_review_outlined,
               trailing: _loading
                   ? SizedBox(
                       height: 18,
@@ -311,8 +311,8 @@ class _SectionHeaderCard extends StatelessWidget {
               border: Border.all(color: scheme.outlineVariant),
             ),
             child: Center(
-              child: HugeIcon(
-                icon: leading,
+              child: Icon(
+                leading,
                 size: 18,
                 color: scheme.primary,
               ),
