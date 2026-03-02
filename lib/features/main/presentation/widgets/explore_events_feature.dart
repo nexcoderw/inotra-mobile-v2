@@ -7,9 +7,9 @@ import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "explore_listings_feature.dart" show _ErrorState, _EmptyState, _SpecularHighlight, _GlassPill, _GlassLink;
 
 class ExploreEventsFeature extends StatefulWidget {
   const ExploreEventsFeature({super.key});
@@ -73,22 +73,18 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _GlassPill(
-                child: Text(
-                  t(lang, "explore.events_title"),
-                  style: TextStyle(
-                    fontSize: isTablet ? 18 : 16,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                    color: scheme.onSurface,
-                  ),
+              Text(
+                t(lang, "explore.events_title"),
+                style: TextStyle(
+                  fontSize: isTablet ? 14 : 12,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.onSurface,
+                  letterSpacing: -0.2,
                 ),
               ),
-              _GlassLink(
+              _GlassButton(
                 label: t(lang, "explore.events_hint"),
-                onTap: () {
-                  // hook to events page when available
-                },
+                onTap: () => Navigator.pushNamed(context, AppRoutes.events),
               ),
             ],
           ),
@@ -435,40 +431,12 @@ class _EventSkeleton extends StatelessWidget {
   }
 }
 
-class _GlassPill extends StatelessWidget {
-  final Widget child;
-  const _GlassPill({required this.child});
 
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassLink extends StatelessWidget {
+class _GlassButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _GlassLink({
-    required this.label,
-    required this.onTap,
-  });
+  const _GlassButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -500,6 +468,71 @@ class _GlassLink extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: scheme.surfaceVariant.withOpacity(0.6),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.cloud_off_rounded, color: scheme.error),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: scheme.error,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: Text(t(currentLangSync(), "common.try_again")),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String label;
+  const _EmptyState({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 240,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: scheme.surfaceVariant.withOpacity(0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w700),
+        textAlign: TextAlign.center,
       ),
     );
   }

@@ -168,7 +168,7 @@ const translations = {
     "explore.listings_title": "Featured Listings",
     "explore.listings_hint": "See all",
     "explore.events_title": "Upcoming Events",
-    "explore.events_hint": "Don't miss out",
+    "explore.events_hint": "See All",
     "explore.hero_prefix": "Discover the wonders of ",
     "explore.hero_rwanda": "Rwanda!",
     "explore.hero_suffix": "",

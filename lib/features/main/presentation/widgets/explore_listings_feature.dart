@@ -155,7 +155,7 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
               ),
               _GlassButton(
                 label: t(lang, "explore.listings_hint"),
-                onTap: () => Navigator.pushNamed(context, AppRoutes.tripPackages),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.listings),
               ),
             ],
           ),
@@ -668,32 +668,6 @@ class _ListingSkeleton extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassPill extends StatelessWidget {
-  final Widget child;
-  const _GlassPill({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-          ),
-          child: child,
         ),
       ),
     );
