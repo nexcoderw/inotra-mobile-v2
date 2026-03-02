@@ -93,7 +93,7 @@ class _ListingImagePreviewState extends State<ListingImagePreview> {
               shape: const CircleBorder(),
               child: IconButton(
                 icon: HugeIcon(
-                  icon: HugeIcons.strokeRoundedCloseCircle,
+                  icon: HugeIcons.strokeRoundedX,
                   color: Colors.white,
                   size: 18,
                 ),
