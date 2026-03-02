@@ -9,9 +9,9 @@ import "package:http/http.dart" as http;
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 
 class ListingReviewsTab extends StatefulWidget {
   final String placeId;
@@ -116,7 +116,8 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json",
-          if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+          if (token != null && token.isNotEmpty)
+            "Authorization": "Bearer $token",
         },
         body: jsonEncode(body),
       );
@@ -162,9 +163,7 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: scheme.primary.withOpacity(0.12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.10),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.10)),
                   ),
                   child: Center(
                     child: HugeIcon(
@@ -191,8 +190,8 @@ class _ListingReviewsTabState extends State<ListingReviewsTab> {
                         _loading
                             ? t(lang, "auth.processing")
                             : _reviews.isEmpty
-                                ? t(lang, "listings.reviews_empty")
-                                : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
+                            ? t(lang, "listings.reviews_empty")
+                            : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -280,10 +279,7 @@ class _ReviewTile extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _AvatarGlass(
-          initials: review.initials,
-          imageUrl: review.avatarUrl,
-        ),
+        _AvatarGlass(initials: review.initials, imageUrl: review.avatarUrl),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -403,11 +399,16 @@ class _ReviewComposerGlass extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                       onTap: submitting ? null : () => onRatingChanged(v),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 3,
+                          vertical: 2,
+                        ),
                         child: Icon(
                           Icons.star_rounded,
                           size: 20,
-                          color: active ? Colors.amber : Colors.grey.withOpacity(0.35),
+                          color: active
+                              ? Colors.amber
+                              : Colors.grey.withOpacity(0.35),
                         ),
                       ),
                     );
@@ -446,6 +447,7 @@ class _ReviewComposerGlass extends StatelessWidget {
                 hintStyle: TextStyle(
                   color: scheme.onSurface.withOpacity(0.55),
                   fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
                 contentPadding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 border: OutlineInputBorder(
@@ -560,8 +562,8 @@ class _GlassIconButton extends StatelessWidget {
             border: Border.all(color: Colors.white.withOpacity(0.10)),
           ),
           child: Center(
-            child: Icon(
-              icon,
+            child: HugeIcon(
+              icon: icon,
               size: 18,
               color: scheme.onSurface.withOpacity(0.90),
             ),
@@ -619,11 +621,7 @@ class _PrimaryGlassButton extends StatelessWidget {
                 ),
               )
             else
-              Icon(
-                icon,
-                size: 16,
-                color: scheme.onPrimary,
-              ),
+              HugeIcon(icon: icon, size: 16, color: scheme.onPrimary),
             const SizedBox(width: 8),
             Text(
               label,
@@ -689,10 +687,7 @@ class _Initials extends StatelessWidget {
     return Center(
       child: Text(
         initials,
-        style: TextStyle(
-          color: scheme.primary,
-          fontWeight: FontWeight.w900,
-        ),
+        style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -707,20 +702,17 @@ class _StarRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Row(
-      children: List.generate(
-        5,
-        (i) {
-          final active = i < rating;
-          return Padding(
-            padding: const EdgeInsets.only(right: 2),
-            child: Icon(
-              Icons.star_rounded,
-              size: 16,
-              color: active ? Colors.amber : scheme.onSurface.withOpacity(0.20),
-            ),
-          );
-        },
-      ),
+      children: List.generate(5, (i) {
+        final active = i < rating;
+        return Padding(
+          padding: const EdgeInsets.only(right: 2),
+          child: Icon(
+            Icons.star_rounded,
+            size: 16,
+            color: active ? Colors.amber : scheme.onSurface.withOpacity(0.20),
+          ),
+        );
+      }),
     );
   }
 }
@@ -789,7 +781,7 @@ class _ErrorGlassBanner extends StatelessWidget {
           const SizedBox(width: 10),
           _PrimaryGlassButton(
             label: "Retry",
-            icon: Icons.refresh_rounded,
+            icon: HugeIcons.strokeRoundedRefreshCw02,
             onTap: onRetry,
           ),
         ],
@@ -820,7 +812,8 @@ class _Review {
   String get initials {
     final parts = author.trim().split(" ").where((e) => e.isNotEmpty).toList();
     if (parts.isEmpty) return "?";
-    if (parts.length == 1) return parts.first.isNotEmpty ? parts.first[0].toUpperCase() : "?";
+    if (parts.length == 1)
+      return parts.first.isNotEmpty ? parts.first[0].toUpperCase() : "?";
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
 
@@ -840,16 +833,19 @@ class _Review {
       }
     }
 
-    final avatar = (json["user_avatar_url"] ??
-            json["avatar"] ??
-            json["avatar_url"] ??
-            "")
-        .toString()
-        .trim();
+    final avatar =
+        (json["user_avatar_url"] ?? json["avatar"] ?? json["avatar_url"] ?? "")
+            .toString()
+            .trim();
 
     return _Review(
       id: (json["id"] ?? "").toString(),
-      author: (json["author"] ?? json["user_name"] ?? json["username"] ?? "Anonymous").toString(),
+      author:
+          (json["author"] ??
+                  json["user_name"] ??
+                  json["username"] ??
+                  "Anonymous")
+              .toString(),
       comment: (json["comment"] ?? json["text"] ?? "").toString(),
       createdAt: parseDate(json["created_at"]?.toString()),
       rating: _toNullableInt(json["rating"]),
