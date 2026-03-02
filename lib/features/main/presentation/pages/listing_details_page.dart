@@ -1,9 +1,11 @@
 import "dart:convert";
+import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
+import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
@@ -28,6 +30,7 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
   PlaceDetails? _place;
   bool _loading = true;
   String? _error;
+  bool _ctaBusy = false;
 
   @override
   void initState() {
@@ -174,40 +177,178 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
         bottomNavigationBar: (_place != null && !_loading && _error == null)
             ? SafeArea(
                 minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: SizedBox(
-                  height: 54,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: scheme.primary,
-                      foregroundColor: scheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(t(lang, "common.coming_soon")),
-                        ),
-                      );
-                    },
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedCalendarCheckIn01,
-                      size: 18,
-                      color: scheme.onPrimary,
-                    ),
-                    label: Text(
-                      t(lang, "listings.reserve_cta"),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
+                child: _ReserveCTAButton(
+                  label: t(lang, "listings.reserve_cta"),
+                  busy: _ctaBusy,
+                  onTap: _ctaBusy
+                      ? null
+                      : () async {
+                          setState(() => _ctaBusy = true);
+                          await Future.delayed(const Duration(milliseconds: 900));
+                          if (!mounted) return;
+                          toastification.show(
+                            context: context,
+                            type: ToastificationType.info,
+                            style: ToastificationStyle.fillColored,
+                            title: Text(t(lang, "common.coming_soon")),
+                            alignment: Alignment.topCenter,
+                            autoCloseDuration: const Duration(seconds: 3),
+                          );
+                          if (mounted) setState(() => _ctaBusy = false);
+                        },
                 ),
               )
             : null,
       ),
+    );
+  }
+}
+
+/* ----------------------------- RESERVE CTA ----------------------------- */
+
+class _ReserveCTAButton extends StatefulWidget {
+  final String label;
+  final bool busy;
+  final VoidCallback? onTap;
+
+  const _ReserveCTAButton({
+    required this.label,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  State<_ReserveCTAButton> createState() => _ReserveCTAButtonState();
+}
+
+class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) => setState(() => _pressed = v);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTapDown: widget.onTap == null ? null : (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        scale: _pressed ? 0.992 : 1,
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.primary,
+                scheme.primary.withOpacity(0.88),
+              ],
+            ),
+          ),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: ScaleTransition(scale: anim, child: child),
+              ),
+              child: widget.busy
+                  ? const _PremiumDotsLoader(key: ValueKey("dots"))
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedCalendarCheckIn01,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.label,
+                          key: const ValueKey("label"),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ----------------------------- LOADER ----------------------------- */
+
+class _PremiumDotsLoader extends StatefulWidget {
+  const _PremiumDotsLoader({super.key});
+
+  @override
+  State<_PremiumDotsLoader> createState() => _PremiumDotsLoaderState();
+}
+
+class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        final t = _ctrl.value;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final phase = i * 0.18;
+            final v = (t - phase);
+            final pulse =
+                (0.5 + 0.5 * (1 - math.cos(v * 2 * math.pi))).clamp(0.0, 1.0);
+            final size = 6 + 4 * pulse;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: scheme.onPrimary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }
