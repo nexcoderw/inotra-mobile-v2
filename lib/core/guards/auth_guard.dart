@@ -53,8 +53,8 @@ class _GuardedPageState extends State<_GuardedPage> {
 
   Future<void> _checkGuard() async {
     if (_prompted) return;
-    final authed = AuthSession.instance.value.isAuthenticated;
-    if (authed) {
+    final valid = await AuthSession.instance.ensureValid();
+    if (valid) {
       if (mounted) setState(() => _allowed = true);
       return;
     }
