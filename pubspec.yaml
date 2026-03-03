@@ -45,7 +45,7 @@ dependencies:
   intl_phone_field: ^3.2.0
   shadcn_ui: ^0.46.1
   world_countries: ^3.9.4
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0
   share_plus: ^7.2.1
   google_maps_flutter: ^2.6.1
   map_launcher: ^3.5.0
