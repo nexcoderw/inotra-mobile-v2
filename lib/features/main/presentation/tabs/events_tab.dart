@@ -367,24 +367,10 @@ class _EventsTabState extends State<EventsTab> {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(hPad),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 24),
-                          HugeIcon(
-                            icon: HugeIcons.strokeRoundedCalendarRemove02,
-                            color: scheme.onSurface.withOpacity(0.35),
-                            size: 36,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            t(lang, "common.coming_soon"),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: scheme.onSurface.withOpacity(0.5),
-                            ),
-                          ),
-                        ],
+                      child: _EmptyFilteredState(
+                        title: t(lang, "events.status_${_statusFilter ?? "all"}",
+                            ifAbsent: (k) => t(lang, "common.all")),
+                        description: t(lang, "events.filter_empty"),
                       ),
                     ),
                   ),
@@ -408,6 +394,77 @@ class _EventsTabState extends State<EventsTab> {
                 child: const Icon(Icons.arrow_upward_rounded),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyFilteredState extends StatelessWidget {
+  final String title;
+  final String description;
+
+  const _EmptyFilteredState({
+    required this.title,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceVariant.withOpacity(0.45),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(0.6)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.surface.withOpacity(0.8),
+              border: Border.all(color: scheme.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                  color: Colors.black.withOpacity(0.10),
+                )
+              ],
+            ),
+            child: Center(
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedCalendarSearch01,
+                size: 28,
+                color: scheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
+              color: scheme.onSurface.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface.withOpacity(0.65),
+            ),
+          ),
         ],
       ),
     );
