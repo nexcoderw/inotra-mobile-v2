@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import "../widgets/main_scaffold.dart";
-import "../widgets/page_header.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -10,47 +9,23 @@ class NotificationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final scheme = Theme.of(context).colorScheme;
+    final items = List.generate(6, (i) => "${t(lang, "notifications.item_prefix")} ${i + 1}");
 
     return MainScaffold(
       title: t(lang, "notifications.title"),
-      showAppBar: false,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PageHeader(title: t(lang, "notifications.title")),
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        t(lang, "notifications.title"),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: scheme.onSurface.withOpacity(0.92),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t(lang, "common.coming_soon"),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface.withOpacity(0.72),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        itemBuilder: (context, index) {
+          return Card(
+            child: ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: Text(items[index], style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: Text(t(lang, "notifications.placeholder")),
+            ),
+          );
+        },
       ),
     );
   }

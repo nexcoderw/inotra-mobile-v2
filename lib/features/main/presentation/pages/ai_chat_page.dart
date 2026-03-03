@@ -1,9 +1,9 @@
 import "package:flutter/material.dart";
 
+import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
-import "../widgets/page_header.dart";
 
 class AiChatPage extends StatelessWidget {
   const AiChatPage({super.key});
@@ -11,44 +11,21 @@ class AiChatPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final scheme = Theme.of(context).colorScheme;
     return MainScaffold(
       title: t(lang, "nav.ai_chat"),
-      showAppBar: false,
-      child: SafeArea(
+      actions: [
+        IconButton(
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.aiChatConversations),
+          icon: const Icon(Icons.chat_bubble_outline),
+          tooltip: t(lang, "ai.conversations"),
+        ),
+      ],
+      child: Center(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              PageHeader(title: t(lang, "nav.ai_chat")),
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        t(lang, "nav.ai_chat"),
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: scheme.onSurface.withOpacity(0.92),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        t(lang, "common.coming_soon"),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface.withOpacity(0.72),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            t(lang, "ai.todo"),
+            textAlign: TextAlign.center,
           ),
         ),
       ),

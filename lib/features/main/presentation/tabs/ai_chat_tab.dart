@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 
+import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -8,40 +9,28 @@ class AiChatTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lang = currentLangSync();
-    final scheme = Theme.of(context).colorScheme;
-
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      t(lang, "nav.ai_chat"),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: scheme.onSurface.withOpacity(0.92),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t(lang, "common.coming_soon"),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface.withOpacity(0.72),
-                      ),
-                    ),
-                  ],
-                ),
+            Text(
+              t(currentLangSync(), "nav.ai_chat"),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(t(currentLangSync(), "ai.placeholder")),
               ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.aiChatConversations),
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: Text(t(currentLangSync(), "ai.open_conversations")),
             ),
           ],
         ),

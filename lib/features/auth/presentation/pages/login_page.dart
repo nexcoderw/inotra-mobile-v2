@@ -3,19 +3,19 @@ import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:toastification/toastification.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
-import "../../../../core/config/env.dart";
 import "../../../../core/constants/app_colors.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
+import "../../../../core/services/google_auth_service.dart";
 import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -31,21 +31,13 @@ class _LoginPageState extends State<LoginPage> {
   final _identifier = TextEditingController();
   final _password = TextEditingController();
 
+
   bool _rememberMe = false;
   bool _obscure = true;
   bool _isBusy = false;
   String? _error;
-  late final GoogleSignIn _googleSignIn;
 
-  @override
-  void initState() {
-    super.initState();
-    _googleSignIn = GoogleSignIn(
-      clientId: Env.googleClientId,
-      serverClientId: Env.googleClientId,
-      scopes: const ["email", "profile", "openid"],
-    );
-  }
+  final GoogleAuthService _googleAuth = GoogleAuthService();
 
   @override
   void dispose() {
@@ -78,7 +70,11 @@ class _LoginPageState extends State<LoginPage> {
         final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
         final user = body?["user"] as Map<String, dynamic>? ?? {};
 
-        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        await AuthStorage.saveSession(
+          tokens: tokens,
+          user: user,
+          theme: "light",
+        );
         AuthSession.instance.signIn(
           user: user,
           accessToken: tokens["access"] as String? ?? "",
@@ -150,6 +146,7 @@ class _LoginPageState extends State<LoginPage> {
     return tr("auth.incorrect_credentials");
   }
 
+  // ✅ GOOGLE LOGIN (ID TOKEN -> backend)
   Future<void> _onGoogleLogin() async {
     setState(() {
       _isBusy = true;
@@ -157,15 +154,8 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final account = await _googleSignIn.signIn();
-      if (account == null) {
-        if (mounted) setState(() => _isBusy = false);
-        return;
-      }
-
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
-      if (idToken == null) throw Exception("Missing Google ID token");
+      final idToken = await _googleAuth.signInAndGetIdToken();
+      if (idToken == null) return; // user cancelled
 
       final uri = Api.url(AuthEndpoints.googleLogin);
       final response = await http.post(
@@ -197,6 +187,7 @@ class _LoginPageState extends State<LoginPage> {
           alignment: Alignment.topCenter,
           autoCloseDuration: const Duration(seconds: 3),
         );
+
         Navigator.pushReplacementNamed(context, AppRoutes.home);
         return;
       }
@@ -241,14 +232,11 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Title
               AuthUI.heading(
                 tr("auth.sign_in"),
                 color: onSurface.withOpacity(0.96),
               ),
               const SizedBox(height: 6),
-
-              // Subtitle (visible both themes)
               Text(
                 tr("auth.sign_in_title"),
                 style: TextStyle(
@@ -258,17 +246,17 @@ class _LoginPageState extends State<LoginPage> {
                   color: onSurface.withOpacity(0.88),
                 ),
               ),
-
               const SizedBox(height: 18),
 
-              // Error chip (premium)
               if (_error != null && _error!.trim().isNotEmpty) ...[
                 _ErrorPill(text: _error!),
                 const SizedBox(height: 14),
               ],
 
-              // Identifier
-              AuthUI.label(tr("auth.identifier"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.identifier"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _identifier,
@@ -283,8 +271,10 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 14),
 
-              // Password
-              AuthUI.label(tr("auth.password"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.password"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _password,
@@ -293,7 +283,9 @@ class _LoginPageState extends State<LoginPage> {
                 enabled: !_isBusy,
                 prefixIcon: HugeIcons.strokeRoundedLockPassword,
                 suffix: IconButton(
-                  onPressed: _isBusy ? null : () => setState(() => _obscure = !_obscure),
+                  onPressed: _isBusy
+                      ? null
+                      : () => setState(() => _obscure = !_obscure),
                   icon: HugeIcon(
                     icon: _obscure
                         ? HugeIcons.strokeRoundedViewOff
@@ -310,7 +302,6 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 12),
 
-              // Remember + forgot
               Row(
                 children: [
                   _RememberMe(
@@ -322,7 +313,10 @@ class _LoginPageState extends State<LoginPage> {
                   TextButton(
                     onPressed: _isBusy
                         ? null
-                        : () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                        : () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.forgotPassword,
+                          ),
                     child: Text(
                       tr("auth.forgot_password"),
                       style: TextStyle(
@@ -339,7 +333,6 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 14),
 
-              // Actions row
               Row(
                 children: [
                   Expanded(
@@ -368,12 +361,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(height: 18),
-
               AuthUI.orDivider(),
-
               const SizedBox(height: 14),
 
-              // Google
               _GoogleButton(
                 busy: _isBusy,
                 onTap: _isBusy ? null : _onGoogleLogin,
@@ -382,7 +372,6 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 16),
 
-              // Sign up
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -395,7 +384,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   InkWell(
-                    onTap: _isBusy ? null : () => Navigator.pushNamed(context, AppRoutes.register),
+                    onTap: _isBusy
+                        ? null
+                        : () =>
+                              Navigator.pushNamed(context, AppRoutes.register),
                     child: Text(
                       tr("auth.sign_up"),
                       style: TextStyle(
@@ -425,10 +417,7 @@ class _GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
 
-  const _GlassCard({
-    required this.child,
-    required this.padding,
-  });
+  const _GlassCard({required this.child, required this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -442,7 +431,6 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            // ✅ no border / no shadow / no gradient (premium clean glass)
             color: scheme.surface.withOpacity(0.55),
           ),
           child: child,
@@ -519,7 +507,10 @@ class _GlassFieldState extends State<_GlassField> {
                   fontWeight: FontWeight.w600,
                   color: scheme.onSurface.withOpacity(0.45),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 border: InputBorder.none,
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 12, right: 8),
@@ -581,7 +572,7 @@ class _RememberMe extends StatelessWidget {
                 color: value ? scheme.primary : Colors.transparent,
               ),
               child: value
-                  ? const Icon(Icons.check, size: 10, color: Colors.white)
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
                   : null,
             ),
             const SizedBox(width: 10),
@@ -617,7 +608,6 @@ class _PrimaryPillButton extends StatefulWidget {
 
 class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
   bool _pressed = false;
-
   void _setPressed(bool v) => setState(() => _pressed = v);
 
   @override
@@ -640,12 +630,9 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withOpacity(0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
             ),
-            boxShadow: const [], // ✅ no hover/click shadow
+            boxShadow: const [],
           ),
           child: Center(
             child: AnimatedSwitcher(
@@ -742,7 +729,9 @@ class _GoogleButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: scheme.surface.withOpacity(0.45),
           side: BorderSide(color: scheme.onSurface.withOpacity(0.10)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -848,14 +837,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
