@@ -368,8 +368,9 @@ class _EventsTabState extends State<EventsTab> {
                     child: Padding(
                       padding: EdgeInsets.all(hPad),
                       child: _EmptyFilteredState(
-                        title: t(lang, "events.status_${_statusFilter ?? "all"}",
-                            ifAbsent: (k) => t(lang, "common.all")),
+                        title: _statusFilter == null
+                            ? t(lang, "common.all")
+                            : t(lang, "events.status_${_statusFilter!}"),
                         description: t(lang, "events.filter_empty"),
                       ),
                     ),
@@ -440,7 +441,7 @@ class _EmptyFilteredState extends StatelessWidget {
             ),
             child: Center(
               child: HugeIcon(
-                icon: HugeIcons.strokeRoundedCalendarSearch01,
+                icon: HugeIcons.strokeRoundedPropertySearch,
                 size: 28,
                 color: scheme.onSurface.withOpacity(0.65),
               ),
