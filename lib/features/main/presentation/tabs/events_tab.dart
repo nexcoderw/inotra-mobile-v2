@@ -29,6 +29,7 @@ class _EventsTabState extends State<EventsTab> {
   bool _hasMore = true;
   int _page = 1;
   String _query = "";
+  String? _statusFilter; // null = all, values: happening, tomorrow, future
   String? _error;
   bool _showBackToTop = false;
   Timer? _debounce;
@@ -131,11 +132,64 @@ class _EventsTabState extends State<EventsTab> {
     });
   }
 
+  List<_EventItem> _applyFilter(List<_EventItem> list) {
+    if (_statusFilter == null) return list;
+    return list.where((e) {
+      final bucket = _statusBucket(e);
+      return bucket == _statusFilter;
+    }).toList();
+  }
+
+  String _statusBucket(_EventItem e) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (e.endAt != null && e.endAt!.isBefore(now)) return "ended";
+    if (e.startAt != null) {
+      final startDay = DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+      final tomorrow = today.add(const Duration(days: 1));
+      if (startDay == today) return "happening";
+      if (startDay == tomorrow) return "tomorrow";
+      if (startDay.isAfter(tomorrow)) return "future";
+    }
+    return "future";
+  }
+
+  List<Widget> _buildStatusChips(String lang, ColorScheme scheme) {
+    final entries = <String?, String>{
+      null: t(lang, "common.all"),
+      "happening": t(lang, "events.status_happening"),
+      "tomorrow": t(lang, "events.status_tomorrow"),
+      "future": t(lang, "events.status_future"),
+    };
+
+    return entries.entries.map((entry) {
+      final key = entry.key;
+      final label = entry.value;
+      final selected = _statusFilter == key;
+      return ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => setState(() => _statusFilter = selected ? null : key),
+        backgroundColor: scheme.surfaceVariant.withOpacity(0.45),
+        selectedColor: scheme.primary.withOpacity(0.18),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: selected ? scheme.primary : scheme.onSurface.withOpacity(0.75),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        shape: StadiumBorder(
+          side: BorderSide(color: selected ? scheme.primary : scheme.outlineVariant),
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
     final screenWidth = MediaQuery.sizeOf(context).width;
+    final filtered = _applyFilter(_events);
 
     // Responsive: 1 column on phone, 2 on tablet
     final isTablet = screenWidth >= 700;
@@ -208,6 +262,24 @@ class _EventsTabState extends State<EventsTab> {
                   ),
                 ),
 
+                // Status filter chips
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 14),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _buildStatusChips(lang, scheme)
+                            .map((w) => Padding(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: w,
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                  ),
+                ),
+
                 // Skeleton (initial load)
                 if (_loading && _events.isEmpty)
                   SliverPadding(
@@ -227,7 +299,7 @@ class _EventsTabState extends State<EventsTab> {
                   ),
 
                 // Grid of event cards
-                if (_events.isNotEmpty)
+                if (filtered.isNotEmpty)
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 14),
                     sliver: SliverGrid(
@@ -239,10 +311,10 @@ class _EventsTabState extends State<EventsTab> {
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          if (index >= _events.length) {
+                          if (index >= filtered.length) {
                             return const _EventCardSkeleton();
                           }
-                          final evt = _events[index];
+                          final evt = filtered[index];
                           return _EventPosterCard(
                             event: evt,
                             onTap: () => Navigator.pushNamed(
@@ -252,8 +324,8 @@ class _EventsTabState extends State<EventsTab> {
                             ),
                           );
                         },
-                        childCount: _events.length +
-                            ((_loading && _events.isNotEmpty) ? 2 : 0),
+                        childCount:
+                            filtered.length + ((_loading && _events.isNotEmpty) ? 2 : 0),
                       ),
                     ),
                   ),
@@ -291,7 +363,7 @@ class _EventsTabState extends State<EventsTab> {
                   ),
 
                 // Empty state
-                if (!_loading && _events.isEmpty && _error == null)
+                if (!_loading && filtered.isEmpty && _error == null)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(hPad),
