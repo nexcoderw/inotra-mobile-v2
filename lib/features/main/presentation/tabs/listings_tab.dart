@@ -26,6 +26,7 @@ class _ListingsTabState extends State<ListingsTab> {
   final _searchCtrl = TextEditingController();
   final List<_Listing> _items = [];
   final Set<String> _favorites = {};
+  String? _selectedCategory; // null = all
 
   bool _loading = false;
   bool _hasMore = true;
@@ -34,6 +35,7 @@ class _ListingsTabState extends State<ListingsTab> {
   String? _error;
   bool _showBackToTop = false;
   Timer? _debounce;
+  List<_CategoryFilter> _categoryFilters = [];
 
   static const _favKey = "explore_listing_favs";
   static const _expiryMs = 7 * 24 * 60 * 60 * 1000;
@@ -135,6 +137,16 @@ class _ListingsTabState extends State<ListingsTab> {
             .map((e) => _Listing.fromJson(Map<String, dynamic>.from(e)))
             .toList();
 
+        // Build category chips dynamically
+        final catSet = <String>{};
+        for (final l in [..._items, ...incoming]) {
+          if (l.categoryName.isNotEmpty) catSet.add(l.categoryName);
+        }
+        _categoryFilters = [
+          _CategoryFilter(label: t(currentLangSync(), "common.all"), value: null),
+          ...catSet.map((c) => _CategoryFilter(label: c, value: c)),
+        ];
+
         final existing = _items.map((e) => e.id).toSet();
         final unique = incoming.where((e) => !existing.contains(e.id)).toList();
 
@@ -227,6 +239,11 @@ class _ListingsTabState extends State<ListingsTab> {
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
 
+    final visibleItems = _selectedCategory == null
+        ? _items
+        : _items.where((e) => e.categoryName == _selectedCategory).toList();
+    final categories = _buildCategories(lang);
+
     return SafeArea(
       child: Stack(
         children: [
@@ -265,6 +282,52 @@ class _ListingsTabState extends State<ListingsTab> {
                   ),
                 ),
 
+                // Category slider
+                if (categories.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.fromLTRB(isTablet ? 24 : 16, 0, isTablet ? 24 : 16, 12),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: categories.map((cat) {
+                            final selected = _selectedCategory == cat.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: ChoiceChip(
+                                label: Text(cat.label),
+                                selected: selected,
+                                onSelected: (_) {
+                                  setState(() => _selectedCategory = cat.value);
+                                },
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceVariant
+                                    .withOpacity(0.4),
+                                selectedColor: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                labelStyle: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: selected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                shape: StadiumBorder(
+                                  side: BorderSide(
+                                    color: selected
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context).dividerColor,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // Initial load skeletons that match card design
                 if (_loading && _items.isEmpty)
                   SliverToBoxAdapter(
@@ -288,7 +351,7 @@ class _ListingsTabState extends State<ListingsTab> {
                     (context, index) {
                       final showLoader = _loading && _items.isNotEmpty;
 
-                      if (index >= _items.length) {
+                      if (index >= visibleItems.length) {
                         return showLoader
                             ? Padding(
                                 padding: EdgeInsets.fromLTRB(
@@ -302,7 +365,7 @@ class _ListingsTabState extends State<ListingsTab> {
                             : const SizedBox.shrink();
                       }
 
-                      final listing = _items[index];
+                      final listing = visibleItems[index];
 
                       return Padding(
                         padding: EdgeInsets.fromLTRB(isTablet ? 24 : 16, 0, isTablet ? 24 : 16, 14),
@@ -319,7 +382,8 @@ class _ListingsTabState extends State<ListingsTab> {
                         ),
                       );
                     },
-                    childCount: _items.length + ((_loading && _items.isNotEmpty) ? 1 : 0),
+                    childCount:
+                        visibleItems.length + ((_loading && _items.isNotEmpty) ? 1 : 0),
                   ),
                 ),
 
@@ -337,7 +401,7 @@ class _ListingsTabState extends State<ListingsTab> {
                   ),
 
                 // Empty state
-                if (!_loading && _items.isEmpty && _error == null)
+                if (!_loading && visibleItems.isEmpty && _error == null)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(isTablet ? 24 : 16),
@@ -375,6 +439,16 @@ class _ListingsTabState extends State<ListingsTab> {
         ],
       ),
     );
+  }
+
+  List<_CategoryFilter> _buildCategories(String lang) {
+    if (_categoryFilters.isNotEmpty) return _categoryFilters;
+    // Fallback if API not yet loaded
+    final set = _items.map((e) => e.categoryName).where((e) => e.isNotEmpty).toSet();
+    return [
+      _CategoryFilter(label: t(lang, "common.all"), value: null),
+      ...set.map((c) => _CategoryFilter(label: c, value: c)),
+    ];
   }
 }
 
@@ -456,6 +530,12 @@ int _toIntOrZero(dynamic v) {
   if (v is num) return v.toInt();
   if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt() ?? 0;
   return 0;
+}
+
+class _CategoryFilter {
+  final String label;
+  final String? value;
+  const _CategoryFilter({required this.label, required this.value});
 }
 
 /* ----------------------------- UI WIDGETS ----------------------------- */
