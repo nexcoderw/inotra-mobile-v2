@@ -5,9 +5,11 @@ import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:google_maps_flutter/google_maps_flutter.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
+import "package:map_launcher/map_launcher.dart" as launcher;
 import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
@@ -219,47 +221,7 @@ class _EventDetailsBody extends StatelessWidget {
                       const SizedBox(height: 12),
                     ],
 
-                    _GlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _SectionTitle(t(lang, "listings.address")),
-                          const SizedBox(height: 10),
-                          _InfoRow(
-                            icon: HugeIcons.strokeRoundedMapsLocation02,
-                            label: event.address.isNotEmpty
-                                ? event.address
-                                : t(lang, "listings.no_data"),
-                            trailing: (event.lat != null && event.lng != null)
-                                ? Text(
-                                    "${event.lat!.toStringAsFixed(6)}, ${event.lng!.toStringAsFixed(6)}",
-                                    style: TextStyle(
-                                      color:
-                                          scheme.onSurface.withOpacity(0.65),
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  )
-                                : Text(
-                                    t(lang, "listings.map_placeholder"),
-                                    style: TextStyle(
-                                      color:
-                                          scheme.onSurface.withOpacity(0.55),
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            t(lang, "listings.map_placeholder"),
-                            style: TextStyle(
-                              color: scheme.onSurface.withOpacity(0.60),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _EventMapSection(event: event, lang: lang, scheme: scheme),
 
                     if (event.tickets.isNotEmpty) ...[
                       const SizedBox(height: 12),
@@ -458,6 +420,296 @@ class _BottomCtaBar extends StatelessWidget {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+/* ----------------------------- Event Map Section ----------------------------- */
+
+class _EventMapSection extends StatelessWidget {
+  final _EventDetail event;
+  final String lang;
+  final ColorScheme scheme;
+
+  const _EventMapSection({
+    required this.event,
+    required this.lang,
+    required this.scheme,
+  });
+
+  Future<void> _openExternalMaps(BuildContext context) async {
+    final lat = event.lat;
+    final lng = event.lng;
+
+    if (lat == null || lng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(lang, "listings.no_data"))),
+      );
+      return;
+    }
+
+    final coords = launcher.Coords(lat, lng);
+    final title = event.title.isNotEmpty ? event.title : "Event";
+
+    final availableMaps = await launcher.MapLauncher.installedMaps;
+
+    if (!context.mounted) return;
+
+    if (availableMaps.isEmpty) {
+      await launcher.MapLauncher.showDirections(
+        mapType: launcher.MapType.google,
+        destination: coords,
+        destinationTitle: title,
+      );
+      return;
+    }
+
+    final googleMapApp = availableMaps
+        .where((m) => m.mapType == launcher.MapType.google)
+        .cast<launcher.AvailableMap?>()
+        .fold<launcher.AvailableMap?>(null, (prev, curr) => curr ?? prev);
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: scheme.surface,
+      builder: (_) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 6),
+              ListTile(
+                leading: HugeIcon(
+                  icon: HugeIcons.strokeRoundedMapsLocation02,
+                  size: 22,
+                  color: scheme.primary,
+                ),
+                title: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withOpacity(0.92),
+                  ),
+                ),
+                subtitle: Text(
+                  "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface.withOpacity(0.70),
+                  ),
+                ),
+              ),
+              Divider(height: 0, color: scheme.onSurface.withOpacity(0.08)),
+
+              if (googleMapApp != null)
+                ListTile(
+                  leading: HugeIcon(
+                    icon: HugeIcons.strokeRoundedMapsLocation02,
+                    size: 22,
+                    color: scheme.onSurface.withOpacity(0.70),
+                  ),
+                  title: Text(
+                    "Google Maps",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface.withOpacity(0.90),
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await launcher.MapLauncher.showDirections(
+                      mapType: launcher.MapType.google,
+                      destination: coords,
+                      destinationTitle: title,
+                    );
+                  },
+                ),
+
+              ...availableMaps.where((m) => m != googleMapApp).map((m) {
+                return ListTile(
+                  leading: HugeIcon(
+                    icon: HugeIcons.strokeRoundedMapsLocation02,
+                    size: 22,
+                    color: scheme.onSurface.withOpacity(0.70),
+                  ),
+                  title: Text(
+                    m.mapName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface.withOpacity(0.90),
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await m.showMarker(
+                      coords: coords,
+                      title: title,
+                      description: event.address,
+                    );
+                  },
+                );
+              }),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lat = event.lat;
+    final lng = event.lng;
+    final hasCoords = lat != null && lng != null;
+
+    final camera = hasCoords
+        ? CameraPosition(target: LatLng(lat, lng), zoom: 15)
+        : const CameraPosition(target: LatLng(0, 0), zoom: 1);
+
+    final markers = hasCoords
+        ? <Marker>{
+            Marker(
+              markerId: const MarkerId("event"),
+              position: LatLng(lat, lng),
+              infoWindow: InfoWindow(
+                title: event.title.isNotEmpty ? event.title : t(lang, "listings.address"),
+                snippet: event.address,
+              ),
+            ),
+          }
+        : <Marker>{};
+
+    return _GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(t(lang, "listings.address")),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: HugeIcons.strokeRoundedMapsLocation02,
+            label: event.address.isNotEmpty
+                ? event.address
+                : t(lang, "listings.no_data"),
+            trailing: hasCoords
+                ? Text(
+                    "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}",
+                    style: TextStyle(
+                      color: scheme.onSurface.withOpacity(0.65),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 12),
+
+          // Map card
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Material(
+              color: scheme.surfaceVariant.withOpacity(0.55),
+              child: InkWell(
+                onTap: hasCoords ? () => _openExternalMaps(context) : null,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 220,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: hasCoords
+                            ? GoogleMap(
+                                initialCameraPosition: camera,
+                                markers: markers,
+                                zoomControlsEnabled: false,
+                                myLocationButtonEnabled: false,
+                                mapToolbarEnabled: false,
+                                compassEnabled: false,
+                                tiltGesturesEnabled: false,
+                                rotateGesturesEnabled: false,
+                                mapType: MapType.normal,
+                              )
+                            : Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    HugeIcon(
+                                      icon: HugeIcons.strokeRoundedMapsLocation02,
+                                      size: 34,
+                                      color: scheme.onSurface.withOpacity(0.55),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      t(lang, "listings.map_placeholder"),
+                                      style: TextStyle(
+                                        color: scheme.onSurface.withOpacity(0.6),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                      ),
+
+                      // Subtle border overlay
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: scheme.onSurface.withOpacity(0.10),
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Open in maps pill
+                      if (hasCoords)
+                        Positioned(
+                          left: 12,
+                          bottom: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: scheme.surface.withOpacity(0.90),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+                              boxShadow: [
+                                BoxShadow(
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                  color: Colors.black.withOpacity(0.12),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                HugeIcon(
+                                  icon: HugeIcons.strokeRoundedArrowUpRight01,
+                                  size: 18,
+                                  color: scheme.onSurface.withOpacity(0.85),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  t(lang, "listings.open_in_maps"),
+                                  style: const TextStyle(fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
