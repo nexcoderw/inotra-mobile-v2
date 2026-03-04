@@ -58,7 +58,7 @@ class App extends StatelessWidget {
               centerTitle: false,
             ),
           ),
-          initialRoute: AppRoutes.home,
+          initialRoute: AppRoutes.splash,
           onGenerateRoute: AppRouter.onGenerateRoute,
         );
       },
