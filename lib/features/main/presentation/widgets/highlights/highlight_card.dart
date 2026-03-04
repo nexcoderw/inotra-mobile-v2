@@ -2,8 +2,15 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
-class HighlightCard extends StatelessWidget {
+class HighlightMediaItem {
+  final String url;
+  final bool isVideo;
+  const HighlightMediaItem({required this.url, required this.isVideo});
+}
+
+class HighlightCard extends StatefulWidget {
   final String? imageUrl;
+  final List<HighlightMediaItem> mediaItems;
   final String title;
   final String? meta;
   final String? entityName;
@@ -20,6 +27,7 @@ class HighlightCard extends StatelessWidget {
   const HighlightCard({
     super.key,
     required this.imageUrl,
+    this.mediaItems = const [],
     required this.title,
     this.meta,
     this.entityName,
@@ -35,39 +43,69 @@ class HighlightCard extends StatelessWidget {
   });
 
   @override
+  State<HighlightCard> createState() => _HighlightCardState();
+}
+
+class _HighlightCardState extends State<HighlightCard> {
+  int _currentPage = 0;
+  late final PageController _mediaPageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _mediaPageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _mediaPageController.dispose();
+    super.dispose();
+  }
+
+  List<HighlightMediaItem> get _effectiveMedia {
+    if (widget.mediaItems.isNotEmpty) return widget.mediaItems;
+    if (widget.imageUrl != null && widget.imageUrl!.trim().isNotEmpty) {
+      return [HighlightMediaItem(url: widget.imageUrl!, isVideo: false)];
+    }
+    return [];
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final media = _effectiveMedia;
+    final hasMultiple = media.length > 1;
 
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(18)),
       child: Stack(
         children: [
-          // Media
+          // Media (carousel or single)
           Positioned.fill(
-            child: Image.network(
-              imageUrl ?? "",
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                color: scheme.surfaceVariant,
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.image_not_supported,
-                  color: scheme.onSurface.withOpacity(0.5),
-                  size: 42,
-                ),
-              ),
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                final value = progress.expectedTotalBytes == null
-                    ? null
-                    : progress.cumulativeBytesLoaded /
-                        (progress.expectedTotalBytes ?? 1);
-                return Center(child: CircularProgressIndicator(value: value));
-              },
-            ),
+            child: hasMultiple
+                ? PageView.builder(
+                    controller: _mediaPageController,
+                    itemCount: media.length,
+                    onPageChanged: (i) => setState(() => _currentPage = i),
+                    itemBuilder: (_, i) => _MediaSlide(
+                      item: media[i],
+                      scheme: scheme,
+                    ),
+                  )
+                : media.isNotEmpty
+                    ? _MediaSlide(item: media.first, scheme: scheme)
+                    : Container(
+                        color: scheme.surfaceVariant,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: scheme.onSurface.withOpacity(0.5),
+                          size: 42,
+                        ),
+                      ),
           ),
 
-          // Subtle overall vignette (keeps the card premium on any image)
+          // Subtle overall vignette
           Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
@@ -87,6 +125,83 @@ class HighlightCard extends StatelessWidget {
             ),
           ),
 
+          // Counter pill (top right) — Instagram style "1/5"
+          if (hasMultiple)
+            Positioned(
+              top: 52,
+              right: 14,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                    ),
+                    child: Text(
+                      "${_currentPage + 1}/${media.length}",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                            color: Colors.black54,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Dots indicator (center bottom area, above caption)
+          if (hasMultiple)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 100,
+              child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.20),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          media.length,
+                          (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: _currentPage == i ? 16 : 6,
+                            height: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                            decoration: BoxDecoration(
+                              color: _currentPage == i
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.40),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
           // Right actions (Instagram Reel-like)
           Positioned(
             right: 14,
@@ -95,24 +210,24 @@ class HighlightCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _ActionButton(
-                  icon: liked
+                  icon: widget.liked
                       ? HugeIcons.strokeRoundedHeartCheck
                       : HugeIcons.strokeRoundedHeartAdd,
-                  selected: liked,
-                  label: "$likes",
-                  onTap: onLike,
+                  selected: widget.liked,
+                  label: "${widget.likes}",
+                  onTap: widget.onLike,
                 ),
                 const SizedBox(height: 14),
                 _ActionButton(
                   icon: HugeIcons.strokeRoundedMessage02,
-                  label: "$comments",
-                  onTap: onComment,
+                  label: "${widget.comments}",
+                  onTap: widget.onComment,
                 ),
                 const SizedBox(height: 14),
                 _ActionButton(
                   icon: HugeIcons.strokeRoundedShare08,
-                  label: "$shares",
-                  onTap: onShare,
+                  label: "${widget.shares}",
+                  onTap: widget.onShare,
                 ),
               ],
             ),
@@ -124,11 +239,11 @@ class HighlightCard extends StatelessWidget {
             right: 78,
             bottom: 14,
             child: _BottomInfo(
-              title: title,
-              meta: meta,
-              entityName: entityName,
-              expanded: expandedCaption,
-              onTap: onCaptionTap,
+              title: widget.title,
+              meta: widget.meta,
+              entityName: widget.entityName,
+              expanded: widget.expandedCaption,
+              onTap: widget.onCaptionTap,
             ),
           ),
         ],
@@ -136,6 +251,69 @@ class HighlightCard extends StatelessWidget {
     );
   }
 }
+
+/* ----------------------------- Media Slide ----------------------------- */
+
+class _MediaSlide extends StatelessWidget {
+  final HighlightMediaItem item;
+  final ColorScheme scheme;
+
+  const _MediaSlide({required this.item, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    if (item.isVideo) {
+      // Video thumbnail fallback — show poster-like placeholder
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            item.url,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _mediaFallback(),
+            loadingBuilder: (_, child, p) => p == null ? child : _mediaFallback(),
+          ),
+          Center(
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.45),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.20)),
+              ),
+              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Image.network(
+      item.url,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _mediaFallback(),
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return _mediaFallback();
+      },
+    );
+  }
+
+  Widget _mediaFallback() {
+    return Container(
+      color: scheme.surfaceVariant,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.image_not_supported,
+        color: scheme.onSurface.withOpacity(0.5),
+        size: 42,
+      ),
+    );
+  }
+}
+
+/* ----------------------------- Bottom Info ----------------------------- */
 
 class _BottomInfo extends StatelessWidget {
   final String title;
@@ -154,7 +332,6 @@ class _BottomInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Instagram-like readability: blur + gradient + soft shadow behind text
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(14)),
       child: BackdropFilter(
@@ -282,6 +459,8 @@ String _initials(String name) {
   return "$first$second".toUpperCase();
 }
 
+/* ----------------------------- Action Button ----------------------------- */
+
 class _ActionButton extends StatelessWidget {
   final List<List<dynamic>> icon;
   final String label;
@@ -306,7 +485,6 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          // Small glassy pill behind icon (clean + visible)
           ClipRRect(
             borderRadius: const BorderRadius.all(Radius.circular(18)),
             child: BackdropFilter(
