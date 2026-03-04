@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
@@ -210,7 +211,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
     final scheme = Theme.of(context).colorScheme;
 
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const _HighlightsSkeleton();
     }
     if (_error != null) {
       return Center(
@@ -254,6 +255,9 @@ class _HighlightsTabState extends State<HighlightsTab> {
             children: [
               HighlightCard(
                 imageUrl: item.coverUrl,
+                mediaItems: item.mediaItems
+                    .map((m) => HighlightMediaItem(url: m.url, isVideo: m.isVideo))
+                    .toList(),
                 title: item.caption ?? t(lang, "highlights.title"),
                 meta: null,
                 entityName: _entityName(item),
@@ -295,10 +299,17 @@ class _HighlightsTabState extends State<HighlightsTab> {
   }
 }
 
+class _MediaItem {
+  final String url;
+  final bool isVideo;
+  const _MediaItem({required this.url, required this.isVideo});
+}
+
 class _Highlight {
   final String id;
   final String? caption;
   final String? coverUrl;
+  final List<_MediaItem> mediaItems;
   final int likes;
   final int comments;
   final int shares;
@@ -310,6 +321,7 @@ class _Highlight {
     required this.id,
     required this.caption,
     required this.coverUrl,
+    required this.mediaItems,
     required this.likes,
     required this.comments,
     required this.shares,
@@ -321,6 +333,7 @@ class _Highlight {
   _Highlight copyWith({
     String? caption,
     String? coverUrl,
+    List<_MediaItem>? mediaItems,
     int? likes,
     int? comments,
     int? shares,
@@ -332,6 +345,7 @@ class _Highlight {
       id: id,
       caption: caption ?? this.caption,
       coverUrl: coverUrl ?? this.coverUrl,
+      mediaItems: mediaItems ?? this.mediaItems,
       likes: likes ?? this.likes,
       comments: comments ?? this.comments,
       shares: shares ?? this.shares,
@@ -344,13 +358,24 @@ class _Highlight {
   static _Highlight fromJson(Map<String, dynamic> json) {
     final media = (json["media"] as List? ?? []).whereType<Map<String, dynamic>>().toList();
     String? cover;
-    if (media.isNotEmpty) {
-      cover = (media.first["image_url"] ?? media.first["video_url"]) as String?;
+    final items = <_MediaItem>[];
+    for (final m in media) {
+      final imageUrl = m["image_url"] as String?;
+      final videoUrl = m["video_url"] as String?;
+      if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+        items.add(_MediaItem(url: imageUrl.trim(), isVideo: false));
+      } else if (videoUrl != null && videoUrl.trim().isNotEmpty) {
+        items.add(_MediaItem(url: videoUrl.trim(), isVideo: true));
+      }
+    }
+    if (items.isNotEmpty) {
+      cover = items.first.url;
     }
     return _Highlight(
       id: json["id"] as String? ?? "",
       caption: json["caption"] as String?,
       coverUrl: cover,
+      mediaItems: items,
       likes: (json["likes_count"] as num?)?.toInt() ?? 0,
       comments: (json["comments_count"] as num?)?.toInt() ?? 0,
       shares: (json["shares_count"] as num?)?.toInt() ?? 0,
@@ -374,44 +399,224 @@ String? _entityName(_Highlight h) {
   return null;
 }
 
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color? color;
-  final VoidCallback onTap;
+/* ----------------------------- Skeleton Loading ----------------------------- */
 
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.color,
-  });
+class _HighlightsSkeleton extends StatefulWidget {
+  const _HighlightsSkeleton();
+
+  @override
+  State<_HighlightsSkeleton> createState() => _HighlightsSkeletonState();
+}
+
+class _HighlightsSkeletonState extends State<_HighlightsSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.35),
-              borderRadius: BorderRadius.circular(18),
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        final t = _ctrl.value;
+        final base = isDark
+            ? Colors.white.withOpacity(0.06)
+            : scheme.surfaceVariant.withOpacity(0.30);
+        final hi = isDark
+            ? Colors.white.withOpacity(0.12)
+            : scheme.surfaceVariant.withOpacity(0.55);
+        final c = Color.lerp(base, hi, t)!;
+
+        return ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(18)),
+          child: Container(
+            color: isDark ? const Color(0xFF121212) : scheme.surfaceVariant.withOpacity(0.20),
+            child: Stack(
+              children: [
+                // Full background shimmer
+                Positioned.fill(child: Container(color: c.withOpacity(0.3))),
+
+                // Title skeleton (top left)
+                Positioned(
+                  top: 42,
+                  left: 16,
+                  child: Container(
+                    width: 120,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: c,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+
+                // Counter pill skeleton (top right)
+                Positioned(
+                  top: 52,
+                  right: 14,
+                  child: Container(
+                    width: 48,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: c,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+
+                // Right action buttons skeleton
+                Positioned(
+                  right: 14,
+                  bottom: 72,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(3, (i) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              width: 20,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+
+                // Dots skeleton (center bottom)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 100,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: c.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(4, (i) {
+                          return Container(
+                            width: i == 0 ? 16 : 6,
+                            height: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                            decoration: BoxDecoration(
+                              color: c,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom info card skeleton
+                Positioned(
+                  left: 14,
+                  right: 78,
+                  bottom: 14,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: c.withOpacity(0.35),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: c.withOpacity(0.15)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Entity name skeleton
+                            Row(
+                              children: [
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: c,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  width: 100,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: c,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Caption lines
+                            Container(
+                              width: double.infinity,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              width: 160,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: c,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: Icon(icon, color: color ?? Colors.white, size: 24),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
