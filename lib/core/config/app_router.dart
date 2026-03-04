@@ -8,6 +8,9 @@ import "../../features/auth/presentation/pages/register_page.dart";
 import "../../features/auth/presentation/pages/reset_password_page.dart";
 import "../../features/auth/presentation/pages/verify_registration_otp_page.dart";
 
+// Splash
+import "../../features/main/presentation/pages/splash_page.dart";
+
 // Shell and main tabs
 import "../../features/main/presentation/layouts/main_shell.dart";
 // Me shell
@@ -63,6 +66,12 @@ final class AppRouter {
     final lang = currentLangSync();
 
     switch (settings.name) {
+      // -------------------
+      // Splash
+      // -------------------
+      case AppRoutes.splash:
+        return MaterialPageRoute(builder: (_) => const SplashPage());
+
       // -------------------
       // Auth
       // -------------------
