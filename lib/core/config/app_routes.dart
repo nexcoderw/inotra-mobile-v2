@@ -1,6 +1,9 @@
 final class AppRoutes {
   AppRoutes._();
 
+  // Splash
+  static const splash = "/splash";
+
   // Auth
   static const login = "/login";
   static const register = "/register";
