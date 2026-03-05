@@ -1,6 +1,7 @@
 import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "highlight_video_player.dart";
 
 class HighlightMediaItem {
   final String url;
@@ -23,6 +24,7 @@ class HighlightCard extends StatefulWidget {
   final VoidCallback onShare;
   final bool expandedCaption;
   final VoidCallback onCaptionTap;
+  final bool isActive;
 
   const HighlightCard({
     super.key,
@@ -40,6 +42,7 @@ class HighlightCard extends StatefulWidget {
     required this.onShare,
     required this.expandedCaption,
     required this.onCaptionTap,
+    this.isActive = true,
   });
 
   @override
@@ -75,6 +78,9 @@ class _HighlightCardState extends State<HighlightCard> {
     final scheme = Theme.of(context).colorScheme;
     final media = _effectiveMedia;
     final hasMultiple = media.length > 1;
+    final currentIsVideo = media.isNotEmpty && media[_currentPage].isVideo;
+    final infoBottom = currentIsVideo ? 64.0 : 14.0;
+    final dotsBottom = currentIsVideo ? 148.0 : 100.0;
 
     return ClipRRect(
       borderRadius: const BorderRadius.all(Radius.circular(18)),
@@ -90,16 +96,21 @@ class _HighlightCardState extends State<HighlightCard> {
                     itemBuilder: (_, i) => _MediaSlide(
                       item: media[i],
                       scheme: scheme,
+                      isActive: widget.isActive && _currentPage == i,
                     ),
                   )
                 : media.isNotEmpty
-                    ? _MediaSlide(item: media.first, scheme: scheme)
+                    ? _MediaSlide(
+                        item: media.first,
+                        scheme: scheme,
+                        isActive: widget.isActive,
+                      )
                     : Container(
-                        color: scheme.surfaceVariant,
+                        color: scheme.surfaceContainerHighest,
                         alignment: Alignment.center,
                         child: Icon(
                           Icons.image_not_supported,
-                          color: scheme.onSurface.withOpacity(0.5),
+                          color: scheme.onSurface.withValues(alpha: 0.5),
                           size: 42,
                         ),
                       ),
@@ -166,7 +177,7 @@ class _HighlightCardState extends State<HighlightCard> {
             Positioned(
               left: 0,
               right: 0,
-              bottom: 100,
+              bottom: dotsBottom,
               child: Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(999),
@@ -237,7 +248,7 @@ class _HighlightCardState extends State<HighlightCard> {
           Positioned(
             left: 14,
             right: 78,
-            bottom: 14,
+            bottom: infoBottom,
             child: _BottomInfo(
               title: widget.title,
               meta: widget.meta,
@@ -257,36 +268,18 @@ class _HighlightCardState extends State<HighlightCard> {
 class _MediaSlide extends StatelessWidget {
   final HighlightMediaItem item;
   final ColorScheme scheme;
+  final bool isActive;
 
-  const _MediaSlide({required this.item, required this.scheme});
+  const _MediaSlide({
+    required this.item,
+    required this.scheme,
+    required this.isActive,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (item.isVideo) {
-      // Video thumbnail fallback — show poster-like placeholder
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.network(
-            item.url,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _mediaFallback(),
-            loadingBuilder: (_, child, p) => p == null ? child : _mediaFallback(),
-          ),
-          Center(
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.20)),
-              ),
-              child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
-            ),
-          ),
-        ],
-      );
+      return HighlightVideoPlayer(url: item.url, isActive: isActive);
     }
 
     return Image.network(
@@ -302,11 +295,11 @@ class _MediaSlide extends StatelessWidget {
 
   Widget _mediaFallback() {
     return Container(
-      color: scheme.surfaceVariant,
+      color: scheme.surfaceContainerHighest,
       alignment: Alignment.center,
       child: Icon(
         Icons.image_not_supported,
-        color: scheme.onSurface.withOpacity(0.5),
+        color: scheme.onSurface.withValues(alpha: 0.5),
         size: 42,
       ),
     );
@@ -465,7 +458,6 @@ class _ActionButton extends StatelessWidget {
   final List<List<dynamic>> icon;
   final String label;
   final bool selected;
-  final Color? color;
   final VoidCallback onTap;
 
   const _ActionButton({
@@ -473,12 +465,11 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.selected = false,
-    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = color ?? (selected ? Colors.redAccent : Colors.white);
+    final iconColor = selected ? Colors.redAccent : Colors.white;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
