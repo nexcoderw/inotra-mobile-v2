@@ -187,7 +187,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final response = await http.post(
         uri,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"token": idToken}),
+        body: jsonEncode({"IdToken": idToken}),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
