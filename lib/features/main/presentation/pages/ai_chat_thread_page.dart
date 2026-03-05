@@ -290,7 +290,7 @@ class _Composer extends StatelessWidget {
                       ),
                     )
                   : HugeIcon(
-                      icon: HugeIcons.strokeRoundedSend03,
+                      icon: HugeIcons.strokeRoundedAirplane02,
                       size: 16,
                       color: scheme.onPrimary,
                     ),
