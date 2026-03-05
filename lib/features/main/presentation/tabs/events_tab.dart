@@ -415,24 +415,27 @@ class _EventsHeaderDelegate extends SliverPersistentHeaderDelegate {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                AnimatedOpacity(
-                  opacity: (1.0 - t_ * 1.6).clamp(0.0, 1.0),
-                  duration: Duration.zero,
-                  child: Transform.translate(
-                    offset: Offset(0, -t_ * 14),
-                    child: Text(
-                      t(lang, "nav.events"),
-                      style: TextStyle(
-                        fontSize: (28 - t_ * 6).clamp(22.0, 28.0),
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.6,
-                        height: 1.0,
-                        color: scheme.onSurface,
+                SizedBox(
+                  height: (28.0 * (1.0 - t_)).clamp(0.0, 28.0),
+                  child: AnimatedOpacity(
+                    opacity: (1.0 - t_ * 1.6).clamp(0.0, 1.0),
+                    duration: Duration.zero,
+                    child: Transform.translate(
+                      offset: Offset(0, -t_ * 14),
+                      child: Text(
+                        t(lang, "nav.events"),
+                        style: TextStyle(
+                          fontSize: (28 - t_ * 6).clamp(22.0, 28.0),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.6,
+                          height: 1.0,
+                          color: scheme.onSurface,
+                        ),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: (10 - t_ * 4).clamp(2.0, 10.0)),
+                SizedBox(height: (10.0 * (1.0 - t_)).clamp(0.0, 10.0)),
                 _PremiumSearchBar(
                   controller: searchCtrl,
                   hintText: t(lang, "packages.search_hint"),
