@@ -59,10 +59,15 @@ dev_dependencies:
     sdk: flutter
 
 flutter_launcher_icons:
-  android: true
+  android: "ic_launcher"
   ios: true
-  image_path: assets/branding/logo_color.png
-  remove_alpha_ios: true
+  # iOS: logo pre-composited on solid black (iOS forbids transparency)
+  image_path_ios: "assets/branding/logo_ios.png"
+  # Android legacy (< API 26)
+  image_path_android: "assets/branding/logo_color.png"
+  # Android adaptive icon (API 26+)
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/branding/logo_color.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
