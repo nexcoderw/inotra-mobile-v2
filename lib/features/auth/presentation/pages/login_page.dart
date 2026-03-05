@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:io";
 import "dart:math" as math;
 import "dart:ui";
 
@@ -41,8 +42,10 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _googleSignIn = GoogleSignIn(
-      clientId: Env.googleClientId,
-      serverClientId: Env.googleClientId,
+      clientId: Platform.isIOS
+          ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
+          : null,
+      serverClientId: Env.googleClientId, // your Web client ID from .env
       scopes: const ["email", "profile", "openid"],
     );
   }

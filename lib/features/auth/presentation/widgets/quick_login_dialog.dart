@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:io";
 import "dart:math" as math;
 import "dart:ui";
 
@@ -45,7 +46,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   void initState() {
     super.initState();
     _googleSignIn = GoogleSignIn(
-      clientId: Env.googleClientId,
+      clientId: Platform.isIOS ? Env.googleClientId : null,
       serverClientId: Env.googleClientId,
       scopes: const ["email", "profile", "openid"],
     );
