@@ -11,4 +11,6 @@ final class HighlightEndpoints {
       "api/highlight/$highlightId/comments/";
   static String share(String highlightId) =>
       "api/highlight/$highlightId/share/";
+  static String view(String highlightId) =>
+      "api/highlight/$highlightId/view/";
 }
