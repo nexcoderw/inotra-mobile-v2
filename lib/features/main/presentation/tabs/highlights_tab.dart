@@ -10,6 +10,7 @@ import "../../../../core/constants/api/highlight_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../widgets/highlights/highlight_card.dart";
 import "../widgets/highlights/highlight_comments_sheet.dart";
 import "../widgets/highlights/highlight_comment.dart";
@@ -51,11 +52,13 @@ class _HighlightsTabState extends State<HighlightsTab> {
     return false;
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final uri = Api.url(HighlightEndpoints.list);
       final token = AuthSession.instance.value.accessToken;
@@ -73,17 +76,43 @@ class _HighlightsTabState extends State<HighlightsTab> {
             .whereType<Map<String, dynamic>>()
             .map(_Highlight.fromJson)
             .toList();
-        setState(() {
-          _items = results;
-        });
+        if (mounted) setState(() => _items = results);
       } else {
-        setState(() => _error = "Status ${resp.statusCode}");
+        if (!silent && mounted) setState(() => _error = "Status ${resp.statusCode}");
       }
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (!silent && mounted) setState(() => _error = e.toString());
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Shows the quick login dialog when an action requires authentication.
+  /// After successful login, silently refreshes data and restores the user's
+  /// position, then re-attempts the original action.
+  Future<void> _requireAuth(BuildContext ctx, Future<void> Function() action) async {
+    if (AuthSession.instance.value.isAuthenticated) {
+      await action();
+      return;
+    }
+
+    final savedIndex = _activeIndex;
+    await QuickLoginDialog.show(ctx);
+
+    if (!AuthSession.instance.value.isAuthenticated) return;
+    if (!ctx.mounted) return;
+
+    // Silently refresh so like/comment counts reflect auth'd state
+    await _load(silent: true);
+
+    // Restore scroll position after the frame rebuilds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients && savedIndex < _items.length) {
+        _pageController.jumpToPage(savedIndex);
+      }
+    });
+
+    if (ctx.mounted) await action();
   }
 
   Future<void> _toggleLike(int index) async {
@@ -277,8 +306,8 @@ class _HighlightsTabState extends State<HighlightsTab> {
                     }
                   });
                 },
-                onLike: () => _toggleLike(index),
-                onComment: () => _openCommentSheet(index),
+                onLike: () => _requireAuth(context, () => _toggleLike(index)),
+                onComment: () => _requireAuth(context, () async => _openCommentSheet(index)),
                 onShare: () => _share(index),
               ),
               Positioned(
