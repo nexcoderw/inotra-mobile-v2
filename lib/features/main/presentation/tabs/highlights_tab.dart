@@ -28,6 +28,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
   final Map<String, List<HighlightComment>> _commentsCache = {};
   final Set<String> _expandedCaptions = {};
   final PageController _pageController = PageController();
+  int _activeIndex = 0;
 
   @override
   void initState() {
@@ -208,7 +209,6 @@ class _HighlightsTabState extends State<HighlightsTab> {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final scheme = Theme.of(context).colorScheme;
 
     if (_loading) {
       return const _HighlightsSkeleton();
@@ -248,6 +248,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
         scrollDirection: Axis.vertical,
         controller: _pageController,
         physics: const BouncingScrollPhysics(),
+        onPageChanged: (i) => setState(() => _activeIndex = i),
         itemCount: _items.length,
         itemBuilder: (context, index) {
           final item = _items[index];
@@ -258,6 +259,7 @@ class _HighlightsTabState extends State<HighlightsTab> {
                 mediaItems: item.mediaItems
                     .map((m) => HighlightMediaItem(url: m.url, isVideo: m.isVideo))
                     .toList(),
+                isActive: index == _activeIndex,
                 title: item.caption ?? t(lang, "highlights.title"),
                 meta: null,
                 entityName: _entityName(item),
