@@ -3,17 +3,19 @@ import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
+import "../../../../core/config/app_routes.dart";
+import "../../../../core/config/env.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../../../../core/config/app_routes.dart";
 
 class QuickLoginDialog extends StatefulWidget {
   const QuickLoginDialog({super.key});
@@ -22,7 +24,7 @@ class QuickLoginDialog extends StatefulWidget {
     await showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (_) => const QuickLoginDialog(),
     );
   }
@@ -37,6 +39,17 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   bool _busy = false;
   final _formKey = GlobalKey<FormState>();
   bool _showPassword = false;
+  late final GoogleSignIn _googleSignIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _googleSignIn = GoogleSignIn(
+      clientId: Env.googleClientId,
+      serverClientId: Env.googleClientId,
+      scopes: const ["email", "profile", "openid"],
+    );
+  }
 
   @override
   void dispose() {
@@ -85,7 +98,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
           autoCloseDuration: const Duration(seconds: 3),
         );
 
-        Navigator.of(context).pop(); // close dialog, stay on same page
+        Navigator.of(context).pop();
         return;
       }
 
@@ -108,6 +121,83 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
         style: ToastificationStyle.fillColored,
         title: Text(t(lang, "auth.network_error")),
         description: Text(t(lang, "auth.network_retry")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _onGoogleLogin() async {
+    final lang = currentLangSync();
+
+    setState(() => _busy = true);
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) throw Exception("Missing Google ID token");
+
+      final uri = Api.url(AuthEndpoints.googleLogin);
+      final resp = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"token": idToken}),
+      );
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final body = jsonDecode(resp.body) as Map<String, dynamic>;
+        final tokens = body["tokens"] as Map<String, dynamic>? ?? {};
+        final user = body["user"] as Map<String, dynamic>? ?? {};
+
+        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        AuthSession.instance.signIn(
+          user: user,
+          accessToken: tokens["access"] as String? ?? "",
+          refreshToken: tokens["refresh"] as String? ?? "",
+          theme: "light",
+        );
+
+        if (!mounted) return;
+        toastification.show(
+          context: context,
+          type: ToastificationType.success,
+          style: ToastificationStyle.fillColored,
+          title: Text(t(lang, "auth.google_success")),
+          description: Text(t(lang, "auth.welcome_back")),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 3),
+        );
+
+        Navigator.of(context).pop(); // close dialog, stay on same page
+        return;
+      }
+
+      final detail = _extractError(resp.body);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(lang, "auth.google_error")),
+        description: Text(detail),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(lang, "auth.google_error")),
+        description: Text(e.toString()),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
@@ -141,7 +231,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
             decoration: BoxDecoration(
-              color: scheme.surface.withOpacity(0.95),
+              color: scheme.surface.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(22),
             ),
             child: Form(
@@ -202,12 +292,8 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                   const SizedBox(height: 12),
                   _GoogleButton(
                     busy: _busy,
-                    onTap: _busy
-                        ? null
-                        : () {
-                            Navigator.of(context).pop();
-                            Navigator.pushNamed(context, AppRoutes.login);
-                          },
+                    onTap: _busy ? null : _onGoogleLogin,
+                    label: t(lang, "auth.sign_in_google"),
                   ),
 
                   const SizedBox(height: 10),
@@ -217,7 +303,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                       Text(
                         t(lang, "auth.no_account"),
                         style: TextStyle(
-                          color: scheme.onSurface.withOpacity(0.7),
+                          color: scheme.onSurface.withValues(alpha: 0.7),
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -249,7 +335,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   }
 }
 
-/* --------------------------- Reused UI pieces (trimmed) --------------------------- */
+/* -------------------------------- Reused UI pieces -------------------------------- */
 
 class _GlassField extends StatefulWidget {
   final TextEditingController controller;
@@ -283,8 +369,8 @@ class _GlassFieldState extends State<_GlassField> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final borderColor = _focused
-        ? scheme.primary.withOpacity(0.32)
-        : scheme.onSurface.withOpacity(0.10);
+        ? scheme.primary.withValues(alpha: 0.32)
+        : scheme.onSurface.withValues(alpha: 0.10);
 
     return Focus(
       onFocusChange: (v) => setState(() => _focused = v),
@@ -296,7 +382,7 @@ class _GlassFieldState extends State<_GlassField> {
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
             decoration: BoxDecoration(
-              color: scheme.surface.withOpacity(0.55),
+              color: scheme.surface.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor, width: 1),
             ),
@@ -308,7 +394,7 @@ class _GlassFieldState extends State<_GlassField> {
               cursorColor: scheme.primary,
               style: TextStyle(
                 fontSize: 12,
-                color: scheme.onSurface.withOpacity(0.92),
+                color: scheme.onSurface.withValues(alpha: 0.92),
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
@@ -316,7 +402,7 @@ class _GlassFieldState extends State<_GlassField> {
                 hintStyle: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: scheme.onSurface.withOpacity(0.5),
+                  color: scheme.onSurface.withValues(alpha: 0.5),
                 ),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 12, right: 10),
@@ -324,7 +410,7 @@ class _GlassFieldState extends State<_GlassField> {
                     icon: widget.prefixIcon,
                     size: 18,
                     strokeWidth: 2,
-                    color: scheme.onSurface.withOpacity(0.75),
+                    color: scheme.onSurface.withValues(alpha: 0.75),
                   ),
                 ),
                 suffixIcon: widget.onToggleObscure == null
@@ -333,7 +419,7 @@ class _GlassFieldState extends State<_GlassField> {
                         icon: Icon(
                           widget.obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                           size: 18,
-                          color: scheme.onSurface.withOpacity(0.65),
+                          color: scheme.onSurface.withValues(alpha: 0.65),
                         ),
                         onPressed: widget.onToggleObscure,
                       ),
@@ -391,7 +477,7 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
               end: Alignment.bottomRight,
               colors: [
                 scheme.primary,
-                scheme.primary.withOpacity(0.88),
+                scheme.primary.withValues(alpha: 0.88),
               ],
             ),
           ),
@@ -420,25 +506,54 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
 class _GoogleButton extends StatelessWidget {
   final bool busy;
   final VoidCallback? onTap;
+  final String label;
 
-  const _GoogleButton({required this.busy, required this.onTap});
+  const _GoogleButton({
+    required this.busy,
+    required this.onTap,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       width: double.infinity,
-      height: 46,
-      child: OutlinedButton.icon(
+      height: 50,
+      child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: scheme.onSurface.withOpacity(0.16)),
+          side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.16)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         onPressed: busy ? null : onTap,
-        icon: const Icon(Icons.g_mobiledata_rounded, size: 24),
-        label: Text(
-          t(currentLangSync(), "auth.sign_in_google"),
-          style: const TextStyle(fontWeight: FontWeight.w800),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: busy
+              ? SizedBox(
+                  key: const ValueKey("spinner"),
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                  ),
+                )
+              : Row(
+                  key: const ValueKey("label"),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const _GoogleMark(),
+                    const SizedBox(width: 10),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onSurface.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -470,7 +585,6 @@ class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderState
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (_, __) {
@@ -487,8 +601,8 @@ class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderState
               child: Container(
                 width: size,
                 height: size,
-                decoration: BoxDecoration(
-                  color: scheme.onPrimary,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -498,4 +612,64 @@ class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderState
       },
     );
   }
+}
+
+/* -------------------------------- Google Brand Mark -------------------------------- */
+
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 20,
+      height: 20,
+      child: CustomPaint(painter: _GoogleGPainter()),
+    );
+  }
+}
+
+class _GoogleGPainter extends CustomPainter {
+  static const _blue = Color(0xFF4285F4);
+  static const _red = Color(0xFFEA4335);
+  static const _yellow = Color(0xFFFBBC05);
+  static const _green = Color(0xFF34A853);
+
+  const _GoogleGPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = size.width / 2;
+    final rect = Rect.fromCircle(center: c, radius: r);
+
+    canvas.save();
+    canvas.clipPath(Path()..addOval(rect));
+
+    void arc(Color color, double startAngle, double sweepAngle) {
+      final path = Path()
+        ..moveTo(c.dx, c.dy)
+        ..arcTo(rect, startAngle, sweepAngle, false)
+        ..close();
+      canvas.drawPath(path, Paint()..color = color);
+    }
+
+    arc(_blue,   -math.pi / 6,     2 * math.pi / 3);
+    arc(_red,     math.pi / 2,     2 * math.pi / 3);
+    arc(_yellow,  7 * math.pi / 6, math.pi / 3);
+    arc(_green,   3 * math.pi / 2, math.pi / 3);
+
+    final barHalf = r * 0.28;
+    canvas.drawRect(
+      Rect.fromLTRB(c.dx, c.dy - barHalf, r * 2, c.dy + barHalf),
+      Paint()..color = _blue,
+    );
+
+    canvas.drawCircle(c, r * 0.58, Paint()..color = Colors.white);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
