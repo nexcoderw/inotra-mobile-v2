@@ -19,6 +19,7 @@ class HighlightCard extends StatefulWidget {
   final int likes;
   final int comments;
   final int shares;
+  final int views;
   final VoidCallback onLike;
   final VoidCallback onComment;
   final VoidCallback onShare;
@@ -37,6 +38,7 @@ class HighlightCard extends StatefulWidget {
     required this.likes,
     required this.comments,
     required this.shares,
+    required this.views,
     required this.onLike,
     required this.onComment,
     required this.onShare,
@@ -125,9 +127,9 @@ class _HighlightCardState extends State<HighlightCard> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.10),
+                      Colors.black.withValues(alpha: 0.10),
                       Colors.transparent,
-                      Colors.black.withOpacity(0.55),
+                      Colors.black.withValues(alpha: 0.55),
                     ],
                     stops: const [0.0, 0.55, 1.0],
                   ),
@@ -148,9 +150,9 @@ class _HighlightCardState extends State<HighlightCard> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.35),
+                      color: Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                     ),
                     child: Text(
                       "${_currentPage + 1}/${media.length}",
@@ -186,7 +188,7 @@ class _HighlightCardState extends State<HighlightCard> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.20),
+                        color: Colors.black.withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Row(
@@ -201,7 +203,7 @@ class _HighlightCardState extends State<HighlightCard> {
                             decoration: BoxDecoration(
                               color: _currentPage == i
                                   ? Colors.white
-                                  : Colors.white.withOpacity(0.40),
+                                  : Colors.white.withValues(alpha: 0.40),
                               borderRadius: BorderRadius.circular(999),
                             ),
                           ),
@@ -240,6 +242,8 @@ class _HighlightCardState extends State<HighlightCard> {
                   label: "${widget.shares}",
                   onTap: widget.onShare,
                 ),
+                const SizedBox(height: 14),
+                _ViewCount(views: widget.views),
               ],
             ),
           ),
@@ -335,12 +339,12 @@ class _BottomInfo extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.10),
-                Colors.black.withOpacity(0.42),
+                Colors.black.withValues(alpha: 0.10),
+                Colors.black.withValues(alpha: 0.42),
               ],
             ),
             border: Border.all(
-              color: Colors.white.withOpacity(0.10),
+              color: Colors.white.withValues(alpha: 0.10),
               width: 1,
             ),
             borderRadius: const BorderRadius.all(Radius.circular(14)),
@@ -358,7 +362,7 @@ class _BottomInfo extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 12,
-                          backgroundColor: Colors.white.withOpacity(0.18),
+                          backgroundColor: Colors.white.withValues(alpha: 0.18),
                           child: Text(
                             _initials(entityName!),
                             style: const TextStyle(
@@ -452,6 +456,66 @@ String _initials(String name) {
   return "$first$second".toUpperCase();
 }
 
+/* ----------------------------- View Count ----------------------------- */
+
+String _formatCount(int n) {
+  if (n >= 1000000) return "${(n / 1000000).toStringAsFixed(1)}M";
+  if (n >= 1000) return "${(n / 1000).toStringAsFixed(1)}K";
+  return "$n";
+}
+
+class _ViewCount extends StatelessWidget {
+  final int views;
+  const _ViewCount({required this.views});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: const BorderRadius.all(Radius.circular(18)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.22),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.10),
+                  width: 1,
+                ),
+                borderRadius: const BorderRadius.all(Radius.circular(18)),
+              ),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedEye,
+                size: 18,
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _formatCount(views),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            shadows: [
+              Shadow(
+                blurRadius: 14,
+                offset: Offset(0, 3),
+                color: Colors.black87,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /* ----------------------------- Action Button ----------------------------- */
 
 class _ActionButton extends StatelessWidget {
@@ -483,9 +547,9 @@ class _ActionButton extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.22),
+                  color: Colors.black.withValues(alpha: 0.22),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.10),
+                    color: Colors.white.withValues(alpha: 0.10),
                     width: 1,
                   ),
                   borderRadius: const BorderRadius.all(Radius.circular(18)),
