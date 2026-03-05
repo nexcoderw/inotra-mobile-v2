@@ -15,6 +15,7 @@ import "../../../../core/config/env.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
+import "../../../../core/services/biometric_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -40,6 +41,8 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   bool _busy = false;
   final _formKey = GlobalKey<FormState>();
   bool _showPassword = false;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
   late final GoogleSignIn _googleSignIn;
 
   @override
@@ -52,6 +55,18 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
       serverClientId: Env.googleClientId,
       scopes: const ["email", "profile", "openid"],
     );
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final available = await BiometricService.instance.isAvailable();
+    final enabled = available && await BiometricService.instance.isEnabled();
+    if (mounted) {
+      setState(() {
+        _biometricAvailable = available;
+        _biometricEnabled = enabled;
+      });
+    }
   }
 
   @override
@@ -90,6 +105,11 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
           accessToken: tokens["access"] as String? ?? "",
           refreshToken: tokens["refresh"] as String? ?? "",
           theme: "light",
+        );
+
+        await BiometricService.instance.saveCredentials(
+          identifier: _identifier.text.trim(),
+          password: _password.text,
         );
 
         if (!mounted) return;
@@ -131,6 +151,44 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
       );
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _onBiometricLogin() async {
+    final lang = currentLangSync();
+    setState(() => _busy = true);
+
+    try {
+      final authenticated = await BiometricService.instance.authenticate();
+      if (!authenticated) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+
+      final creds = await BiometricService.instance.getCredentials();
+      if (creds == null) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+
+      _identifier.text = creds.identifier;
+      _password.text = creds.password;
+
+      // Delegate to the existing login method — it manages _busy from here.
+      await _login();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: Text(t(lang, "auth.biometric_error")),
+          description: Text(e.toString()),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
     }
   }
 
@@ -307,6 +365,14 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                     onTap: _busy ? null : _onGoogleLogin,
                     label: t(lang, "auth.sign_in_google"),
                   ),
+
+                  if (_biometricAvailable && _biometricEnabled) ...[
+                    const SizedBox(height: 12),
+                    _FaceIdButton(
+                      busy: _busy,
+                      onTap: _busy ? null : _onBiometricLogin,
+                    ),
+                  ],
 
                   const SizedBox(height: 10),
                   Row(
@@ -622,6 +688,66 @@ class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderState
           }),
         );
       },
+    );
+  }
+}
+
+/* -------------------------------- Face ID Button -------------------------------- */
+
+class _FaceIdButton extends StatelessWidget {
+  final bool busy;
+  final VoidCallback? onTap;
+
+  const _FaceIdButton({required this.busy, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
+
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        onPressed: busy ? null : onTap,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: busy
+              ? SizedBox(
+                  key: const ValueKey("spinner"),
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                  ),
+                )
+              : Row(
+                  key: const ValueKey("label"),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedFaceId,
+                      size: 20,
+                      strokeWidth: 2,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      t(lang, "auth.sign_in_biometric"),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onSurface.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
     );
   }
 }
