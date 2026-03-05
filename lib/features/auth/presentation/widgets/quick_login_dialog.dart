@@ -624,55 +624,11 @@ class _GoogleMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return Image.asset(
+      "assets/images/google.png",
       width: 20,
       height: 20,
-      child: CustomPaint(painter: _GoogleGPainter()),
+      filterQuality: FilterQuality.high,
     );
   }
-}
-
-class _GoogleGPainter extends CustomPainter {
-  static const _blue = Color(0xFF4285F4);
-  static const _red = Color(0xFFEA4335);
-  static const _yellow = Color(0xFFFBBC05);
-  static const _green = Color(0xFF34A853);
-
-  const _GoogleGPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final c = Offset(size.width / 2, size.height / 2);
-    final r = size.width / 2;
-    final rect = Rect.fromCircle(center: c, radius: r);
-
-    canvas.save();
-    canvas.clipPath(Path()..addOval(rect));
-
-    void arc(Color color, double startAngle, double sweepAngle) {
-      final path = Path()
-        ..moveTo(c.dx, c.dy)
-        ..arcTo(rect, startAngle, sweepAngle, false)
-        ..close();
-      canvas.drawPath(path, Paint()..color = color);
-    }
-
-    arc(_blue,   -math.pi / 6,     2 * math.pi / 3);
-    arc(_red,     math.pi / 2,     2 * math.pi / 3);
-    arc(_yellow,  7 * math.pi / 6, math.pi / 3);
-    arc(_green,   3 * math.pi / 2, math.pi / 3);
-
-    final barHalf = r * 0.28;
-    canvas.drawRect(
-      Rect.fromLTRB(c.dx, c.dy - barHalf, r * 2, c.dy + barHalf),
-      Paint()..color = _blue,
-    );
-
-    canvas.drawCircle(c, r * 0.58, Paint()..color = Colors.white);
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
