@@ -16,6 +16,7 @@ import "../../../../core/constants/app_colors.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
+import "../../../../core/services/biometric_service.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
@@ -36,6 +37,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscure = true;
   bool _isBusy = false;
   String? _error;
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
   late final GoogleSignIn _googleSignIn;
 
   @override
@@ -48,6 +51,18 @@ class _LoginPageState extends State<LoginPage> {
       serverClientId: Env.googleClientId, // your Web client ID from .env
       scopes: const ["email", "profile", "openid"],
     );
+    _checkBiometrics();
+  }
+
+  Future<void> _checkBiometrics() async {
+    final available = await BiometricService.instance.isAvailable();
+    final enabled = available && await BiometricService.instance.isEnabled();
+    if (mounted) {
+      setState(() {
+        _biometricAvailable = available;
+        _biometricEnabled = enabled;
+      });
+    }
   }
 
   @override
@@ -89,6 +104,11 @@ class _LoginPageState extends State<LoginPage> {
           accessToken: tokens["access"] as String? ?? "",
           refreshToken: tokens["refresh"] as String? ?? "",
           theme: "light",
+        );
+
+        await BiometricService.instance.saveCredentials(
+          identifier: _identifier.text.trim(),
+          password: _password.text,
         );
 
         if (!mounted) return;
@@ -136,6 +156,47 @@ class _LoginPageState extends State<LoginPage> {
       }
     } finally {
       if (mounted) setState(() => _isBusy = false);
+    }
+  }
+
+  Future<void> _onBiometricLogin() async {
+    setState(() {
+      _isBusy = true;
+      _error = null;
+    });
+
+    try {
+      final authenticated = await BiometricService.instance.authenticate();
+      if (!authenticated) {
+        if (mounted) setState(() => _isBusy = false);
+        return;
+      }
+
+      final creds = await BiometricService.instance.getCredentials();
+      if (creds == null) {
+        if (mounted) setState(() => _isBusy = false);
+        return;
+      }
+
+      _identifier.text = creds.identifier;
+      _password.text = creds.password;
+
+      // Delegate entirely to the existing login method — it owns the busy
+      // state from this point and will set _isBusy = false in its finally.
+      await _onLogin();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isBusy = false);
+        toastification.show(
+          context: context,
+          type: ToastificationType.error,
+          style: ToastificationStyle.fillColored,
+          title: Text(tr("auth.biometric_error")),
+          description: Text(e.toString()),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
     }
   }
 
@@ -358,16 +419,9 @@ class _LoginPageState extends State<LoginPage> {
                   _IconCircleButton(
                     icon: HugeIcons.strokeRoundedFaceId,
                     busy: _isBusy,
-                    onTap: _isBusy
+                    onTap: (!_biometricAvailable || _isBusy)
                         ? null
-                        : () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(tr("auth.biometric_soon")),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
+                        : _onBiometricLogin,
                   ),
                 ],
               ),
