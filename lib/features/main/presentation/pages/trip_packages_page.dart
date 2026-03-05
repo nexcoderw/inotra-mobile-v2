@@ -4,7 +4,6 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
@@ -155,8 +154,6 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
     final hPad = isTablet ? 24.0 : 18.0;
-
-    // Title collapse factor
     final titleT = (_scrollOffset / 72.0).clamp(0.0, 1.0);
 
     return Scaffold(
@@ -176,49 +173,12 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                     controller: _scrollCtrl,
                     physics: const BouncingScrollPhysics(),
                     slivers: [
-                      // ── Page header (collapses on scroll) ───────────
+                      // ── Page header ─────────────────────────────────
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding:
-                              EdgeInsets.fromLTRB(hPad, 14, hPad, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Back row
-                              Row(
-                                children: [
-                                  _BackButton(
-                                    isDark: isDark,
-                                    scheme: scheme,
-                                    onTap: () =>
-                                        Navigator.maybePop(context),
-                                  ),
-                                ],
-                              ),
-                              // Title — fades & shrinks on scroll
-                              AnimatedOpacity(
-                                opacity: (1.0 - titleT * 1.6)
-                                    .clamp(0.0, 1.0),
-                                duration: Duration.zero,
-                                child: SizedBox(
-                                  height:
-                                      (44.0 * (1.0 - titleT)).clamp(
-                                          0.0, 44.0),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      t(lang, "packages.title"),
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: -0.6,
-                                        height: 1.0,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          padding: EdgeInsets.fromLTRB(hPad - 4, 12, hPad, 0),
+                          child: PageHeader(
+                            title: t(lang, "packages.title"),
                           ),
                         ),
                       ),
@@ -1152,83 +1112,6 @@ class _PremiumSearchBar extends StatelessWidget {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   BACK BUTTON
-───────────────────────────────────────────────────────────────────────────── */
-
-class _BackButton extends StatefulWidget {
-  final bool isDark;
-  final ColorScheme scheme;
-  final VoidCallback onTap;
-  const _BackButton(
-      {required this.isDark,
-      required this.scheme,
-      required this.onTap});
-
-  @override
-  State<_BackButton> createState() => _BackButtonState();
-}
-
-class _BackButtonState extends State<_BackButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 130));
-    _scale = Tween<double>(begin: 1.0, end: 0.90).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: Container(
-          width: 40,
-          height: 40,
-          margin: const EdgeInsets.only(bottom: 6),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: widget.isDark
-                ? Colors.white.withOpacity(0.07)
-                : Colors.black.withOpacity(0.055),
-            border: Border.all(
-              color: widget.isDark
-                  ? Colors.white.withOpacity(0.10)
-                  : Colors.black.withOpacity(0.08),
-              width: 1.2,
-            ),
-          ),
-          child: Center(
-            child: Icon(
-              Icons.arrow_back_rounded,
-              size: 18,
-              color: widget.scheme.onSurface.withOpacity(0.80),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
    ERROR / EMPTY / BACK-TO-TOP
 ───────────────────────────────────────────────────────────────────────────── */
 
@@ -1350,17 +1233,6 @@ class _BackToTopButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   NO-GLOW SCROLL BEHAVIOR
-───────────────────────────────────────────────────────────────────────────── */
-
-class _NoGlowBehavior extends ScrollBehavior {
-  @override
-  Widget buildOverscrollIndicator(
-          BuildContext context, Widget child, ScrollableDetails details) =>
-      child;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
