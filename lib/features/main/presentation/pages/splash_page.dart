@@ -35,7 +35,7 @@ class _SplashPageState extends State<SplashPage> {
             Image.asset(
               isDark
                   ? "assets/branding/logo_color.png"
-                  : "assets/branding/logo_color.png",
+                  : "assets/branding/logo_black.png",
               height: 90,
               fit: BoxFit.contain,
             ),
