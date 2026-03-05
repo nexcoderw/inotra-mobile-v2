@@ -80,19 +80,21 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final uri = Api.url(AuthEndpoints.register);
-      final response = await http.post(
-        uri,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "name": _name.text.trim(),
-          "email": _email.text.trim(),
-          "phone_number": _normalizedPhone(_phone.text.trim()),
-          "nationality": _nationality.text.trim(),
-          "preferred_languages": [_preferredLanguage],
-          "password": _password.text,
-          "confirm_password": _confirmPassword.text,
-        }),
-      );
+      final response = await http
+          .post(
+            uri,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "name": _name.text.trim(),
+              "email": _email.text.trim(),
+              "phone_number": _normalizedPhone(_phone.text.trim()),
+              "nationality": _nationality.text.trim(),
+              "preferred_languages": [_preferredLanguage],
+              "password": _password.text,
+              "confirm_password": _confirmPassword.text,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (!mounted) return;
@@ -127,16 +129,16 @@ class _RegisterPageState extends State<RegisterPage> {
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       toastification.show(
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
         title: Text(tr("auth.network_error")),
-        description: Text(tr("auth.signup_retry")),
+        description: Text(e.toString()),
         alignment: Alignment.topCenter,
-        autoCloseDuration: const Duration(seconds: 4),
+        autoCloseDuration: const Duration(seconds: 6),
       );
     } finally {
       if (mounted) setState(() => _isBusy = false);
