@@ -68,14 +68,16 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
     setState(() => _busy = true);
     try {
       final uri = Api.url(AuthEndpoints.login);
-      final resp = await http.post(
-        uri,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "identifier": _identifier.text.trim(),
-          "password": _password.text,
-        }),
-      );
+      final resp = await http
+          .post(
+            uri,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "identifier": _identifier.text.trim(),
+              "password": _password.text,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -116,16 +118,16 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       toastification.show(
         context: context,
         type: ToastificationType.error,
         style: ToastificationStyle.fillColored,
         title: Text(t(lang, "auth.network_error")),
-        description: Text(t(lang, "auth.network_retry")),
+        description: Text(e.toString()),
         alignment: Alignment.topCenter,
-        autoCloseDuration: const Duration(seconds: 4),
+        autoCloseDuration: const Duration(seconds: 6),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -151,7 +153,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
       final resp = await http.post(
         uri,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"token": idToken}),
+        body: jsonEncode({"IdToken": idToken}),
       );
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
@@ -212,11 +214,18 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   String _extractError(String body) {
     try {
       final decoded = jsonDecode(body);
-      if (decoded is Map && decoded["detail"] != null) {
-        return decoded["detail"].toString();
+      if (decoded is Map) {
+        final top = decoded["message"] ?? decoded["detail"] ?? decoded["error"];
+        if (top is String && top.trim().isNotEmpty) return top.trim();
+        final errors = decoded["errors"];
+        if (errors is Map && errors.isNotEmpty) {
+          final first = errors.values.first;
+          if (first is List && first.isNotEmpty) return first.first.toString();
+          if (first is String) return first;
+        }
       }
     } catch (_) {}
-    return "Unable to login";
+    return t(currentLangSync(), "auth.login_failed");
   }
 
   @override
