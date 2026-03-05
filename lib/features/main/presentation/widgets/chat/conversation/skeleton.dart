@@ -161,13 +161,13 @@ class ConvEmptyState extends StatelessWidget {
               height: 68,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF007AFF).withValues(alpha: 0.10),
+                color: scheme.primary.withValues(alpha: 0.10),
               ),
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.chat_bubble_outline_rounded,
                   size: 30,
-                  color: Color(0xFF007AFF),
+                  color: scheme.primary,
                 ),
               ),
             ),
@@ -237,7 +237,7 @@ class ConvErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF007AFF),
+                backgroundColor: scheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
