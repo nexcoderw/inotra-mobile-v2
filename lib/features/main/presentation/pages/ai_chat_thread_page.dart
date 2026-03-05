@@ -50,7 +50,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
     });
 
     try {
-      final uri = Api.url(ChatEndpoints.messages(widget.threadId));
+      final uri = Api.url("${ChatEndpoints.messages(widget.threadId)}?page=1&page_size=50");
       final resp = await http.get(uri, headers: {
         "Accept": "application/json",
         "Authorization": "Bearer $token",
