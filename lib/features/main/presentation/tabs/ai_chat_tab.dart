@@ -1,5 +1,6 @@
 import "dart:async";
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -93,52 +94,60 @@ class _AiChatTabState extends State<AiChatTab> {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
     final isTablet = MediaQuery.sizeOf(context).width >= 700;
+    final hPad = isTablet ? 24.0 : 16.0;
 
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: _fetchThreads,
+        color: scheme.primary,
         child: CustomScrollView(
           controller: _scrollCtrl,
           slivers: [
+            // Hero banner
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(isTablet ? 24 : 16, 16, isTablet ? 24 : 16, 12),
-                child: _HeroBanner(lang: lang),
+                padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 12),
+                child: _HeroBanner(lang: lang, isDark: isDark, scheme: scheme),
               ),
             ),
 
-            // Threads
+            // Section header
+            if (!_loading && _error == null && _threads.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 10),
+                  child: _SectionHeader(lang: lang, scheme: scheme),
+                ),
+              ),
+
+            // Content
             if (_loading && _threads.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
-                  child: Column(
-                    children: List.generate(
-                      3,
-                      (_) => const Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: _ThreadSkeleton(),
-                      ),
-                    ),
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  child: _ThreadSkeletonList(isDark: isDark, scheme: scheme),
                 ),
               )
             else if (_error != null)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16, vertical: 20),
+                  padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),
                   child: _ErrorCard(
+                    lang: lang,
                     message: _error!,
                     onRetry: _fetchThreads,
+                    isDark: isDark,
+                    scheme: scheme,
                   ),
                 ),
               )
             else if (_threads.isEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16, vertical: 20),
-                  child: _EmptyState(lang: lang),
+                  padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),
+                  child: _EmptyState(lang: lang, scheme: scheme),
                 ),
               )
             else
@@ -148,9 +157,12 @@ class _AiChatTabState extends State<AiChatTab> {
                     if (index >= _threads.length) return null;
                     final thread = _threads[index];
                     return Padding(
-                      padding:
-                          EdgeInsets.fromLTRB(isTablet ? 24 : 16, 0, isTablet ? 24 : 16, 12),
-                      child: _ThreadCard(thread: thread),
+                      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 10),
+                      child: _ThreadCard(
+                        thread: thread,
+                        isDark: isDark,
+                        scheme: scheme,
+                      ),
                     );
                   },
                   childCount: _threads.length,
@@ -165,179 +177,311 @@ class _AiChatTabState extends State<AiChatTab> {
   }
 }
 
-/* ---------------------------- UI COMPONENTS ---------------------------- */
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Hero Banner                                                             */
+/* ─────────────────────────────────────────────────────────────────────── */
 
 class _HeroBanner extends StatelessWidget {
   final String lang;
-  const _HeroBanner({required this.lang});
+  final bool isDark;
+  final ColorScheme scheme;
+
+  const _HeroBanner({
+    required this.lang,
+    required this.isDark,
+    required this.scheme,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: LinearGradient(
-          colors: [scheme.primary.withOpacity(0.15), scheme.secondary.withOpacity(0.14)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: scheme.primary.withOpacity(0.12)),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      child: Row(
-        children: [
-          Container(
-            height: 56,
-            width: 56,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.primary.withOpacity(0.12),
-              border: Border.all(color: scheme.primary.withOpacity(0.28)),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [
+                      scheme.primary.withValues(alpha: 0.22),
+                      scheme.primary.withValues(alpha: 0.10),
+                    ]
+                  : [
+                      scheme.primary.withValues(alpha: 0.12),
+                      scheme.primary.withValues(alpha: 0.06),
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            child: Center(
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedSparkles,
-                size: 26,
-                color: scheme.primary,
+            border: Border.all(
+              color: isDark
+                  ? scheme.primary.withValues(alpha: 0.28)
+                  : scheme.primary.withValues(alpha: 0.18),
+              width: 0.8,
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                height: 52,
+                width: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.primary.withValues(alpha: isDark ? 0.20 : 0.12),
+                  border: Border.all(
+                    color: scheme.primary.withValues(alpha: 0.32),
+                    width: 0.8,
+                  ),
+                ),
+                child: Center(
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedSparkles,
+                    size: 24,
+                    color: scheme.primary,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  t(lang, "nav.ai_chat"),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                    letterSpacing: -0.2,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t(lang, "nav.ai_chat"),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        letterSpacing: -0.3,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      t(lang, "chat.no_conversations_sub"),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: scheme.onSurface.withValues(alpha: 0.60),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // CTA Button
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AiChatConversationsPage()),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: scheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: 0.30),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    t(lang, "common.all"),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  t(lang, "common.tap_details"),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          _GlassButton(
-            label: t(lang, "nav.ai_chat"),
-            icon: HugeIcons.strokeRoundedAirplane02,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AiChatConversationsPage()),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _ThreadCard extends StatelessWidget {
-  final _ChatThread thread;
-  const _ThreadCard({required this.thread});
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Section header row                                                      */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+class _SectionHeader extends StatelessWidget {
+  final String lang;
+  final ColorScheme scheme;
+
+  const _SectionHeader({required this.lang, required this.scheme});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Text(
+          t(lang, "chat.title"),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: scheme.onSurface,
+            letterSpacing: -0.2,
+          ),
+        ),
+        const Spacer(),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AiChatConversationsPage()),
+          ),
+          child: Text(
+            t(lang, "common.all"),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: scheme.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Thread Card — frosted glass                                             */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+class _ThreadCard extends StatelessWidget {
+  final _ChatThread thread;
+  final bool isDark;
+  final ColorScheme scheme;
+
+  const _ThreadCard({
+    required this.thread,
+    required this.isDark,
+    required this.scheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final subtitle = thread.subtitle?.trim();
     final last = thread.lastMessage?.trim();
 
-    return Material(
-      color: scheme.surface,
+    return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      elevation: 1,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AiChatThreadPage(
-                threadId: thread.id,
-                title: thread.title,
-              ),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              _Avatar(initials: thread.initials, badge: thread.unreadCount > 0),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            thread.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 14,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (thread.lastAt != null)
-                          Text(
-                            _formatShort(thread.lastAt!),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: scheme.onSurface.withOpacity(0.55),
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (subtitle != null && subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                    if (last != null && last.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        last,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: scheme.onSurface.withOpacity(0.75),
-                        ),
-                      ),
-                    ],
-                  ],
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Material(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.white.withValues(alpha: 0.82),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AiChatThreadPage(
+                    threadId: thread.id,
+                    title: thread.title,
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.10)
+                      : Colors.black.withValues(alpha: 0.07),
+                  width: 0.7,
                 ),
               ),
-              const SizedBox(width: 12),
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
-                size: 16,
-                color: scheme.onSurface.withOpacity(0.55),
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  _Avatar(
+                    initials: thread.initials,
+                    unread: thread.unreadCount,
+                    isDark: isDark,
+                    scheme: scheme,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                thread.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  letterSpacing: -0.2,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (thread.lastAt != null)
+                              Text(
+                                _formatShort(thread.lastAt!),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.onSurface.withValues(alpha: 0.45),
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (subtitle != null && subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface.withValues(alpha: 0.60),
+                            ),
+                          ),
+                        ],
+                        if (last != null && last.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            last,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              height: 1.4,
+                              color: scheme.onSurface.withValues(alpha: 0.55),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedArrowRight01,
+                    size: 16,
+                    color: scheme.onSurface.withValues(alpha: 0.30),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -348,21 +492,30 @@ class _ThreadCard extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final date = DateTime(dt.year, dt.month, dt.day);
-    if (date == today) {
-      return DateFormat("h:mm a").format(dt);
-    }
+    if (date == today) return DateFormat("h:mm a").format(dt);
     return DateFormat("MMM d").format(dt);
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Avatar with optional unread badge                                       */
+/* ─────────────────────────────────────────────────────────────────────── */
+
 class _Avatar extends StatelessWidget {
   final String initials;
-  final bool badge;
-  const _Avatar({required this.initials, required this.badge});
+  final int unread;
+  final bool isDark;
+  final ColorScheme scheme;
+
+  const _Avatar({
+    required this.initials,
+    required this.unread,
+    required this.isDark,
+    required this.scheme,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -371,27 +524,55 @@ class _Avatar extends StatelessWidget {
           width: 46,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: scheme.surfaceVariant.withOpacity(0.7),
-            border: Border.all(color: scheme.outlineVariant),
+            gradient: LinearGradient(
+              colors: [
+                scheme.primary.withValues(alpha: isDark ? 0.35 : 0.18),
+                scheme.primary.withValues(alpha: isDark ? 0.18 : 0.09),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: scheme.primary.withValues(alpha: 0.28),
+              width: 0.8,
+            ),
           ),
           child: Center(
             child: Text(
               initials,
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: scheme.primary,
+              ),
             ),
           ),
         ),
-        if (badge)
+        if (unread > 0)
           Positioned(
-            right: -2,
-            top: -2,
+            right: -3,
+            top: -3,
             child: Container(
-              height: 12,
-              width: 12,
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
                 color: scheme.primary,
-                border: Border.all(color: scheme.surface, width: 2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                  width: 1.5,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  unread > 99 ? "99+" : unread.toString(),
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    height: 1.1,
+                  ),
+                ),
               ),
             ),
           ),
@@ -400,181 +581,295 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-class _GlassButton extends StatelessWidget {
-  final String label;
-  final dynamic icon;
-  final VoidCallback onTap;
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Animated skeleton list                                                  */
+/* ─────────────────────────────────────────────────────────────────────── */
 
-  const _GlassButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
+class _ThreadSkeletonList extends StatefulWidget {
+  final bool isDark;
+  final ColorScheme scheme;
+
+  const _ThreadSkeletonList({required this.isDark, required this.scheme});
+
+  @override
+  State<_ThreadSkeletonList> createState() => _ThreadSkeletonListState();
+}
+
+class _ThreadSkeletonListState extends State<_ThreadSkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) {
+        final shimmerColor = widget.isDark
+            ? Colors.white.withValues(alpha: 0.04 + _anim.value * 0.06)
+            : Colors.black.withValues(alpha: 0.05 + _anim.value * 0.05);
+        final baseColor = widget.isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.06);
+
+        return Column(
+          children: List.generate(
+            3,
+            (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: baseColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: widget.isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.06),
+                    width: 0.7,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 46,
+                      width: 46,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: shimmerColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            height: 12,
+                            width: 130,
+                            decoration: BoxDecoration(
+                              color: shimmerColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 10,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: shimmerColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Container(
+                            height: 10,
+                            width: 180,
+                            decoration: BoxDecoration(
+                              color: shimmerColor,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Empty state                                                             */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+class _EmptyState extends StatelessWidget {
+  final String lang;
+  final ColorScheme scheme;
+
+  const _EmptyState({required this.lang, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        Container(
+          height: 72,
+          width: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: scheme.primary.withValues(alpha: 0.10),
+            border: Border.all(
+              color: scheme.primary.withValues(alpha: 0.20),
+              width: 0.8,
+            ),
+          ),
+          child: Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedSparkles,
+              size: 30,
+              color: scheme.primary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          t(lang, "chat.no_conversations"),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            color: scheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          t(lang, "chat.no_conversations_sub"),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13.5,
+            color: scheme.onSurface.withValues(alpha: 0.55),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 24),
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AiChatConversationsPage()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              color: scheme.primary,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: scheme.primary.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              t(lang, "common.all"),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Error card                                                              */
+/* ─────────────────────────────────────────────────────────────────────── */
+
+class _ErrorCard extends StatelessWidget {
+  final String lang;
+  final String message;
+  final VoidCallback onRetry;
+  final bool isDark;
+  final ColorScheme scheme;
+
+  const _ErrorCard({
+    required this.lang,
+    required this.message,
+    required this.onRetry,
+    required this.isDark,
+    required this.scheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: scheme.surface.withOpacity(0.55),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: scheme.primary.withOpacity(0.25)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            HugeIcon(icon: icon, size: 14, color: scheme.primary),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThreadSkeleton extends StatelessWidget {
-  const _ThreadSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant.withOpacity(0.55),
+        color: scheme.errorContainer.withValues(alpha: isDark ? 0.18 : 0.14),
         borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            height: 46,
-            width: 46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.surface.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 12,
-                  width: 140,
-                  decoration: BoxDecoration(
-                    color: scheme.surface.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 10,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: scheme.surface.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final String lang;
-  const _EmptyState({required this.lang});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Container(
-          height: 70,
-          width: 70,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: scheme.surfaceVariant.withOpacity(0.7),
-          ),
-          child: Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedSearch01,
-              size: 28,
-              color: scheme.onSurface.withOpacity(0.65),
-            ),
-          ),
+        border: Border.all(
+          color: scheme.error.withValues(alpha: 0.30),
+          width: 0.8,
         ),
-        const SizedBox(height: 12),
-        Text(
-          t(lang, "common.coming_soon"),
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          t(lang, "auth.member_only"),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: scheme.onSurface.withOpacity(0.65),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ErrorCard extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorCard({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.error.withOpacity(0.4)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedWifiError01,
-            color: scheme.error,
-            size: 26,
+          Container(
+            height: 52,
+            width: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.error.withValues(alpha: 0.12),
+            ),
+            child: Center(
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedWifiError01,
+                color: scheme.error,
+                size: 24,
+              ),
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Text(
+            t(lang, "chat.load_error"),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: scheme.error,
+            ),
+          ),
+          const SizedBox(height: 4),
           Text(
             message,
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: scheme.error,
-              fontWeight: FontWeight.w700,
+              fontSize: 12.5,
+              color: scheme.error.withValues(alpha: 0.70),
             ),
           ),
-          const SizedBox(height: 10),
-          TextButton(
+          const SizedBox(height: 16),
+          FilledButton.icon(
             onPressed: onRetry,
-            child: Text(t(currentLangSync(), "common.try_again")),
+            style: FilledButton.styleFrom(
+              backgroundColor: scheme.error,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: Text(t(lang, "common.try_again")),
           ),
         ],
       ),
@@ -582,7 +877,9 @@ class _ErrorCard extends StatelessWidget {
   }
 }
 
-/* ---------------------------- DATA MODEL ---------------------------- */
+/* ─────────────────────────────────────────────────────────────────────── */
+/* Data model                                                              */
+/* ─────────────────────────────────────────────────────────────────────── */
 
 class _ChatThread {
   final String id;
