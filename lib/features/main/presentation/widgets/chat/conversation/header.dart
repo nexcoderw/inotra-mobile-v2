@@ -114,7 +114,7 @@ class _BackButton extends StatelessWidget {
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedArrowLeft01,
           size: 22,
-          color: const Color(0xFF007AFF),
+          color: Theme.of(context).colorScheme.primary,
         ),
       ),
     );
