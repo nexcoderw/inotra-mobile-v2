@@ -229,9 +229,7 @@ class _HeroBanner extends StatelessWidget {
           _GlassButton(
             label: t(lang, "nav.ai_chat"),
             icon: HugeIcons.strokeRoundedAirplane02,
-            onTap: () {
-              // placeholder for starting a new AI chat
-            },
+            onTap: () => Navigator.pushNamed(context, "/ai-chat-conversations"),
           ),
         ],
       ),

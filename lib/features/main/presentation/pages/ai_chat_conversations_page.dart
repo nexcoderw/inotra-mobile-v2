@@ -1,4 +1,8 @@
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
+
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
 
 class AiChatConversationsPage extends StatelessWidget {
@@ -6,25 +10,49 @@ class AiChatConversationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = List.generate(8, (i) => "Conversation ${i + 1}");
+    final lang = currentLangSync();
+    final scheme = Theme.of(context).colorScheme;
 
     return MainScaffold(
-      title: "AI Conversations",
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          return Card(
-            child: ListTile(
-              leading: const Icon(Icons.chat_bubble_outline),
-              title: Text(items[index], style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text("Tap to open (coming next)"),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {},
+      title: t(lang, "nav.ai_chat"),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 88,
+              width: 88,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.surfaceVariant.withOpacity(0.7),
+              ),
+              child: Center(
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedSparkles,
+                  size: 38,
+                  color: scheme.primary,
+                ),
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 16),
+            Text(
+              t(lang, "common.coming_soon"),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              t(lang, "ai.todo"),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: scheme.onSurface.withOpacity(0.65),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
