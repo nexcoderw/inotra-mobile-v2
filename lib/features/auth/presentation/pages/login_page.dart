@@ -67,14 +67,16 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final uri = Api.url(AuthEndpoints.login);
-      final response = await http.post(
-        uri,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "identifier": _identifier.text.trim(),
-          "password": _password.text,
-        }),
-      );
+      final response = await http
+          .post(
+            uri,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "identifier": _identifier.text.trim(),
+              "password": _password.text,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = _safeJson(response.body);
@@ -117,8 +119,8 @@ class _LoginPageState extends State<LoginPage> {
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
       );
-    } catch (_) {
-      final message = tr("auth.network_retry");
+    } catch (e) {
+      final message = e.toString();
       _error = message;
 
       if (mounted) {
@@ -129,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
           title: Text(tr("auth.network_error")),
           description: Text(message),
           alignment: Alignment.topCenter,
-          autoCloseDuration: const Duration(seconds: 4),
+          autoCloseDuration: const Duration(seconds: 6),
         );
       }
     } finally {
@@ -174,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
       final response = await http.post(
         uri,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"token": idToken}),
+        body: jsonEncode({"IdToken": idToken}),
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
