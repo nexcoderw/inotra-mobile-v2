@@ -1,4 +1,5 @@
 import "dart:convert";
+import "dart:io";
 import "dart:math" as math;
 import "dart:ui";
 
@@ -17,7 +18,6 @@ import "../../../../core/services/registration_cache.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
-import "../../../../i18n/translations.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
 
@@ -50,7 +50,9 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _googleSignIn = GoogleSignIn(
-      clientId: Env.googleClientId,
+      clientId: Platform.isIOS
+          ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
+          : null,
       serverClientId: Env.googleClientId,
       scopes: const ["email", "profile", "openid"],
     );
@@ -894,24 +896,38 @@ class _GoogleButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: busy ? null : onTap,
         style: OutlinedButton.styleFrom(
-          backgroundColor: scheme.surface.withOpacity(0.45),
-          side: BorderSide(color: scheme.onSurface.withOpacity(0.10)),
+          backgroundColor: scheme.surface.withValues(alpha: 0.45),
+          side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.10)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const _GoogleMark(),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: scheme.onSurface.withOpacity(0.85),
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-              ),
-            ),
-          ],
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: busy
+              ? SizedBox(
+                  key: const ValueKey("spinner"),
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                  ),
+                )
+              : Row(
+                  key: const ValueKey("label"),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const _GoogleMark(),
+                    const SizedBox(width: 12),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: scheme.onSurface.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -923,25 +939,11 @@ class _GoogleMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: 26,
-      height: 26,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-        color: scheme.surface.withOpacity(0.55),
-      ),
-      child: Center(
-        child: Text(
-          "G",
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            color: scheme.onSurface.withOpacity(0.85),
-          ),
-        ),
-      ),
+    return Image.asset(
+      "assets/images/google.png",
+      width: 22,
+      height: 22,
+      filterQuality: FilterQuality.high,
     );
   }
 }
