@@ -72,7 +72,7 @@ class ConvBubble extends StatelessWidget {
                   child: Text(
                     message.authorName!,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: scheme.onSurface.withValues(alpha: 0.42),
                       letterSpacing: 0.1,
@@ -210,7 +210,7 @@ class _BubbleBody extends StatelessWidget {
             child: Text(
               message.text,
               style: TextStyle(
-                fontSize: 15.5,
+                fontSize: 12,
                 height: 1.38,
                 color: textColor,
                 fontWeight: FontWeight.w400,
@@ -315,7 +315,7 @@ class ConvSharedCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: titleColor,
                           height: 1.3,

@@ -115,7 +115,7 @@ class _DateSeparator extends StatelessWidget {
             child: Text(
               _text(),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: FontWeight.w600,
                 color: color,
                 letterSpacing: 0.3,
