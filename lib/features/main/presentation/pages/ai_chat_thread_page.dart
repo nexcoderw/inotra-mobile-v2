@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:convert";
 
 import "package:flutter/material.dart";
@@ -7,10 +8,117 @@ import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/chat_endpoints.dart";
+import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/chat/chat_avatar.dart";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data models
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SharedItem {
+  final String type; // "EVENT" | "PACKAGE" | "LISTING"
+  final String id;
+  final String? title;
+
+  const _SharedItem({required this.type, required this.id, this.title});
+
+  factory _SharedItem.fromJson(Map<String, dynamic> json) => _SharedItem(
+        type: (json["type"] ?? "").toString().toUpperCase(),
+        id: (json["id"] ?? "").toString(),
+        title: json["title"]?.toString(),
+      );
+
+  Map<String, String?> toSendBody() => {
+        if (type == "EVENT") "shared_event_id": id,
+        if (type == "LISTING") "shared_listing_id": id,
+        if (type == "PACKAGE") "shared_package_id": id,
+      };
+}
+
+class _ChatMessage {
+  final String id;
+  final String text;
+  final DateTime createdAt;
+  final bool isMine;
+  final String? authorId;
+  final String? authorName;
+  final String? authorAvatarUrl;
+  final _SharedItem? shared;
+  final bool pending;
+  final bool failed;
+
+  const _ChatMessage({
+    required this.id,
+    required this.text,
+    required this.createdAt,
+    required this.isMine,
+    this.authorId,
+    this.authorName,
+    this.authorAvatarUrl,
+    this.shared,
+    this.pending = false,
+    this.failed = false,
+  });
+
+  _ChatMessage copyWith({bool? pending, bool? failed}) => _ChatMessage(
+        id: id,
+        text: text,
+        createdAt: createdAt,
+        isMine: isMine,
+        authorId: authorId,
+        authorName: authorName,
+        authorAvatarUrl: authorAvatarUrl,
+        shared: shared,
+        pending: pending ?? this.pending,
+        failed: failed ?? this.failed,
+      );
+
+  factory _ChatMessage.fromJson(Map<String, dynamic> json) {
+    DateTime? tryParse(String? raw) {
+      if (raw == null || raw.isEmpty) return null;
+      try {
+        return DateTime.parse(raw).toLocal();
+      } catch (_) {
+        return null;
+      }
+    }
+
+    String? authorId;
+    String? authorName;
+    String? authorAvatarUrl;
+    final sender = json["sender"];
+    if (sender is Map) {
+      authorId = sender["id"]?.toString();
+      authorName = (sender["name"] ?? sender["full_name"] ?? sender["username"])?.toString();
+      authorAvatarUrl = sender["avatar_url"]?.toString();
+    }
+
+    _SharedItem? shared;
+    final sharedRaw = json["shared"];
+    if (sharedRaw is Map) {
+      shared = _SharedItem.fromJson(Map<String, dynamic>.from(sharedRaw));
+    }
+
+    return _ChatMessage(
+      id: (json["id"] ?? "").toString(),
+      text: (json["source_text"] ?? json["text"] ?? json["content"] ?? json["body"] ?? "").toString(),
+      createdAt: tryParse(
+            (json["created_at"] ?? json["timestamp"] ?? json["sent_at"])?.toString(),
+          ) ??
+          DateTime.now(),
+      isMine: json["is_mine"] as bool? ?? false,
+      authorId: authorId,
+      authorName: authorName,
+      authorAvatarUrl: authorAvatarUrl,
+      shared: shared,
+    );
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page
@@ -42,14 +150,11 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   bool _loading = true;
   bool _sending = false;
   String? _error;
-
-  // My user ID for bubble alignment
-  String? _myId;
+  _SharedItem? _pendingShared;
 
   @override
   void initState() {
     super.initState();
-    _myId = AuthSession.instance.value.user?["id"]?.toString();
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
   }
 
@@ -73,7 +178,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     if (mounted) setState(() { _loading = true; _error = null; });
 
     try {
-      final uri = Api.url(ChatEndpoints.messages(widget.threadId));
+      final uri = Api.url(ChatEndpoints.messages(widget.threadId))
+          .replace(queryParameters: {"page": "1", "page_size": "50"});
       final resp = await http.get(uri, headers: {
         "Accept": "application/json",
         "Authorization": "Bearer $token",
@@ -82,8 +188,21 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
       if (!mounted) return;
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final parsed = _parseMessages(resp.body);
-        parsed.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        final decoded = jsonDecode(resp.body);
+        List raw = const [];
+        if (decoded is Map) {
+          raw = (decoded["results"] as List?) ?? const [];
+        } else if (decoded is List) {
+          raw = decoded;
+        }
+        // API returns newest first — reverse for chronological display
+        final parsed = raw
+            .whereType<Map>()
+            .map((m) => _ChatMessage.fromJson(Map<String, dynamic>.from(m)))
+            .toList()
+            .reversed
+            .toList();
+
         setState(() {
           _messages
             ..clear()
@@ -91,6 +210,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           _loading = false;
         });
         _scrollToBottom();
+        _markRead(token);
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
         if (mounted) setState(() { _loading = false; _error = "401"; });
@@ -102,36 +222,24 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     }
   }
 
-  /// Robustly parses multiple possible API response shapes.
-  List<_ChatMessage> _parseMessages(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      List raw = const [];
-      if (decoded is Map) {
-        // Try every common DRF / custom key
-        raw = (decoded["results"] as List?)
-            ?? (decoded["messages"] as List?)
-            ?? (decoded["data"] as List?)
-            ?? (decoded["items"] as List?)
-            ?? (decoded["chat_messages"] as List?)
-            ?? const [];
-      } else if (decoded is List) {
-        raw = decoded;
-      }
-      return raw
-          .whereType<Map>()
-          .map((m) => _ChatMessage.fromJson(Map<String, dynamic>.from(m)))
-          .toList();
-    } catch (_) {
-      return const [];
-    }
+  void _markRead(String token) {
+    http
+        .post(
+          Api.url(ChatEndpoints.markRead(widget.threadId)),
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer $token",
+          },
+        )
+        .ignore();
   }
 
   // ── Send ─────────────────────────────────────────────────────────────────
 
   Future<void> _send() async {
     final text = _inputCtrl.text.trim();
-    if (text.isEmpty) return;
+    final shared = _pendingShared;
+    if (text.isEmpty && shared == null) return;
 
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) return;
@@ -139,23 +247,31 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     HapticFeedback.lightImpact();
     setState(() => _sending = true);
 
-    // Optimistic local insert
+    final optimisticId = "__pending_${DateTime.now().millisecondsSinceEpoch}";
     final optimistic = _ChatMessage(
-      id: "__pending_${DateTime.now().millisecondsSinceEpoch}",
+      id: optimisticId,
       text: text,
       createdAt: DateTime.now(),
-      authorId: _myId,
-      authorName: null,
+      isMine: true,
+      shared: shared,
       pending: true,
     );
+
     setState(() {
       _messages.add(optimistic);
       _inputCtrl.clear();
+      _pendingShared = null;
     });
     _scrollToBottom();
 
     try {
       final uri = Api.url(ChatEndpoints.sendMessage(widget.threadId));
+      final body = <String, dynamic>{
+        "text": text,
+        "source_language": "",
+        if (shared != null) ...shared.toSendBody(),
+      };
+
       final resp = await http.post(
         uri,
         headers: {
@@ -163,32 +279,78 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           "Accept": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({"text": text}),
+        body: jsonEncode(body),
       );
 
       if (!mounted) return;
 
-      // Remove the optimistic message regardless of outcome
-      setState(() {
-        _messages.removeWhere((m) => m.id == optimistic.id);
-        _sending = false;
-      });
-
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        await _fetch();
+        final decoded = jsonDecode(resp.body);
+        final serverMsgRaw = decoded["chat_message"];
+        final idx = _messages.indexWhere((m) => m.id == optimisticId);
+        if (serverMsgRaw is Map && idx != -1) {
+          final serverMsg = _ChatMessage.fromJson(
+            Map<String, dynamic>.from(serverMsgRaw),
+          );
+          setState(() {
+            _messages[idx] = serverMsg;
+            _sending = false;
+          });
+        } else {
+          setState(() {
+            if (idx != -1) {
+              _messages[idx] = _messages[idx].copyWith(pending: false);
+            }
+            _sending = false;
+          });
+        }
+        _scrollToBottom();
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
+        setState(() => _sending = false);
       } else {
+        final idx = _messages.indexWhere((m) => m.id == optimisticId);
+        setState(() {
+          if (idx != -1) {
+            _messages[idx] = _messages[idx].copyWith(pending: false, failed: true);
+          }
+          _sending = false;
+        });
         _showSnack("${resp.statusCode}");
       }
     } catch (e) {
       if (mounted) {
+        final idx = _messages.indexWhere((m) => m.id == optimisticId);
         setState(() {
-          _messages.removeWhere((m) => m.id == optimistic.id);
+          if (idx != -1) {
+            _messages[idx] = _messages[idx].copyWith(pending: false, failed: true);
+          }
           _sending = false;
         });
         _showSnack(e.toString());
       }
+    }
+  }
+
+  // ── Share picker ─────────────────────────────────────────────────────────
+
+  Future<void> _openSharePicker() async {
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) return;
+
+    final lang = currentLangSync();
+    final result = await showModalBottomSheet<_SharedItem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ChatSharePickerSheet(
+        lang: lang,
+        accessToken: token,
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() => _pendingShared = result);
     }
   }
 
@@ -227,9 +389,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     final isDark = scheme.brightness == Brightness.dark;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: scheme.surface,
         resizeToAvoidBottomInset: true,
@@ -254,7 +414,6 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
                             ? _EmptyState(lang: lang)
                             : _MessageList(
                                 messages: _messages,
-                                myId: _myId,
                                 scrollCtrl: _scrollCtrl,
                                 lang: lang,
                               ),
@@ -263,6 +422,9 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
                 controller: _inputCtrl,
                 focusNode: _focusNode,
                 onSend: _send,
+                onAttach: _openSharePicker,
+                onClearAttach: () => setState(() => _pendingShared = null),
+                pendingShared: _pendingShared,
                 busy: _sending,
                 lang: lang,
                 scheme: scheme,
@@ -310,7 +472,6 @@ class _ChatHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Back button
           IconButton(
             onPressed: onBack,
             icon: HugeIcon(
@@ -320,35 +481,28 @@ class _ChatHeader extends StatelessWidget {
             ),
             splashRadius: 20,
           ),
-
-          // Avatar + name
           Expanded(
-            child: GestureDetector(
-              onTap: () {},
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ChatAvatar(name: name, avatarUrl: avatarUrl, size: 36),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface,
-                        letterSpacing: -0.3,
-                      ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ChatAvatar(name: name, avatarUrl: avatarUrl, size: 36),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-
-          // Action buttons
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -384,29 +538,23 @@ class _ChatHeader extends StatelessWidget {
 
 class _MessageList extends StatelessWidget {
   final List<_ChatMessage> messages;
-  final String? myId;
   final ScrollController scrollCtrl;
   final String lang;
 
   const _MessageList({
     required this.messages,
-    required this.myId,
     required this.scrollCtrl,
     required this.lang,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Build flat item list: messages with date separators interleaved
     final items = <dynamic>[];
     for (int i = 0; i < messages.length; i++) {
       final msg = messages[i];
       final prev = i > 0 ? messages[i - 1] : null;
-      final sameDay = prev != null &&
-          _sameDay(prev.createdAt, msg.createdAt);
-      if (!sameDay) {
-        items.add(_DateLabel(date: msg.createdAt, lang: lang));
-      }
+      final sameDay = prev != null && _sameDay(prev.createdAt, msg.createdAt);
+      if (!sameDay) items.add(_DateLabel(date: msg.createdAt, lang: lang));
       items.add(msg);
     }
 
@@ -416,29 +564,24 @@ class _MessageList extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        if (item is _DateLabel) {
-          return _DateSeparator(label: item);
-        }
+        if (item is _DateLabel) return _DateSeparator(label: item);
 
         final msg = item as _ChatMessage;
-        final isMine = myId != null && msg.authorId == myId;
 
-        // Grouping: is this the last in a consecutive run from same author?
         final nextItem = index + 1 < items.length ? items[index + 1] : null;
         final nextMsg = nextItem is _ChatMessage ? nextItem : null;
         final isLastInGroup = nextMsg == null ||
-            nextMsg.authorId != msg.authorId ||
+            nextMsg.isMine != msg.isMine ||
             nextMsg.createdAt.difference(msg.createdAt).inMinutes >= 3;
 
         final prevItem = index > 0 ? items[index - 1] : null;
         final prevMsg = prevItem is _ChatMessage ? prevItem : null;
         final isFirstInGroup = prevMsg == null ||
-            prevMsg.authorId != msg.authorId ||
+            prevMsg.isMine != msg.isMine ||
             msg.createdAt.difference(prevMsg.createdAt).inMinutes >= 3;
 
         return _ChatBubble(
           message: msg,
-          isMine: isMine,
           isFirstInGroup: isFirstInGroup,
           isLastInGroup: isLastInGroup,
         );
@@ -456,13 +599,11 @@ class _MessageList extends StatelessWidget {
 
 class _ChatBubble extends StatelessWidget {
   final _ChatMessage message;
-  final bool isMine;
   final bool isFirstInGroup;
   final bool isLastInGroup;
 
   const _ChatBubble({
     required this.message,
-    required this.isMine,
     required this.isFirstInGroup,
     required this.isLastInGroup,
   });
@@ -471,7 +612,7 @@ class _ChatBubble extends StatelessWidget {
   static const _bubbleRadius = 18.0;
   static const _tailRadius = 4.0;
 
-  BorderRadius _radius() {
+  BorderRadius _radius(bool isMine) {
     if (isMine) {
       return BorderRadius.only(
         topLeft: const Radius.circular(_bubbleRadius),
@@ -493,14 +634,13 @@ class _ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
+    final isMine = message.isMine;
     final maxWidth = MediaQuery.of(context).size.width * 0.72;
 
     final bubbleBg = isMine
         ? _blue
         : (isDark ? const Color(0xFF2C2C2E) : const Color(0xFFE8E8ED));
-    final textColor = isMine
-        ? Colors.white
-        : scheme.onSurface;
+    final textColor = isMine ? Colors.white : scheme.onSurface;
     final timeColor = isMine
         ? Colors.white.withValues(alpha: 0.65)
         : scheme.onSurface.withValues(alpha: 0.40);
@@ -520,7 +660,6 @@ class _ChatBubble extends StatelessWidget {
             crossAxisAlignment:
                 isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              // Sender name for theirs (first in group only)
               if (!isMine && isFirstInGroup && message.authorName != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 4, bottom: 2),
@@ -538,8 +677,10 @@ class _ChatBubble extends StatelessWidget {
               // Bubble
               Container(
                 decoration: BoxDecoration(
-                  color: bubbleBg,
-                  borderRadius: _radius(),
+                  color: message.failed
+                      ? (isDark ? const Color(0xFF3A1A1A) : const Color(0xFFFFE5E5))
+                      : bubbleBg,
+                  borderRadius: _radius(isMine),
                   boxShadow: [
                     BoxShadow(
                       color: isDark
@@ -550,19 +691,39 @@ class _ChatBubble extends StatelessWidget {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
-                child: Text(
-                  message.text,
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    height: 1.35,
-                    color: textColor,
-                    fontWeight: FontWeight.w400,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (message.shared != null)
+                      _SharedCard(
+                        shared: message.shared!,
+                        isMine: isMine,
+                        radius: _radius(isMine),
+                      ),
+                    if (message.text.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 13, vertical: 9),
+                        child: Text(
+                          message.text,
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            height: 1.35,
+                            color: message.failed
+                                ? (isDark ? Colors.red[200]! : Colors.red[700]!)
+                                : textColor,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    if (message.shared != null && message.text.isEmpty)
+                      const SizedBox(height: 4),
+                  ],
                 ),
               ),
 
-              // Timestamp (last in group only)
+              // Timestamp
               if (isLastInGroup)
                 Padding(
                   padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
@@ -579,18 +740,15 @@ class _ChatBubble extends StatelessWidget {
                       ),
                       if (isMine && message.pending) ...[
                         const SizedBox(width: 4),
-                        Icon(
-                          Icons.access_time_rounded,
-                          size: 10,
-                          color: timeColor,
-                        ),
+                        Icon(Icons.access_time_rounded, size: 10, color: timeColor),
+                      ] else if (isMine && message.failed) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.error_outline_rounded,
+                            size: 11,
+                            color: isDark ? Colors.red[300] : Colors.red[700]),
                       ] else if (isMine) ...[
                         const SizedBox(width: 4),
-                        Icon(
-                          Icons.done_rounded,
-                          size: 11,
-                          color: timeColor,
-                        ),
+                        Icon(Icons.done_rounded, size: 11, color: timeColor),
                       ],
                     ],
                   ),
@@ -606,6 +764,109 @@ class _ChatBubble extends StatelessWidget {
     final h = dt.hour.toString().padLeft(2, "0");
     final m = dt.minute.toString().padLeft(2, "0");
     return "$h:$m";
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared card (inside bubble)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SharedCard extends StatelessWidget {
+  final _SharedItem shared;
+  final bool isMine;
+  final BorderRadius radius;
+
+  const _SharedCard({
+    required this.shared,
+    required this.isMine,
+    required this.radius,
+  });
+
+  dynamic _icon() {
+    switch (shared.type) {
+      case "EVENT":
+        return HugeIcons.strokeRoundedCalendar03;
+      case "PACKAGE":
+        return HugeIcons.strokeRoundedLuggage01;
+      default: // LISTING
+        return HugeIcons.strokeRoundedLocation01;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = currentLangSync();
+    final typeLabel = shared.type == "EVENT"
+        ? t(lang, "chat.shared_event")
+        : shared.type == "PACKAGE"
+            ? t(lang, "chat.shared_package")
+            : t(lang, "chat.shared_listing");
+
+    final cardBg = isMine
+        ? Colors.white.withValues(alpha: 0.15)
+        : Colors.black.withValues(alpha: 0.06);
+    final iconColor = isMine ? Colors.white : const Color(0xFF007AFF);
+    final labelColor = isMine
+        ? Colors.white.withValues(alpha: 0.75)
+        : Colors.black.withValues(alpha: 0.45);
+    final titleColor = isMine ? Colors.white : Theme.of(context).colorScheme.onSurface;
+    final dividerColor = isMine
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.black.withValues(alpha: 0.10);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.only(
+        topLeft: radius.topLeft,
+        topRight: radius.topRight,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            color: cardBg,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Row(
+              children: [
+                HugeIcon(icon: _icon(), size: 18, color: iconColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        typeLabel.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: labelColor,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      if (shared.title != null) ...[
+                        const SizedBox(height: 1),
+                        Text(
+                          shared.title!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: titleColor,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 0.5, thickness: 0.5, color: dividerColor),
+        ],
+      ),
+    );
   }
 }
 
@@ -630,7 +891,6 @@ class _DateSeparator extends StatelessWidget {
     final diff = today.difference(msgDay).inDays;
     if (diff == 0) return t(label.lang, "chat.today");
     if (diff == 1) return t(label.lang, "chat.yesterday");
-    // Older: Month Day, Year
     const months = [
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -685,6 +945,9 @@ class _Composer extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final VoidCallback onSend;
+  final VoidCallback onAttach;
+  final VoidCallback onClearAttach;
+  final _SharedItem? pendingShared;
   final bool busy;
   final String lang;
   final ColorScheme scheme;
@@ -693,6 +956,9 @@ class _Composer extends StatefulWidget {
     required this.controller,
     required this.focusNode,
     required this.onSend,
+    required this.onAttach,
+    required this.onClearAttach,
+    required this.pendingShared,
     required this.busy,
     required this.lang,
     required this.scheme,
@@ -704,6 +970,8 @@ class _Composer extends StatefulWidget {
 
 class _ComposerState extends State<_Composer> {
   bool _hasText = false;
+
+  bool get _canSend => _hasText || widget.pendingShared != null;
 
   @override
   void initState() {
@@ -734,106 +1002,710 @@ class _ComposerState extends State<_Composer> {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Text field
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.07)
-                          : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.12)
-                            : Colors.black.withValues(alpha: 0.10),
-                        width: 0.7,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: widget.controller,
-                      focusNode: widget.focusNode,
-                      minLines: 1,
-                      maxLines: 6,
-                      keyboardType: TextInputType.multiline,
-                      textCapitalization: TextCapitalization.sentences,
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        color: widget.scheme.onSurface,
-                        height: 1.35,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: t(widget.lang, "chat.type_message"),
-                        hintStyle: TextStyle(
-                          color: widget.scheme.onSurface.withValues(alpha: 0.35),
-                          fontSize: 15.5,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                      ),
-                    ),
+              // Attachment chip
+              if (widget.pendingShared != null) ...[
+                _AttachmentChip(
+                  shared: widget.pendingShared!,
+                  lang: widget.lang,
+                  scheme: widget.scheme,
+                  onRemove: widget.onClearAttach,
+                ),
+                const SizedBox(height: 6),
+              ],
+
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Attach button
+                  _AttachButton(
+                    onTap: widget.onAttach,
+                    scheme: widget.scheme,
+                    isDark: isDark,
+                    hasAttachment: widget.pendingShared != null,
                   ),
-                ),
-              ),
+                  const SizedBox(width: 6),
 
-              const SizedBox(width: 8),
-
-              // Send button
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                transitionBuilder: (child, anim) => ScaleTransition(
-                  scale: anim,
-                  child: child,
-                ),
-                child: widget.busy
-                    ? const SizedBox(
-                        key: ValueKey("loading"),
-                        width: 40,
-                        height: 40,
-                        child: Padding(
-                          padding: EdgeInsets.all(10),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF007AFF),
+                  // Text field
+                  Expanded(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 120),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.07)
+                              : Colors.black.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.black.withValues(alpha: 0.10),
+                            width: 0.7,
                           ),
                         ),
-                      )
-                    : GestureDetector(
-                        key: const ValueKey("send"),
-                        onTap: _hasText ? widget.onSend : null,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _hasText
-                                ? const Color(0xFF007AFF)
-                                : (isDark
-                                    ? Colors.white.withValues(alpha: 0.12)
-                                    : Colors.black.withValues(alpha: 0.08)),
+                        child: TextField(
+                          controller: widget.controller,
+                          focusNode: widget.focusNode,
+                          minLines: 1,
+                          maxLines: 6,
+                          keyboardType: TextInputType.multiline,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            color: widget.scheme.onSurface,
+                            height: 1.35,
                           ),
-                          child: Center(
-                            child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedSent,
-                              size: 18,
-                              color: _hasText
-                                  ? Colors.white
-                                  : widget.scheme.onSurface.withValues(alpha: 0.35),
+                          decoration: InputDecoration(
+                            hintText: t(widget.lang, "chat.type_message"),
+                            hintStyle: TextStyle(
+                              color: widget.scheme.onSurface.withValues(alpha: 0.35),
+                              fontSize: 15.5,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
                             ),
                           ),
                         ),
                       ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  // Send button
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, anim) =>
+                        ScaleTransition(scale: anim, child: child),
+                    child: widget.busy
+                        ? const SizedBox(
+                            key: ValueKey("loading"),
+                            width: 40,
+                            height: 40,
+                            child: Padding(
+                              padding: EdgeInsets.all(10),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF007AFF),
+                              ),
+                            ),
+                          )
+                        : GestureDetector(
+                            key: const ValueKey("send"),
+                            onTap: _canSend ? widget.onSend : null,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _canSend
+                                    ? const Color(0xFF007AFF)
+                                    : (isDark
+                                        ? Colors.white.withValues(alpha: 0.12)
+                                        : Colors.black.withValues(alpha: 0.08)),
+                              ),
+                              child: Center(
+                                child: HugeIcon(
+                                  icon: HugeIcons.strokeRoundedSent,
+                                  size: 18,
+                                  color: _canSend
+                                      ? Colors.white
+                                      : widget.scheme.onSurface
+                                          .withValues(alpha: 0.35),
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                ],
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final ColorScheme scheme;
+  final bool isDark;
+  final bool hasAttachment;
+
+  const _AttachButton({
+    required this.onTap,
+    required this.scheme,
+    required this.isDark,
+    required this.hasAttachment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: hasAttachment
+              ? const Color(0xFF007AFF).withValues(alpha: 0.15)
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.black.withValues(alpha: 0.05)),
+        ),
+        child: Center(
+          child: HugeIcon(
+            icon: HugeIcons.strokeRoundedAttachment02,
+            size: 18,
+            color: hasAttachment
+                ? const Color(0xFF007AFF)
+                : scheme.onSurface.withValues(alpha: 0.45),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentChip extends StatelessWidget {
+  final _SharedItem shared;
+  final String lang;
+  final ColorScheme scheme;
+  final VoidCallback onRemove;
+
+  const _AttachmentChip({
+    required this.shared,
+    required this.lang,
+    required this.scheme,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = scheme.brightness == Brightness.dark;
+    final typeLabel = shared.type == "EVENT"
+        ? t(lang, "chat.shared_event")
+        : shared.type == "PACKAGE"
+            ? t(lang, "chat.shared_package")
+            : t(lang, "chat.shared_listing");
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF007AFF).withValues(alpha: isDark ? 0.18 : 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF007AFF).withValues(alpha: 0.30),
+          width: 0.7,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const HugeIcon(
+            icon: HugeIcons.strokeRoundedAttachment02,
+            size: 14,
+            color: Color(0xFF007AFF),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              shared.title != null
+                  ? "$typeLabel · ${shared.title}"
+                  : typeLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF007AFF),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF007AFF),
+              ),
+              child: const Center(
+                child: Icon(Icons.close_rounded, size: 12, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Share picker sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum _ShareTab { events, listings, packages }
+
+class _ShareOption {
+  final String id;
+  final String title;
+  final String? subtitle;
+  final _ShareTab tab;
+
+  const _ShareOption({
+    required this.id,
+    required this.title,
+    this.subtitle,
+    required this.tab,
+  });
+}
+
+class _ChatSharePickerSheet extends StatefulWidget {
+  final String lang;
+  final String accessToken;
+
+  const _ChatSharePickerSheet({
+    required this.lang,
+    required this.accessToken,
+  });
+
+  @override
+  State<_ChatSharePickerSheet> createState() => _ChatSharePickerSheetState();
+}
+
+class _ChatSharePickerSheetState extends State<_ChatSharePickerSheet> {
+  _ShareTab _tab = _ShareTab.events;
+  final _searchCtrl = TextEditingController();
+  Timer? _debounce;
+
+  List<_ShareOption> _options = [];
+  bool _fetching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl.addListener(_onSearchChanged);
+    _loadOptions("");
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _loadOptions(_searchCtrl.text.trim());
+    });
+  }
+
+  Future<void> _loadOptions(String query) async {
+    if (!mounted) return;
+    setState(() { _fetching = true; _options = []; });
+
+    try {
+      final String endpoint;
+      switch (_tab) {
+        case _ShareTab.events:
+          endpoint = EventEndpoints.list;
+          break;
+        case _ShareTab.listings:
+          endpoint = PlaceEndpoints.list;
+          break;
+        case _ShareTab.packages:
+          endpoint = PackageEndpoints.list;
+          break;
+      }
+
+      final params = {
+        "page": "1",
+        "page_size": "12",
+        "ordering": "created_at",
+        "sort": "desc",
+        if (query.isNotEmpty) "search": query,
+      };
+
+      final uri = Api.url(endpoint).replace(queryParameters: params);
+      final resp = await http.get(uri, headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer ${widget.accessToken}",
+      });
+
+      if (!mounted) return;
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
+        List raw = const [];
+        if (decoded is Map) {
+          raw = (decoded["results"] as List?) ?? const [];
+        } else if (decoded is List) {
+          raw = decoded;
+        }
+
+        final opts = raw.whereType<Map>().map((item) {
+          final map = Map<String, dynamic>.from(item);
+          final id = (map["id"] ?? "").toString();
+          final title = (map["name"] ?? map["title"] ?? map["id"] ?? "").toString();
+          final subtitle = (map["location"] ?? map["address"] ?? map["description"])?.toString();
+          return _ShareOption(id: id, title: title, subtitle: subtitle, tab: _tab);
+        }).toList();
+
+        setState(() { _options = opts; _fetching = false; });
+      } else {
+        setState(() => _fetching = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _fetching = false);
+    }
+  }
+
+  void _switchTab(_ShareTab tab) {
+    if (_tab == tab) return;
+    _searchCtrl.clear();
+    setState(() {
+      _tab = tab;
+      _options = [];
+    });
+    _loadOptions("");
+  }
+
+  String get _sharedType {
+    switch (_tab) {
+      case _ShareTab.events: return "EVENT";
+      case _ShareTab.listings: return "LISTING";
+      case _ShareTab.packages: return "PACKAGE";
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final lang = widget.lang;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.65,
+      minChildSize: 0.45,
+      maxChildSize: 0.92,
+      snap: true,
+      snapSizes: const [0.65, 0.92],
+      builder: (context, scrollCtrl) {
+        return Container(
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              const SizedBox(height: 12),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: scheme.onSurface.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Text(
+                      t(lang, "chat.share_title"),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.10)
+                              : Colors.black.withValues(alpha: 0.07),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: scheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Tabs
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _TabChip(
+                      label: t(lang, "chat.share_events"),
+                      active: _tab == _ShareTab.events,
+                      onTap: () => _switchTab(_ShareTab.events),
+                    ),
+                    const SizedBox(width: 8),
+                    _TabChip(
+                      label: t(lang, "chat.share_listings"),
+                      active: _tab == _ShareTab.listings,
+                      onTap: () => _switchTab(_ShareTab.listings),
+                    ),
+                    const SizedBox(width: 8),
+                    _TabChip(
+                      label: t(lang, "chat.share_packages"),
+                      active: _tab == _ShareTab.packages,
+                      onTap: () => _switchTab(_ShareTab.packages),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Search
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.07)
+                        : Colors.black.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.12)
+                          : Colors.black.withValues(alpha: 0.10),
+                      width: 0.7,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: TextStyle(fontSize: 14.5, color: scheme.onSurface),
+                    decoration: InputDecoration(
+                      hintText: t(lang, "chat.share_search_hint"),
+                      hintStyle: TextStyle(
+                        color: scheme.onSurface.withValues(alpha: 0.35),
+                        fontSize: 14.5,
+                      ),
+                      prefixIcon: HugeIcon(
+                        icon: HugeIcons.strokeRoundedSearch01,
+                        size: 16,
+                        color: scheme.onSurface.withValues(alpha: 0.40),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Results
+              Expanded(
+                child: _fetching
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF007AFF),
+                        ),
+                      )
+                    : _options.isEmpty
+                        ? Center(
+                            child: Text(
+                              t(lang, "chat.share_no_results"),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: scheme.onSurface.withValues(alpha: 0.40),
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            controller: scrollCtrl,
+                            padding: const EdgeInsets.only(bottom: 24),
+                            itemCount: _options.length,
+                            itemBuilder: (context, index) {
+                              final opt = _options[index];
+                              return _ShareOptionTile(
+                                option: opt,
+                                onTap: () {
+                                  Navigator.of(context).pop(
+                                    _SharedItem(
+                                      type: _sharedType,
+                                      id: opt.id,
+                                      title: opt.title,
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TabChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _TabChip({required this.label, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: active
+              ? const Color(0xFF007AFF)
+              : (isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.black.withValues(alpha: 0.06)),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active
+                ? const Color(0xFF007AFF)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.black.withValues(alpha: 0.10)),
+            width: 0.7,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            color: active
+                ? Colors.white
+                : scheme.onSurface.withValues(alpha: 0.65),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShareOptionTile extends StatelessWidget {
+  final _ShareOption option;
+  final VoidCallback onTap;
+
+  const _ShareOptionTile({required this.option, required this.onTap});
+
+  dynamic _icon() {
+    switch (option.tab) {
+      case _ShareTab.events:
+        return HugeIcons.strokeRoundedCalendar03;
+      case _ShareTab.packages:
+        return HugeIcons.strokeRoundedLuggage01;
+      default:
+        return HugeIcons.strokeRoundedLocation01;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFF007AFF).withValues(alpha: isDark ? 0.15 : 0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: HugeIcon(
+                  icon: _icon(),
+                  size: 20,
+                  color: const Color(0xFF007AFF),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    option.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  if (option.subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      option.subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: scheme.onSurface.withValues(alpha: 0.45),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedArrowRight01,
+              size: 16,
+              color: scheme.onSurface.withValues(alpha: 0.30),
+            ),
+          ],
         ),
       ),
     );
@@ -995,8 +1867,12 @@ class _LoadingShimmerState extends State<_LoadingShimmer>
   @override
   Widget build(BuildContext context) {
     final isDark = widget.scheme.brightness == Brightness.dark;
-    final base = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.06);
-    final highlight = isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.12);
+    final base = isDark
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.black.withValues(alpha: 0.06);
+    final highlight = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.12);
 
     return AnimatedBuilder(
       animation: _anim,
@@ -1071,68 +1947,6 @@ class _ShimmerRow extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Data model
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ChatMessage {
-  final String id;
-  final String text;
-  final DateTime createdAt;
-  final String? authorId;
-  final String? authorName;
-  final bool pending;
-
-  const _ChatMessage({
-    required this.id,
-    required this.text,
-    required this.createdAt,
-    required this.authorId,
-    required this.authorName,
-    this.pending = false,
-  });
-
-  factory _ChatMessage.fromJson(Map<String, dynamic> json) {
-    DateTime? tryParse(String? raw) {
-      if (raw == null || raw.isEmpty) return null;
-      try { return DateTime.parse(raw).toLocal(); } catch (_) { return null; }
-    }
-
-    // Robust author extraction — handle nested map or flat id field
-    String? authorId;
-    String? authorName;
-    final author = json["author"] ?? json["sender"];
-    if (author is Map) {
-      authorId = author["id"]?.toString();
-      authorName = (author["name"]
-              ?? author["full_name"]
-              ?? author["username"])
-          ?.toString();
-    } else if (author != null) {
-      authorId = author.toString();
-    } else {
-      authorId = (json["author_id"] ?? json["user_id"])?.toString();
-    }
-
-    return _ChatMessage(
-      id: (json["id"] ?? "").toString(),
-      text: (json["text"]
-              ?? json["content"]
-              ?? json["body"]
-              ?? json["message"]
-              ?? "")
-          .toString(),
-      createdAt: tryParse(
-            (json["created_at"] ?? json["timestamp"] ?? json["sent_at"])
-                ?.toString(),
-          ) ??
-          DateTime.now(),
-      authorId: authorId,
-      authorName: authorName,
     );
   }
 }
