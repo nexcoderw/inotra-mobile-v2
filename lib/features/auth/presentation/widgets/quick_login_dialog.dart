@@ -46,7 +46,9 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   void initState() {
     super.initState();
     _googleSignIn = GoogleSignIn(
-      clientId: Platform.isIOS ? Env.googleClientId : null,
+      clientId: Platform.isIOS
+          ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
+          : null,
       serverClientId: Env.googleClientId,
       scopes: const ["email", "profile", "openid"],
     );
