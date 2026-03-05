@@ -244,31 +244,31 @@ class _LoginPageState extends State<LoginPage> {
               // Title
               AuthUI.heading(
                 tr("auth.sign_in"),
-                color: onSurface.withOpacity(0.96),
+                color: onSurface.withValues(alpha: 0.96),
               ),
               const SizedBox(height: 6),
 
-              // Subtitle (visible both themes)
+              // Subtitle
               Text(
                 tr("auth.sign_in_title"),
                 style: TextStyle(
                   fontSize: 12,
                   height: 1.25,
                   fontWeight: FontWeight.w600,
-                  color: onSurface.withOpacity(0.88),
+                  color: onSurface.withValues(alpha: 0.88),
                 ),
               ),
 
               const SizedBox(height: 18),
 
-              // Error chip (premium)
+              // Error chip
               if (_error != null && _error!.trim().isNotEmpty) ...[
                 _ErrorPill(text: _error!),
                 const SizedBox(height: 14),
               ],
 
               // Identifier
-              AuthUI.label(tr("auth.identifier"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(tr("auth.identifier"), color: onSurface.withValues(alpha: 0.92)),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _identifier,
@@ -284,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 14),
 
               // Password
-              AuthUI.label(tr("auth.password"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(tr("auth.password"), color: onSurface.withValues(alpha: 0.92)),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _password,
@@ -300,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                         : HugeIcons.strokeRoundedView,
                     size: 14,
                     strokeWidth: 2,
-                    color: onSurface.withOpacity(0.65),
+                    color: onSurface.withValues(alpha: 0.65),
                   ),
                 ),
                 validator: (v) => (v == null || v.isEmpty)
@@ -326,11 +326,11 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       tr("auth.forgot_password"),
                       style: TextStyle(
-                        color: onSurface.withOpacity(0.78),
+                        color: onSurface.withValues(alpha: 0.78),
                         fontWeight: FontWeight.w800,
                         fontSize: 12,
                         decoration: TextDecoration.underline,
-                        decorationColor: onSurface.withOpacity(0.65),
+                        decorationColor: onSurface.withValues(alpha: 0.65),
                       ),
                     ),
                   ),
@@ -389,7 +389,7 @@ class _LoginPageState extends State<LoginPage> {
                   Text(
                     "${tr("auth.no_account")} ",
                     style: TextStyle(
-                      color: onSurface.withOpacity(0.60),
+                      color: onSurface.withValues(alpha: 0.60),
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                     ),
@@ -442,8 +442,7 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            // ✅ no border / no shadow / no gradient (premium clean glass)
-            color: scheme.surface.withOpacity(0.55),
+            color: scheme.surface.withValues(alpha: 0.55),
           ),
           child: child,
         ),
@@ -484,8 +483,8 @@ class _GlassFieldState extends State<_GlassField> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final borderColor = _focused
-        ? scheme.primary.withOpacity(0.32)
-        : scheme.onSurface.withOpacity(0.10);
+        ? scheme.primary.withValues(alpha: 0.32)
+        : scheme.onSurface.withValues(alpha: 0.10);
 
     return Focus(
       onFocusChange: (v) => setState(() => _focused = v),
@@ -497,7 +496,7 @@ class _GlassFieldState extends State<_GlassField> {
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
             decoration: BoxDecoration(
-              color: scheme.surface.withOpacity(0.55),
+              color: scheme.surface.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: borderColor, width: 1),
             ),
@@ -509,7 +508,7 @@ class _GlassFieldState extends State<_GlassField> {
               cursorColor: scheme.primary,
               style: TextStyle(
                 fontSize: 12,
-                color: scheme.onSurface.withOpacity(0.92),
+                color: scheme.onSurface.withValues(alpha: 0.92),
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
@@ -517,7 +516,7 @@ class _GlassFieldState extends State<_GlassField> {
                 hintStyle: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: scheme.onSurface.withOpacity(0.45),
+                  color: scheme.onSurface.withValues(alpha: 0.45),
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 border: InputBorder.none,
@@ -529,7 +528,7 @@ class _GlassFieldState extends State<_GlassField> {
                       icon: widget.prefixIcon,
                       size: 14,
                       strokeWidth: 2,
-                      color: scheme.onSurface.withOpacity(0.65),
+                      color: scheme.onSurface.withValues(alpha: 0.65),
                     ),
                   ),
                 ),
@@ -575,7 +574,7 @@ class _RememberMe extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: onSurface.withOpacity(0.28),
+                  color: onSurface.withValues(alpha: 0.28),
                   width: 1.4,
                 ),
                 color: value ? scheme.primary : Colors.transparent,
@@ -588,7 +587,7 @@ class _RememberMe extends StatelessWidget {
             Text(
               tr("auth.remember_me"),
               style: TextStyle(
-                color: onSurface.withOpacity(0.76),
+                color: onSurface.withValues(alpha: 0.76),
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
               ),
@@ -642,10 +641,10 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
               end: Alignment.bottomRight,
               colors: [
                 scheme.primary,
-                scheme.primary.withOpacity(0.88),
+                scheme.primary.withValues(alpha: 0.88),
               ],
             ),
-            boxShadow: const [], // ✅ no hover/click shadow
+            boxShadow: const [],
           ),
           child: Center(
             child: AnimatedSwitcher(
@@ -700,8 +699,8 @@ class _IconCircleButton extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: scheme.surface.withOpacity(0.55),
-                border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+                color: scheme.surface.withValues(alpha: 0.55),
+                border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -740,24 +739,38 @@ class _GoogleButton extends StatelessWidget {
       child: OutlinedButton(
         onPressed: busy ? null : onTap,
         style: OutlinedButton.styleFrom(
-          backgroundColor: scheme.surface.withOpacity(0.45),
-          side: BorderSide(color: scheme.onSurface.withOpacity(0.10)),
+          backgroundColor: scheme.surface.withValues(alpha: 0.45),
+          side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.10)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const _GoogleMark(),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: scheme.onSurface.withOpacity(0.85),
-                fontWeight: FontWeight.w900,
-                fontSize: 14,
-              ),
-            ),
-          ],
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: busy
+              ? SizedBox(
+                  key: const ValueKey("spinner"),
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                  ),
+                )
+              : Row(
+                  key: const ValueKey("label"),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const _GoogleMark(),
+                    const SizedBox(width: 12),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: scheme.onSurface.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -779,8 +792,8 @@ class _ErrorPill extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: scheme.error.withOpacity(0.10),
-            border: Border.all(color: scheme.error.withOpacity(0.25)),
+            color: scheme.error.withValues(alpha: 0.10),
+            border: Border.all(color: scheme.error.withValues(alpha: 0.25)),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Row(
@@ -793,7 +806,7 @@ class _ErrorPill extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: scheme.onSurface.withOpacity(0.90),
+                    color: scheme.onSurface.withValues(alpha: 0.90),
                   ),
                 ),
               ),
@@ -852,7 +865,7 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
               height: 6 + (b * 4),
               width: 6 + (b * 4),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
+                color: Colors.white.withValues(alpha: 0.75 + b * 0.25),
                 borderRadius: BorderRadius.circular(999),
               ),
             );
@@ -872,30 +885,70 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
   }
 }
 
+/* -------------------------------- Google Brand Mark -------------------------------- */
+
 class _GoogleMark extends StatelessWidget {
   const _GoogleMark();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: 26,
-      height: 26,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
-        color: scheme.surface.withOpacity(0.55),
-      ),
-      child: Center(
-        child: Text(
-          "G",
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            color: scheme.onSurface.withOpacity(0.85),
-          ),
-        ),
-      ),
+    return const SizedBox(
+      width: 22,
+      height: 22,
+      child: CustomPaint(painter: _GoogleGPainter()),
     );
   }
+}
+
+class _GoogleGPainter extends CustomPainter {
+  static const _blue = Color(0xFF4285F4);
+  static const _red = Color(0xFFEA4335);
+  static const _yellow = Color(0xFFFBBC05);
+  static const _green = Color(0xFF34A853);
+
+  const _GoogleGPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = Offset(size.width / 2, size.height / 2);
+    final r = size.width / 2;
+    final rect = Rect.fromCircle(center: c, radius: r);
+
+    // Clip everything to the outer circle so bar edges are clean
+    canvas.save();
+    canvas.clipPath(Path()..addOval(rect));
+
+    void arc(Color color, double startAngle, double sweepAngle) {
+      final path = Path()
+        ..moveTo(c.dx, c.dy)
+        ..arcTo(rect, startAngle, sweepAngle, false)
+        ..close();
+      canvas.drawPath(path, Paint()..color = color);
+    }
+
+    // Four color segments (0 rad = 3 o'clock, clockwise positive)
+    // Blue:   -30° → 90°   (120° sweep) — top-right
+    // Red:     90° → 210°  (120° sweep) — left
+    // Yellow: 210° → 270°  ( 60° sweep) — bottom-left
+    // Green:  270° → 330°  ( 60° sweep) — bottom-right
+    arc(_blue,   -math.pi / 6,       2 * math.pi / 3);
+    arc(_red,     math.pi / 2,       2 * math.pi / 3);
+    arc(_yellow,  7 * math.pi / 6,   math.pi / 3);
+    arc(_green,   3 * math.pi / 2,   math.pi / 3);
+
+    // Blue horizontal bar — the crossbar of the G (from center rightward)
+    final barHalf = r * 0.28;
+    canvas.drawRect(
+      Rect.fromLTRB(c.dx, c.dy - barHalf, r * 2, c.dy + barHalf),
+      Paint()..color = _blue,
+    );
+
+    // Inner donut hole (white)
+    canvas.drawCircle(c, r * 0.58, Paint()..color = Colors.white);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
