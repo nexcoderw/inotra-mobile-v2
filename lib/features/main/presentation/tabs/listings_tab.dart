@@ -37,8 +37,6 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
   Timer? _debounce;
   List<_CategoryFilter> _categoryFilters = [];
 
-  double _scrollOffset = 0;
-
   late AnimationController _entranceCtrl;
   late Animation<double> _entranceFade;
   late Animation<Offset> _entranceSlide;
@@ -111,7 +109,6 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
     final show = px > 320;
     if (show != _showBackToTop) setState(() => _showBackToTop = show);
 
-    setState(() => _scrollOffset = px);
   }
 
   Future<void> _fetchPage({required bool reset}) async {
@@ -259,14 +256,6 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
 
     final categories = _buildCategories(lang);
 
-    // Title shrinks after 60 px scroll
-    final titleT = (_scrollOffset / 60.0).clamp(0.0, 1.0);
-    final titleOpacity = 1.0 - titleT;
-    final titleHeight = 44.0 * (1.0 - titleT);
-
-    // Floating header appears after 80 px scroll
-    final floatingVisible = _scrollOffset > 80;
-
     return SafeArea(
       child: FadeTransition(
         opacity: _entranceFade,
@@ -282,91 +271,38 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                   controller: _scrollCtrl,
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    // Title (collapses on scroll)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
-                        child: SizedBox(
-                          height: titleHeight,
-                          child: Opacity(
-                            opacity: titleOpacity,
-                            child: Text(
-                              t(lang, "nav.listings"),
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.6,
-                                height: 1.0,
-                              ),
-                            ),
-                          ),
-                        ),
+                    // ── Sticky title + search header ──────────────────
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _ListingsHeaderDelegate(
+                        isTablet: isTablet,
+                        isDark: isDark,
+                        scheme: scheme,
+                        lang: lang,
+                        searchCtrl: _searchCtrl,
+                        onSearchChanged: _onSearchChanged,
+                        onClear: () {
+                          _searchCtrl.clear();
+                          _onSearchChanged("");
+                        },
                       ),
                     ),
 
-                    // Inline search bar
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 10, hPad, 12),
-                        child: _PremiumSearchBar(
-                          controller: _searchCtrl,
-                          hintText: t(lang, "packages.search_hint"),
-                          onChanged: _onSearchChanged,
-                          onClear: () {
-                            _searchCtrl.clear();
-                            _onSearchChanged("");
-                          },
-                          isDark: isDark,
-                          scheme: scheme,
-                        ),
+                    // ── Sticky category rail ──────────────────────────
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _CategoryRailDelegate(
+                        categories: categories,
+                        selectedCategory: _selectedCategory,
+                        onSelect: (v) {
+                          HapticFeedback.selectionClick();
+                          setState(() => _selectedCategory = v);
+                        },
+                        isTablet: isTablet,
+                        isDark: isDark,
+                        scheme: scheme,
                       ),
                     ),
-
-                    // Category rail
-                    if (categories.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              left: hPad, right: hPad, bottom: 14),
-                          child: ScrollConfiguration(
-                            behavior: _NoGlowBehavior(),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: categories
-                                    .asMap()
-                                    .entries
-                                    .map((entry) {
-                                  final i = entry.key;
-                                  final cat = entry.value;
-                                  final selected =
-                                      _selectedCategory == cat.value;
-                                  return Padding(
-                                    padding: EdgeInsets.only(
-                                        right: i < categories.length - 1
-                                            ? 8
-                                            : 0),
-                                    child: _CategoryPill(
-                                      label: cat.label,
-                                      selected: selected,
-                                      isDark: isDark,
-                                      scheme: scheme,
-                                      onTap: () {
-                                        HapticFeedback.selectionClick();
-                                        setState(() =>
-                                            _selectedCategory =
-                                                cat.value);
-                                      },
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
 
                     // Skeletons
                     if (_loading && _items.isEmpty)
@@ -463,41 +399,6 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                 ),
               ),
 
-              // ─── Floating sticky header (slides in after 80px) ────────
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                top: floatingVisible ? 0 : -80,
-                left: 0,
-                right: 0,
-                child: IgnorePointer(
-                  ignoring: !floatingVisible,
-                  child: ClipRect(
-                    child: BackdropFilter(
-                      filter:
-                          ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                      child: Container(
-                        color: scheme.surface
-                            .withOpacity(isDark ? 0.88 : 0.93),
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
-                        child: _PremiumSearchBar(
-                          controller: _searchCtrl,
-                          hintText: t(lang, "packages.search_hint"),
-                          onChanged: _onSearchChanged,
-                          onClear: () {
-                            _searchCtrl.clear();
-                            _onSearchChanged("");
-                          },
-                          isDark: isDark,
-                          scheme: scheme,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
               // ─── Back to top ──────────────────────────────────────────
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
@@ -529,6 +430,170 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
       _CategoryFilter(label: t(lang, "common.all"), value: null),
       ...set.map((c) => _CategoryFilter(label: c, value: c)),
     ];
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   LISTINGS HEADER DELEGATE (title + search, pinned)
+───────────────────────────────────────────────────────────────────────────── */
+
+class _ListingsHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final bool isTablet;
+  final bool isDark;
+  final ColorScheme scheme;
+  final String lang;
+  final TextEditingController searchCtrl;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClear;
+
+  const _ListingsHeaderDelegate({
+    required this.isTablet,
+    required this.isDark,
+    required this.scheme,
+    required this.lang,
+    required this.searchCtrl,
+    required this.onSearchChanged,
+    required this.onClear,
+  });
+
+  @override
+  double get minExtent => 68.0;
+  @override
+  double get maxExtent => 132.0;
+
+  @override
+  bool shouldRebuild(_ListingsHeaderDelegate old) =>
+      isTablet != old.isTablet ||
+      isDark != old.isDark ||
+      lang != old.lang ||
+      searchCtrl.text != old.searchCtrl.text;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final range = maxExtent - minExtent;
+    final shrinkT = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
+    final hPad = isTablet ? 24.0 : 16.0;
+
+    return SizedBox.expand(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: scheme.surface.withOpacity(isDark ? 0.85 : 0.92),
+            padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: (28.0 * (1.0 - shrinkT)).clamp(0.0, 28.0),
+                  child: AnimatedOpacity(
+                    opacity: (1.0 - shrinkT * 1.6).clamp(0.0, 1.0),
+                    duration: Duration.zero,
+                    child: Transform.translate(
+                      offset: Offset(0, -shrinkT * 14),
+                      child: Text(
+                        t(lang, "nav.listings"),
+                        style: TextStyle(
+                          fontSize: (28 - shrinkT * 6).clamp(22.0, 28.0),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.6,
+                          height: 1.0,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: (10.0 * (1.0 - shrinkT)).clamp(0.0, 10.0)),
+                _PremiumSearchBar(
+                  controller: searchCtrl,
+                  hintText: t(lang, "packages.search_hint"),
+                  onChanged: onSearchChanged,
+                  onClear: onClear,
+                  isDark: isDark,
+                  scheme: scheme,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CATEGORY RAIL DELEGATE (pinned)
+───────────────────────────────────────────────────────────────────────────── */
+
+class _CategoryRailDelegate extends SliverPersistentHeaderDelegate {
+  final List<_CategoryFilter> categories;
+  final String? selectedCategory;
+  final ValueChanged<String?> onSelect;
+  final bool isTablet;
+  final bool isDark;
+  final ColorScheme scheme;
+
+  const _CategoryRailDelegate({
+    required this.categories,
+    required this.selectedCategory,
+    required this.onSelect,
+    required this.isTablet,
+    required this.isDark,
+    required this.scheme,
+  });
+
+  @override
+  double get minExtent => 54.0;
+  @override
+  double get maxExtent => 54.0;
+
+  @override
+  bool shouldRebuild(_CategoryRailDelegate old) =>
+      selectedCategory != old.selectedCategory ||
+      categories.length != old.categories.length;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final hPad = isTablet ? 24.0 : 16.0;
+
+    return SizedBox.expand(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: scheme.surface.withOpacity(isDark ? 0.82 : 0.90),
+            padding: EdgeInsets.only(left: hPad, right: hPad, bottom: 8),
+            child: ScrollConfiguration(
+              behavior: _NoGlowBehavior(),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(categories.length, (i) {
+                    final cat = categories[i];
+                    final selected = selectedCategory == cat.value;
+                    return Padding(
+                      padding: EdgeInsets.only(
+                          right: i < categories.length - 1 ? 8 : 0),
+                      child: _CategoryPill(
+                        label: cat.label,
+                        selected: selected,
+                        isDark: isDark,
+                        scheme: scheme,
+                        onTap: () => onSelect(cat.value),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
