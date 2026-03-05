@@ -143,13 +143,13 @@ class _BubbleBody extends StatelessWidget {
   Widget _solidBubble(Color textColor, Color failedTextColor) {
     return Container(
       decoration: BoxDecoration(
-        color: message.failed ? (isDark ? const Color(0xFF3D1515) : const Color(0xFFFFE5E5)) : const Color(0xFF007AFF),
+        color: message.failed ? (isDark ? const Color(0xFF3D1515) : const Color(0xFFFFE5E5)) : scheme.primary,
         borderRadius: radius,
         boxShadow: [
           BoxShadow(
             color: message.failed
                 ? Colors.red.withValues(alpha: 0.18)
-                : const Color(0xFF007AFF).withValues(alpha: isDark ? 0.25 : 0.20),
+                : scheme.primary.withValues(alpha: isDark ? 0.25 : 0.20),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -265,7 +265,7 @@ class ConvSharedCard extends StatelessWidget {
     final cardBg = isMine
         ? Colors.white.withValues(alpha: 0.14)
         : (isDark ? Colors.white.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.04));
-    final iconColor = isMine ? Colors.white : const Color(0xFF007AFF);
+    final iconColor = isMine ? Colors.white : scheme.primary;
     final labelColor = isMine
         ? Colors.white.withValues(alpha: 0.65)
         : scheme.onSurface.withValues(alpha: 0.42);
