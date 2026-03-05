@@ -257,6 +257,9 @@ const translations = {
     "chat.you": "You",
     "chat.load_error": "Failed to load conversations",
     "chat.yesterday": "Yesterday",
+    "chat.today": "Today",
+    "chat.no_messages": "No messages yet",
+    "chat.no_messages_sub": "Say hello to start the conversation",
   },
   "rw": {
     "settings.title": "Amagenamiterere",
@@ -504,6 +507,9 @@ const translations = {
     "chat.you": "Wewe",
     "chat.load_error": "Byanze gupakuliwa",
     "chat.yesterday": "Ejo",
+    "chat.today": "Uyu munsi",
+    "chat.no_messages": "Nta butumwa buhari",
+    "chat.no_messages_sub": "Bwirwa kugirango utangire ikiganiro",
   },
   "fr": {
     "settings.title": "Paramètres",
@@ -751,6 +757,9 @@ const translations = {
     "chat.you": "Vous",
     "chat.load_error": "Échec du chargement",
     "chat.yesterday": "Hier",
+    "chat.today": "Aujourd'hui",
+    "chat.no_messages": "Aucun message pour l'instant",
+    "chat.no_messages_sub": "Dites bonjour pour commencer la conversation",
   },
   "es": {
     "settings.title": "Configuración",
@@ -998,6 +1007,9 @@ const translations = {
     "chat.you": "Tú",
     "chat.load_error": "Error al cargar conversaciones",
     "chat.yesterday": "Ayer",
+    "chat.today": "Hoy",
+    "chat.no_messages": "Aún no hay mensajes",
+    "chat.no_messages_sub": "Di hola para iniciar la conversación",
   },
   "de": {
     "settings.title": "Einstellungen",
@@ -1245,6 +1257,9 @@ const translations = {
     "chat.you": "Du",
     "chat.load_error": "Laden fehlgeschlagen",
     "chat.yesterday": "Gestern",
+    "chat.today": "Heute",
+    "chat.no_messages": "Noch keine Nachrichten",
+    "chat.no_messages_sub": "Sag Hallo, um das Gespräch zu beginnen",
   },
 };
 
