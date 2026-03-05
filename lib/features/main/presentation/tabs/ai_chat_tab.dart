@@ -228,7 +228,7 @@ class _HeroBanner extends StatelessWidget {
           const SizedBox(width: 8),
           _GlassButton(
             label: t(lang, "nav.ai_chat"),
-            icon: HugeIcons.strokeRoundedSend03,
+            icon: HugeIcons.strokeRoundedAirplane02,
             onTap: () {
               // placeholder for starting a new AI chat
             },
@@ -503,7 +503,7 @@ class _EmptyState extends StatelessWidget {
           ),
           child: Center(
             child: HugeIcon(
-              icon: HugeIcons.strokeRoundedChatSearch02,
+              icon: HugeIcons.strokeRoundedSearch01,
               size: 28,
               color: scheme.onSurface.withOpacity(0.65),
             ),
