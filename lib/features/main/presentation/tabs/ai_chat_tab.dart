@@ -12,6 +12,8 @@ import "../../../../core/services/auth_session.dart";
 import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../pages/ai_chat_conversations_page.dart";
+import "../pages/ai_chat_thread_page.dart";
 
 class AiChatTab extends StatefulWidget {
   const AiChatTab({super.key});
@@ -229,7 +231,10 @@ class _HeroBanner extends StatelessWidget {
           _GlassButton(
             label: t(lang, "nav.ai_chat"),
             icon: HugeIcons.strokeRoundedAirplane02,
-            onTap: () => Navigator.pushNamed(context, "/ai-chat-conversations"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AiChatConversationsPage()),
+            ),
           ),
         ],
       ),
@@ -254,7 +259,15 @@ class _ThreadCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-          // TODO: navigate to chat details page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AiChatThreadPage(
+                threadId: thread.id,
+                title: thread.title,
+              ),
+            ),
+          );
         },
         child: Padding(
           padding: const EdgeInsets.all(14),
