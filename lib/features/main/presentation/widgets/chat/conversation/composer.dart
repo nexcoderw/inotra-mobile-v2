@@ -166,13 +166,13 @@ class _AttachButton extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: active
-              ? const Color(0xFF007AFF).withValues(alpha: 0.16)
+              ? scheme.primary.withValues(alpha: 0.16)
               : (isDark
                   ? Colors.white.withValues(alpha: 0.08)
                   : Colors.black.withValues(alpha: 0.06)),
           border: Border.all(
             color: active
-                ? const Color(0xFF007AFF).withValues(alpha: 0.35)
+                ? scheme.primary.withValues(alpha: 0.35)
                 : (isDark
                     ? Colors.white.withValues(alpha: 0.10)
                     : Colors.black.withValues(alpha: 0.08)),
@@ -184,7 +184,7 @@ class _AttachButton extends StatelessWidget {
             icon: HugeIcons.strokeRoundedAttachment02,
             size: 17,
             color: active
-                ? const Color(0xFF007AFF)
+                ? scheme.primary
                 : scheme.onSurface.withValues(alpha: 0.42),
           ),
         ),
@@ -285,15 +285,15 @@ class _SendButton extends StatelessWidget {
       transitionBuilder: (child, anim) =>
           ScaleTransition(scale: anim, child: child),
       child: busy
-          ? const SizedBox(
-              key: ValueKey("busy"),
+          ? SizedBox(
+              key: const ValueKey("busy"),
               width: 40,
               height: 40,
               child: Padding(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFF007AFF),
+                  color: scheme.primary,
                 ),
               ),
             )
@@ -307,14 +307,14 @@ class _SendButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: enabled
-                      ? const Color(0xFF007AFF)
+                      ? scheme.primary
                       : (isDark
                           ? Colors.white.withValues(alpha: 0.10)
                           : Colors.black.withValues(alpha: 0.07)),
                   boxShadow: enabled
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF007AFF).withValues(alpha: 0.35),
+                            color: scheme.primary.withValues(alpha: 0.35),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -364,7 +364,7 @@ class ConvAttachmentChip extends StatelessWidget {
             ? t(lang, "chat.shared_package")
             : t(lang, "chat.shared_listing");
 
-    const accent = Color(0xFF007AFF);
+    final accent = scheme.primary;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
@@ -379,7 +379,7 @@ class ConvAttachmentChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const HugeIcon(
+          HugeIcon(
             icon: HugeIcons.strokeRoundedAttachment02,
             size: 13,
             color: accent,
@@ -390,7 +390,7 @@ class ConvAttachmentChip extends StatelessWidget {
               shared.title != null ? "$typeLabel · ${shared.title}" : typeLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: accent,
@@ -403,7 +403,7 @@ class ConvAttachmentChip extends StatelessWidget {
             child: Container(
               width: 18,
               height: 18,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: accent,
               ),
