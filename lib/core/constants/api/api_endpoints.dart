@@ -5,3 +5,4 @@ export "package_endpoints.dart";
 export "my_listing_endpoints.dart";
 export "my_event_endpoints.dart";
 export "highlight_endpoints.dart";
+export "chat_endpoints.dart";
