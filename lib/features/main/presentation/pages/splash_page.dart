@@ -41,7 +41,7 @@ class _SplashPageState extends State<SplashPage> {
             ),
             const SizedBox(height: 24),
             Text(
-              "INOTRA By Navig8",
+              "By Navig8",
               style: TextStyle(
                 fontFamily: "DMSans",
                 fontSize: 16,
