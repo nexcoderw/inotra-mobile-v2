@@ -1,9 +1,10 @@
 import "dart:convert";
-import "dart:io";
+import "dart:io" show Platform;
 import "dart:math" as math;
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:flutter/foundation.dart" show kIsWeb;
 import "package:google_sign_in/google_sign_in.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
@@ -44,10 +45,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    final iosClient = (!kIsWeb && Platform.isIOS)
+        ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
+        : null;
     _googleSignIn = GoogleSignIn(
-      clientId: Platform.isIOS
-          ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
-          : null,
+      clientId: iosClient,
       serverClientId: Env.googleClientId, // your Web client ID from .env
       scopes: const ["email", "profile", "openid"],
     );
