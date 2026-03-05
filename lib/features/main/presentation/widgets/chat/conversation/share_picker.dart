@@ -307,10 +307,10 @@ class _ConvSharePickerSheetState extends State<ConvSharePickerSheet> {
               // Results
               Expanded(
                 child: _fetching
-                    ? const Center(
+                    ? Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Color(0xFF007AFF),
+                          color: scheme.primary,
                         ),
                       )
                     : _options.isEmpty
@@ -380,14 +380,14 @@ class _TabChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: active
-              ? const Color(0xFF007AFF)
+              ? scheme.primary
               : (isDark
                   ? Colors.white.withValues(alpha: 0.07)
                   : Colors.black.withValues(alpha: 0.06)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: active
-                ? const Color(0xFF007AFF)
+                ? scheme.primary
                 : (isDark
                     ? Colors.white.withValues(alpha: 0.10)
                     : Colors.black.withValues(alpha: 0.09)),
@@ -449,7 +449,7 @@ class _ShareOptionTile extends StatelessWidget {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: const Color(0xFF007AFF)
+                color: scheme.primary
                     .withValues(alpha: isDark ? 0.15 : 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -457,7 +457,7 @@ class _ShareOptionTile extends StatelessWidget {
                 child: HugeIcon(
                   icon: _icon(),
                   size: 20,
-                  color: const Color(0xFF007AFF),
+                  color: scheme.primary,
                 ),
               ),
             ),
