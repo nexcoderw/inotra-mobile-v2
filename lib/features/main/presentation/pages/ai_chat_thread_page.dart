@@ -43,24 +43,40 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
 
   bool _loading = true;
   bool _sending = false;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _page = 1;
+  static const int _pageSize = 50;
   String? _error;
   SharedItem? _pendingShared;
 
   @override
   void initState() {
     super.initState();
+    _scrollCtrl.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
   }
 
   @override
   void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+    if (_scrollCtrl.position.pixels <= 80 &&
+        !_loadingMore &&
+        _hasMore &&
+        !_loading) {
+      _loadMore();
+    }
+  }
+
+  // ── Fetch (initial / refresh) ─────────────────────────────────────────────
 
   Future<void> _fetch() async {
     final token = AuthSession.instance.value.accessToken;
@@ -69,11 +85,11 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
       return;
     }
 
-    if (mounted) setState(() { _loading = true; _error = null; });
+    if (mounted) setState(() { _loading = true; _error = null; _page = 1; _hasMore = true; });
 
     try {
       final uri = Api.url(ChatEndpoints.messages(widget.threadId))
-          .replace(queryParameters: {"page": "1", "page_size": "50"});
+          .replace(queryParameters: {"page": "1", "page_size": "$_pageSize"});
       final resp = await http.get(uri, headers: {
         "Accept": "application/json",
         "Authorization": "Bearer $token",
@@ -84,8 +100,10 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body);
         List raw = const [];
+        bool hasNext = false;
         if (decoded is Map) {
           raw = (decoded["results"] as List?) ?? const [];
+          hasNext = decoded["next"] != null;
         } else if (decoded is List) {
           raw = decoded;
         }
@@ -103,6 +121,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
             ..clear()
             ..addAll(parsed);
           _loading = false;
+          _hasMore = hasNext;
+          _page = 1;
         });
         _scrollToBottom();
         _markRead(token);
@@ -114,6 +134,79 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
       }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = e.toString(); });
+    }
+  }
+
+  // ── Load more (older messages on scroll to top) ───────────────────────────
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore || _loading) return;
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) return;
+
+    setState(() => _loadingMore = true);
+
+    final nextPage = _page + 1;
+    try {
+      final uri = Api.url(ChatEndpoints.messages(widget.threadId))
+          .replace(queryParameters: {
+        "page": "$nextPage",
+        "page_size": "$_pageSize",
+      });
+      final resp = await http.get(uri, headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      });
+
+      if (!mounted) return;
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
+        List raw = const [];
+        bool hasNext = false;
+        if (decoded is Map) {
+          raw = (decoded["results"] as List?) ?? const [];
+          hasNext = decoded["next"] != null;
+        } else if (decoded is List) {
+          raw = decoded;
+        }
+
+        final older = raw
+            .whereType<Map>()
+            .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
+            .toList()
+            .reversed
+            .toList();
+
+        if (older.isEmpty) {
+          setState(() { _loadingMore = false; _hasMore = false; });
+          return;
+        }
+
+        // Save scroll offset so we don't jump after prepending
+        final prevExtent = _scrollCtrl.hasClients
+            ? _scrollCtrl.position.maxScrollExtent
+            : 0.0;
+
+        setState(() {
+          _messages.insertAll(0, older);
+          _page = nextPage;
+          _hasMore = hasNext;
+          _loadingMore = false;
+        });
+
+        // Restore position after layout so the view doesn't jump
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollCtrl.hasClients) {
+            final newExtent = _scrollCtrl.position.maxScrollExtent;
+            _scrollCtrl.jumpTo(newExtent - prevExtent);
+          }
+        });
+      } else {
+        if (mounted) setState(() => _loadingMore = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -303,10 +396,28 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
                           )
                         : _messages.isEmpty
                             ? ConvEmptyState(lang: lang)
-                            : ConvMessageList(
-                                messages: _messages,
-                                scrollCtrl: _scrollCtrl,
-                                lang: lang,
+                            : Column(
+                                children: [
+                                  if (_loadingMore)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: scheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  Expanded(
+                                    child: ConvMessageList(
+                                      messages: _messages,
+                                      scrollCtrl: _scrollCtrl,
+                                      lang: lang,
+                                    ),
+                                  ),
+                                ],
                               ),
               ),
               ConvComposer(
