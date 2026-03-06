@@ -297,16 +297,32 @@ class _HeroBanner extends StatelessWidget {
         child: Stack(
           children: [
             SizedBox(
-              height: 260,
+              height: 300,
               width: double.infinity,
               child: hasUrl
-                  ? Image.network(
-                      url!.trim(),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          _BannerFallback(scheme: scheme),
-                      loadingBuilder: (_, child, evt) =>
-                          evt == null ? child : _BannerFallback(scheme: scheme),
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Blurred background fills letterbox areas
+                        ImageFiltered(
+                          imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                          child: Image.network(
+                            url!.trim(),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                        ColoredBox(color: Colors.black.withValues(alpha: 0.35)),
+                        // Full image, no cropping
+                        Image.network(
+                          url!.trim(),
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) =>
+                              _BannerFallback(scheme: scheme),
+                          loadingBuilder: (_, child, evt) =>
+                              evt == null ? child : _BannerFallback(scheme: scheme),
+                        ),
+                      ],
                     )
                   : _BannerFallback(scheme: scheme),
             ),
