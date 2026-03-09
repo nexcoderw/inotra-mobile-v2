@@ -1,8 +1,10 @@
 import "dart:async";
 import "dart:convert";
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
@@ -27,7 +29,6 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
   List<_Review> _reviews = const [];
   final _controller = TextEditingController();
 
-  // Optional rating (UI only). If your API accepts rating, include it in body.
   int _selectedRating = 5;
 
   late final AnimationController _skeletonCtrl;
@@ -154,33 +155,70 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final authed = AuthSession.instance.value.isAuthenticated;
-
-    final width = MediaQuery.sizeOf(context).width;
-    final isTablet = width >= 700;
-
-    // Premium minimal spacing
-    const pagePad = EdgeInsets.fromLTRB(16, 16, 16, 20);
 
     return RefreshIndicator(
       onRefresh: _fetch,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePad,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SectionHeaderCard(
-              title: t(lang, "listings.reviews_title"),
-              subtitle: _loading
-                  ? t(lang, "auth.processing")
-                  : _reviews.isEmpty
-                      ? t(lang, "listings.reviews_empty")
-                      : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
-              leading: Icons.rate_review_outlined,
-              trailing: _loading
-                  ? SizedBox(
+            // Header card
+            _GlassSection(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedCommentAdd01,
+                      size: 16,
+                      color: scheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t(lang, "listings.reviews_title"),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                            color: scheme.onSurface.withValues(alpha: 0.92),
+                            letterSpacing: -0.1,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _loading
+                              ? t(lang, "auth.processing")
+                              : _reviews.isEmpty
+                                  ? t(lang, "listings.reviews_empty")
+                                  : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: scheme.onSurface.withValues(alpha: 0.55),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  if (_loading)
+                    SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
@@ -188,40 +226,43 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
                         color: scheme.primary,
                       ),
                     )
-                  : _SoftIconButton(
-                      tooltip: "Refresh",
-                      icon: Icons.refresh_rounded,
+                  else
+                    GestureDetector(
                       onTap: _fetch,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest
+                              .withValues(alpha: 0.30),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedRefresh,
+                          size: 16,
+                          color: scheme.onSurface.withValues(alpha: 0.70),
+                        ),
+                      ),
                     ),
-              isTablet: isTablet,
+                ],
+              ),
             ),
 
             const SizedBox(height: 12),
 
             if (_loading) ...[
-              _ReviewsSkeleton(
-                controller: _skeletonCtrl,
-                isTablet: isTablet,
-              ),
+              _ReviewsSkeleton(controller: _skeletonCtrl),
             ] else if (_error != null) ...[
-              _ErrorBanner(
-                message: _error!,
-                onRetry: _fetch,
-              ),
+              _ErrorBanner(message: _error!, onRetry: _fetch),
             ] else if (_reviews.isEmpty) ...[
-              _EmptyStateCard(
-                label: t(lang, "listings.reviews_empty"),
-              ),
+              _EmptyStateCard(label: t(lang, "listings.reviews_empty")),
             ] else ...[
-              _ReviewsListCard(
-                reviews: _reviews,
-                isTablet: isTablet,
-              ),
+              _ReviewsListCard(reviews: _reviews),
             ],
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-            // Composer
             if (authed)
               _ReviewComposer(
                 controller: _controller,
@@ -229,22 +270,21 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
                 rating: _selectedRating,
                 onRatingChanged: (v) => setState(() => _selectedRating = v),
                 onSubmit: _submit,
-                isTablet: isTablet,
               )
             else
               _MutedInfoCard(
-                icon: Icons.lock_outline_rounded,
+                icon: HugeIcons.strokeRoundedLockKey,
                 title: t(lang, "listings.reviews_add"),
                 subtitle: "Log in to write a review.",
               ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Small “premium” hint at the bottom (optional)
             Text(
               "Tip: Pull down to refresh.",
-              style: textTheme.bodySmall?.copyWith(
-                color: scheme.onSurface.withOpacity(0.55),
+              style: TextStyle(
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.40),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -255,162 +295,53 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
   }
 }
 
-/* ============================= UI - CLEAN MINIMAL ============================= */
+/* ========================== Glass card ========================== */
 
-class _SurfaceCard extends StatelessWidget {
+class _GlassSection extends StatelessWidget {
   final Widget child;
-  final EdgeInsets padding;
-
-  const _SurfaceCard({
-    required this.child,
-    this.padding = const EdgeInsets.all(14),
-  });
+  final EdgeInsets? padding;
+  const _GlassSection({required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outlineVariant.withOpacity(0.75)),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _SectionHeaderCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData leading;
-  final Widget trailing;
-  final bool isTablet;
-
-  const _SectionHeaderCard({
-    required this.title,
-    required this.subtitle,
-    required this.leading,
-    required this.trailing,
-    required this.isTablet,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return _SurfaceCard(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            height: 38,
-            width: 38,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: scheme.primary.withOpacity(0.10),
-              border: Border.all(color: scheme.outlineVariant),
-            ),
-            child: Center(
-              child: Icon(
-                leading,
-                size: 18,
-                color: scheme.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: isTablet ? 18 : 16,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurface.withOpacity(0.62),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          trailing,
-        ],
-      ),
-    );
-  }
-}
-
-class _SoftIconButton extends StatelessWidget {
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _SoftIconButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
-          width: 40,
-          height: 40,
+          width: double.infinity,
+          padding: padding ?? const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            color: scheme.surfaceVariant.withOpacity(0.55),
-            border: Border.all(color: scheme.outlineVariant),
+            color: scheme.surface.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.08),
+              ),
+            ],
           ),
-          child: Center(
-            child: Icon(
-              icon,
-              size: 18,
-              color: scheme.onSurface.withOpacity(0.85),
-            ),
-          ),
+          child: child,
         ),
       ),
     );
   }
 }
 
+/* ========================== Reviews list ========================== */
+
 class _ReviewsListCard extends StatelessWidget {
   final List<_Review> reviews;
-  final bool isTablet;
-
-  const _ReviewsListCard({
-    required this.reviews,
-    required this.isTablet,
-  });
+  const _ReviewsListCard({required this.reviews});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return _SurfaceCard(
+    return _GlassSection(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: ListView.separated(
         padding: EdgeInsets.zero,
@@ -421,11 +352,10 @@ class _ReviewsListCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Divider(
             height: 1,
-            thickness: 1,
-            color: scheme.outlineVariant.withOpacity(0.7),
+            color: scheme.onSurface.withValues(alpha: 0.08),
           ),
         ),
-        itemBuilder: (_, i) => _ReviewTile(review: reviews[i], isTablet: isTablet),
+        itemBuilder: (_, i) => _ReviewTile(review: reviews[i]),
       ),
     );
   }
@@ -433,8 +363,7 @@ class _ReviewsListCard extends StatelessWidget {
 
 class _ReviewTile extends StatelessWidget {
   final _Review review;
-  final bool isTablet;
-  const _ReviewTile({required this.review, required this.isTablet});
+  const _ReviewTile({required this.review});
 
   @override
   Widget build(BuildContext context) {
@@ -443,10 +372,7 @@ class _ReviewTile extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Avatar(
-          initials: review.initials,
-          imageUrl: review.avatarUrl,
-        ),
+        _Avatar(initials: review.initials, imageUrl: review.avatarUrl),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -461,7 +387,8 @@ class _ReviewTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
-                        fontSize: isTablet ? 14 : 13,
+                        fontSize: 12,
+                        color: scheme.onSurface.withValues(alpha: 0.92),
                       ),
                     ),
                   ),
@@ -469,9 +396,9 @@ class _ReviewTile extends StatelessWidget {
                   Text(
                     review.formattedDate,
                     style: TextStyle(
-                      fontSize: 11,
-                      color: scheme.onSurface.withOpacity(0.55),
-                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: scheme.onSurface.withValues(alpha: 0.45),
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -484,8 +411,9 @@ class _ReviewTile extends StatelessWidget {
               Text(
                 review.comment,
                 style: TextStyle(
-                  color: scheme.onSurface.withOpacity(0.88),
-                  height: 1.45,
+                  fontSize: 12,
+                  color: scheme.onSurface.withValues(alpha: 0.82),
+                  height: 1.5,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -497,13 +425,14 @@ class _ReviewTile extends StatelessWidget {
   }
 }
 
+/* ========================== Composer ========================== */
+
 class _ReviewComposer extends StatelessWidget {
   final TextEditingController controller;
   final bool submitting;
   final int rating;
   final ValueChanged<int> onRatingChanged;
   final VoidCallback onSubmit;
-  final bool isTablet;
 
   const _ReviewComposer({
     required this.controller,
@@ -511,7 +440,6 @@ class _ReviewComposer extends StatelessWidget {
     required this.rating,
     required this.onRatingChanged,
     required this.onSubmit,
-    required this.isTablet,
   });
 
   @override
@@ -519,18 +447,34 @@ class _ReviewComposer extends StatelessWidget {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
 
-    return _SurfaceCard(
-      padding: const EdgeInsets.all(14),
+    return _GlassSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedCommentAdd01,
+                  size: 14,
+                  color: scheme.primary,
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(
                 t(lang, "listings.reviews_add"),
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: isTablet ? 15 : 14,
+                  fontSize: 12,
+                  color: scheme.onSurface.withValues(alpha: 0.92),
+                  letterSpacing: -0.1,
                 ),
               ),
               const Spacer(),
@@ -545,57 +489,71 @@ class _ReviewComposer extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // Rating (optional)
-          Row(
-            children: [
-              Text(
-                "Rating",
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: scheme.onSurface.withOpacity(0.70),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Row(
-                  children: List.generate(5, (i) {
-                    final v = i + 1;
-                    final active = rating >= v;
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(999),
-                      onTap: submitting ? null : () => onRatingChanged(v),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-                        child: Icon(
-                          Icons.star_rounded,
-                          size: 20,
-                          color: active ? Colors.amber : scheme.outlineVariant.withOpacity(0.75),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-              if (rating != 0)
-                _SoftIconButton(
-                  tooltip: "Clear rating",
-                  icon: Icons.close_rounded,
-                  onTap: submitting ? () {} : () => onRatingChanged(0),
-                ),
-            ],
-          ),
-
           const SizedBox(height: 12),
 
-          // Input
+          // Rating row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.20),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  "Rating",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface.withValues(alpha: 0.65),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Row(
+                    children: List.generate(5, (i) {
+                      final v = i + 1;
+                      final active = rating >= v;
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(999),
+                        onTap: submitting ? null : () => onRatingChanged(v),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 3, vertical: 2),
+                          child: Icon(
+                            Icons.star_rounded,
+                            size: 20,
+                            color: active
+                                ? Colors.amber
+                                : scheme.onSurface.withValues(alpha: 0.20),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                if (rating != 0)
+                  GestureDetector(
+                    onTap: submitting ? null : () => onRatingChanged(0),
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedCancel01,
+                      size: 16,
+                      color: scheme.onSurface.withValues(alpha: 0.45),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Text input
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: scheme.outlineVariant),
-              color: scheme.surfaceVariant.withOpacity(0.45),
+              borderRadius: BorderRadius.circular(12),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.20),
+              border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.08)),
             ),
             child: TextField(
               controller: controller,
@@ -603,19 +561,20 @@ class _ReviewComposer extends StatelessWidget {
               minLines: 3,
               textInputAction: TextInputAction.newline,
               style: TextStyle(
-                color: scheme.onSurface.withOpacity(0.92),
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.92),
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText: t(lang, "listings.reviews_hint"),
                 hintStyle: TextStyle(
-                  color: scheme.onSurface.withOpacity(0.55),
-                  fontWeight: FontWeight.w600,
                   fontSize: 12,
+                  color: scheme.onSurface.withValues(alpha: 0.40),
+                  fontWeight: FontWeight.w500,
                 ),
-                contentPadding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                contentPadding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -623,9 +582,9 @@ class _ReviewComposer extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // Actions
+          // Actions row
           Row(
             children: [
               Expanded(
@@ -634,18 +593,17 @@ class _ReviewComposer extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: scheme.onSurface.withOpacity(0.55),
-                    fontWeight: FontWeight.w700,
                     fontSize: 12,
+                    color: scheme.onSurface.withValues(alpha: 0.45),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               const SizedBox(width: 10),
-              _PrimaryButton(
+              _SendButton(
                 label: submitting
                     ? t(lang, "auth.processing")
                     : t(lang, "listings.reviews_submit"),
-                icon: Icons.send_rounded,
                 loading: submitting,
                 onTap: submitting ? null : onSubmit,
               ),
@@ -657,15 +615,13 @@ class _ReviewComposer extends StatelessWidget {
   }
 }
 
-class _PrimaryButton extends StatelessWidget {
+class _SendButton extends StatelessWidget {
   final String label;
-  final IconData icon;
   final bool loading;
   final VoidCallback? onTap;
 
-  const _PrimaryButton({
+  const _SendButton({
     required this.label,
-    required this.icon,
     required this.onTap,
     this.loading = false,
   });
@@ -673,16 +629,16 @@ class _PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final disabled = onTap == null;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
+    return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: onTap == null
-              ? scheme.primary.withOpacity(0.35)
+          borderRadius: BorderRadius.circular(10),
+          color: disabled
+              ? scheme.primary.withValues(alpha: 0.40)
               : scheme.primary,
         ),
         child: Row(
@@ -690,21 +646,26 @@ class _PrimaryButton extends StatelessWidget {
           children: [
             if (loading)
               SizedBox(
-                height: 16,
-                width: 16,
+                height: 14,
+                width: 14,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
                   color: scheme.onPrimary,
                 ),
               )
             else
-              Icon(icon, size: 16, color: scheme.onPrimary),
-            const SizedBox(width: 8),
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedSent,
+                size: 14,
+                color: scheme.onPrimary,
+              ),
+            const SizedBox(width: 7),
             Text(
               label,
               style: TextStyle(
+                fontSize: 12,
                 color: scheme.onPrimary,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
@@ -713,6 +674,8 @@ class _PrimaryButton extends StatelessWidget {
     );
   }
 }
+
+/* ========================== Avatar ========================== */
 
 class _Avatar extends StatelessWidget {
   final String initials;
@@ -725,15 +688,15 @@ class _Avatar extends StatelessWidget {
     final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
 
     return Container(
-      height: 40,
-      width: 40,
+      height: 38,
+      width: 38,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: scheme.surfaceVariant.withOpacity(0.55),
-        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+        color: scheme.primary.withValues(alpha: 0.10),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.18)),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: hasImage
             ? Image.network(
                 imageUrl!.trim(),
@@ -759,6 +722,7 @@ class _Initials extends StatelessWidget {
       child: Text(
         initials,
         style: TextStyle(
+          fontSize: 12,
           color: scheme.primary,
           fontWeight: FontWeight.w900,
         ),
@@ -766,6 +730,8 @@ class _Initials extends StatelessWidget {
     );
   }
 }
+
+/* ========================== Star row ========================== */
 
 class _StarRow extends StatelessWidget {
   final int rating;
@@ -782,14 +748,18 @@ class _StarRow extends StatelessWidget {
           padding: const EdgeInsets.only(right: 2),
           child: Icon(
             Icons.star_rounded,
-            size: 16,
-            color: active ? Colors.amber : scheme.outlineVariant.withOpacity(0.75),
+            size: 14,
+            color: active
+                ? Colors.amber
+                : scheme.onSurface.withValues(alpha: 0.20),
           ),
         );
       }),
     );
   }
 }
+
+/* ========================== Empty / Error / Muted ========================== */
 
 class _EmptyStateCard extends StatelessWidget {
   final String label;
@@ -799,22 +769,31 @@ class _EmptyStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return _SurfaceCard(
-      padding: const EdgeInsets.all(14),
+    return _GlassSection(
       child: Row(
         children: [
-          Icon(
-            Icons.chat_bubble_outline_rounded,
-            size: 18,
-            color: scheme.onSurface.withOpacity(0.45),
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.30),
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedBubbleChat,
+              size: 16,
+              color: scheme.onSurface.withValues(alpha: 0.40),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withOpacity(0.75),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: scheme.onSurface.withValues(alpha: 0.60),
               ),
             ),
           ),
@@ -833,26 +812,44 @@ class _ErrorBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return _SurfaceCard(
-      padding: const EdgeInsets.all(14),
+    return _GlassSection(
       child: Row(
         children: [
-          Icon(Icons.wifi_off_rounded, size: 18, color: scheme.error),
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedWifiError01,
+            size: 18,
+            color: scheme.error,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
               style: TextStyle(
-                color: scheme.onSurface.withOpacity(0.85),
+                fontSize: 12,
+                color: scheme.onSurface.withValues(alpha: 0.85),
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(width: 10),
-          _PrimaryButton(
-            label: "Retry",
-            icon: Icons.refresh_rounded,
+          GestureDetector(
             onTap: onRetry,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: scheme.primary,
+              ),
+              child: Text(
+                "Retry",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -861,7 +858,7 @@ class _ErrorBanner extends StatelessWidget {
 }
 
 class _MutedInfoCard extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final String subtitle;
 
@@ -875,19 +872,22 @@ class _MutedInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return _SurfaceCard(
-      padding: const EdgeInsets.all(14),
+    return _GlassSection(
       child: Row(
         children: [
           Container(
-            height: 38,
-            width: 38,
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: scheme.surfaceVariant.withOpacity(0.55),
-              border: Border.all(color: scheme.outlineVariant),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.30),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, size: 18, color: scheme.onSurface.withOpacity(0.75)),
+            child: HugeIcon(
+              icon: icon,
+              size: 16,
+              color: scheme.onSurface.withValues(alpha: 0.55),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -896,15 +896,19 @@ class _MutedInfoCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withValues(alpha: 0.88),
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: scheme.onSurface.withOpacity(0.60),
-                    fontWeight: FontWeight.w600,
                     fontSize: 12,
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -916,55 +920,43 @@ class _MutedInfoCard extends StatelessWidget {
   }
 }
 
-/* ============================== SKELETON LOADING ============================== */
+/* ========================== Skeleton ========================== */
 
 class _ReviewsSkeleton extends StatelessWidget {
   final AnimationController controller;
-  final bool isTablet;
-
-  const _ReviewsSkeleton({
-    required this.controller,
-    required this.isTablet,
-  });
+  const _ReviewsSkeleton({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    Color base = scheme.surfaceVariant.withOpacity(0.55);
-    Color highlight = scheme.surfaceVariant.withOpacity(0.85);
+    final base = scheme.surfaceContainerHighest.withValues(alpha: 0.30);
+    final highlight = scheme.surfaceContainerHighest.withValues(alpha: 0.55);
 
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final t = controller.value;
-        final color = Color.lerp(base, highlight, t)!;
+        final color = Color.lerp(base, highlight, controller.value)!;
 
-        return Column(
-          children: [
-            // List container skeleton (same as reviews card)
-            _SurfaceCard(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Column(
-                children: List.generate(3, (i) {
-                  return Column(
-                    children: [
-                      _SkeletonReviewTile(color: color, isTablet: isTablet),
-                      if (i != 2)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: scheme.outlineVariant.withOpacity(0.7),
-                          ),
-                        ),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ],
+        return _GlassSection(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+          child: Column(
+            children: List.generate(3, (i) {
+              return Column(
+                children: [
+                  _SkeletonReviewTile(color: color),
+                  if (i != 2)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(
+                        height: 1,
+                        color: scheme.onSurface.withValues(alpha: 0.08),
+                      ),
+                    ),
+                ],
+              );
+            }),
+          ),
         );
       },
     );
@@ -973,37 +965,28 @@ class _ReviewsSkeleton extends StatelessWidget {
 
 class _SkeletonReviewTile extends StatelessWidget {
   final Color color;
-  final bool isTablet;
+  const _SkeletonReviewTile({required this.color});
 
-  const _SkeletonReviewTile({
-    required this.color,
-    required this.isTablet,
-  });
+  Widget _bar(double w, double h) => Container(
+        width: w,
+        height: h,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(999),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    Widget bar(double w, double h) => Container(
-          width: w,
-          height: h,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(999),
-          ),
-        );
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Avatar skeleton
         Container(
-          height: 40,
-          width: 40,
+          height: 38,
+          width: 38,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             color: color,
-            border: Border.all(color: scheme.outlineVariant.withOpacity(0.75)),
           ),
         ),
         const SizedBox(width: 12),
@@ -1013,21 +996,20 @@ class _SkeletonReviewTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: bar(isTablet ? 160 : 130, 12)),
+                  Expanded(child: _bar(130, 11)),
                   const SizedBox(width: 10),
-                  bar(70, 10),
+                  _bar(60, 10),
                 ],
               ),
               const SizedBox(height: 8),
-              // Optional rating row space
               Row(
                 children: List.generate(
                   5,
                   (i) => Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child: Container(
-                      width: 16,
-                      height: 16,
+                      width: 14,
+                      height: 14,
                       decoration: BoxDecoration(
                         color: color,
                         borderRadius: BorderRadius.circular(4),
@@ -1037,11 +1019,11 @@ class _SkeletonReviewTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              bar(double.infinity, 10),
+              _bar(double.infinity, 10),
               const SizedBox(height: 8),
-              bar(double.infinity, 10),
+              _bar(double.infinity, 10),
               const SizedBox(height: 8),
-              bar(isTablet ? 240 : 200, 10),
+              _bar(180, 10),
             ],
           ),
         ),
@@ -1050,7 +1032,7 @@ class _SkeletonReviewTile extends StatelessWidget {
   }
 }
 
-/* ================================== MODEL ================================== */
+/* ========================== Model ========================== */
 
 class _Review {
   final String id;
