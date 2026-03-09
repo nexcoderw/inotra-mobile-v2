@@ -410,7 +410,7 @@ class _QuickStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stats = <({IconData icon, String label, String value})>[
+    final stats = <({dynamic icon, String label, String value})>[
       if (pkg.durationDays != null)
         (
           icon: HugeIcons.strokeRoundedClock01,
