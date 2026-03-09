@@ -1,11 +1,15 @@
+import "dart:ui";
+
 import "package:flutter/material.dart";
-import "../../pages/trip_package_details_page.dart";
+import "package:hugeicons/hugeicons.dart";
+
 import "../../../../../../i18n/lang.dart";
 import "../../../../../../i18n/translations.dart";
-import "package:hugeicons/hugeicons.dart";
+import "package_models.dart";
 
 class PackageActivitiesTab extends StatelessWidget {
   final List<PackageActivity> activities;
+
   const PackageActivitiesTab({super.key, required this.activities});
 
   @override
@@ -14,70 +18,219 @@ class PackageActivitiesTab extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     if (activities.isEmpty) {
-      return Center(
-        child: Text(
-          t(lang, "common.coming_soon"),
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
+      return _EmptyState(
+        icon: HugeIcons.strokeRoundedCalendar02,
+        message: t(lang, "listings.no_data"),
+        scheme: scheme,
       );
     }
 
-    final grouped = <int, List<PackageActivity>>{};
+    final Map<int, List<PackageActivity>> grouped = {};
     for (final a in activities) {
       grouped.putIfAbsent(a.day, () => []).add(a);
     }
     final days = grouped.keys.toList()..sort();
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      itemCount: days.length,
-      itemBuilder: (context, index) {
-        final day = days[index];
-        final list = grouped[day]!;
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      children: [
+        for (final day in days) ...[
+          _DayHeader(day: day, lang: lang, scheme: scheme),
+          const SizedBox(height: 8),
+          for (int i = 0; i < grouped[day]!.length; i++)
+            _TimelineActivityTile(
+              activity: grouped[day]![i],
+              isLast: i == grouped[day]!.length - 1 && day == days.last,
+              scheme: scheme,
+            ),
+          const SizedBox(height: 16),
+        ],
+      ],
+    );
+  }
+}
+
+class _DayHeader extends StatelessWidget {
+  final int day;
+  final String lang;
+  final ColorScheme scheme;
+
+  const _DayHeader({
+    required this.day,
+    required this.lang,
+    required this.scheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            "${t(lang, "trips.day_label")} $day",
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: scheme.onPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Divider(
+            color: scheme.onSurface.withValues(alpha: 0.12),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TimelineActivityTile extends StatelessWidget {
+  final PackageActivity activity;
+  final bool isLast;
+  final ColorScheme scheme;
+
+  const _TimelineActivityTile({
+    required this.activity,
+    required this.isLast,
+    required this.scheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 28,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedCalendar02,
-                      size: 16,
-                      color: scheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "${t(lang, "packages.days")} $day",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
+                Container(
+                  width: 10,
+                  height: 10,
+                  margin: const EdgeInsets.only(top: 14),
+                  decoration: BoxDecoration(
+                    color: scheme.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: scheme.surface, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: 0.35),
+                        blurRadius: 6,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                ...list.map((a) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle_outline, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              a.name,
-                              style: const TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                        ],
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 2,
+                      margin: const EdgeInsets.symmetric(vertical: 2),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            scheme.primary.withValues(alpha: 0.45),
+                            scheme.primary.withValues(alpha: 0.10),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(1),
                       ),
-                    )),
+                    ),
+                  ),
               ],
             ),
           ),
-        );
-      },
+          const SizedBox(width: 8),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: scheme.surfaceContainerHighest
+                          .withValues(alpha: 0.22),
+                      border: Border.all(
+                        color: scheme.onSurface.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedCheckmarkBadge01,
+                          size: 15,
+                          color: scheme.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            activity.title,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurface.withValues(alpha: 0.90),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final dynamic icon;
+  final String message;
+  final ColorScheme scheme;
+
+  const _EmptyState({
+    required this.icon,
+    required this.message,
+    required this.scheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HugeIcon(
+            icon: icon,
+            size: 34,
+            color: scheme.onSurface.withValues(alpha: 0.30),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.50),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
