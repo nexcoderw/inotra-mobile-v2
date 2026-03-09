@@ -211,7 +211,8 @@ class _EventDetailsBody extends StatelessWidget {
                               event.description,
                               style: TextStyle(
                                 height: 1.6,
-                                color: scheme.onSurface.withOpacity(0.82),
+                                fontSize: 12,
+                                color: scheme.onSurface.withValues(alpha: 0.82),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -331,7 +332,7 @@ class _HeroBanner extends StatelessWidget {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.22),
+                  color: Colors.black.withValues(alpha: 0.22),
                 ),
               ),
             ),
@@ -371,9 +372,9 @@ class _HeroBanner extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.96),
+                          color: Colors.white.withValues(alpha: 0.96),
                           fontWeight: FontWeight.w900,
-                          fontSize: 18,
+                          fontSize: 12,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -505,8 +506,9 @@ class _EventMapSection extends StatelessWidget {
                 title: Text(
                   title,
                   style: TextStyle(
+                    fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: scheme.onSurface.withOpacity(0.92),
+                    color: scheme.onSurface.withValues(alpha: 0.92),
                   ),
                 ),
                 subtitle: Text(
@@ -514,24 +516,25 @@ class _EventMapSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: scheme.onSurface.withOpacity(0.70),
+                    color: scheme.onSurface.withValues(alpha: 0.70),
                   ),
                 ),
               ),
-              Divider(height: 0, color: scheme.onSurface.withOpacity(0.08)),
+              Divider(height: 0, color: scheme.onSurface.withValues(alpha: 0.08)),
 
               if (googleMapApp != null)
                 ListTile(
                   leading: HugeIcon(
                     icon: HugeIcons.strokeRoundedMapsLocation02,
                     size: 22,
-                    color: scheme.onSurface.withOpacity(0.70),
+                    color: scheme.onSurface.withValues(alpha: 0.70),
                   ),
                   title: Text(
                     "Google Maps",
                     style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: scheme.onSurface.withOpacity(0.90),
+                      color: scheme.onSurface.withValues(alpha: 0.90),
                     ),
                   ),
                   onTap: () async {
@@ -549,13 +552,14 @@ class _EventMapSection extends StatelessWidget {
                   leading: HugeIcon(
                     icon: HugeIcons.strokeRoundedMapsLocation02,
                     size: 22,
-                    color: scheme.onSurface.withOpacity(0.70),
+                    color: scheme.onSurface.withValues(alpha: 0.70),
                   ),
                   title: Text(
                     m.mapName,
                     style: TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: scheme.onSurface.withOpacity(0.90),
+                      color: scheme.onSurface.withValues(alpha: 0.90),
                     ),
                   ),
                   onTap: () async {
@@ -614,7 +618,8 @@ class _EventMapSection extends StatelessWidget {
                 ? Text(
                     "${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}",
                     style: TextStyle(
-                      color: scheme.onSurface.withOpacity(0.65),
+                      fontSize: 12,
+                      color: scheme.onSurface.withValues(alpha: 0.65),
                       fontWeight: FontWeight.w700,
                     ),
                   )
@@ -626,7 +631,7 @@ class _EventMapSection extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Material(
-              color: scheme.surfaceVariant.withOpacity(0.55),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
               child: InkWell(
                 onTap: hasCoords ? () => _openExternalMaps(context) : null,
                 child: SizedBox(
@@ -654,13 +659,14 @@ class _EventMapSection extends StatelessWidget {
                                     HugeIcon(
                                       icon: HugeIcons.strokeRoundedMapsLocation02,
                                       size: 34,
-                                      color: scheme.onSurface.withOpacity(0.55),
+                                      color: scheme.onSurface.withValues(alpha: 0.55),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       t(lang, "listings.map_placeholder"),
                                       style: TextStyle(
-                                        color: scheme.onSurface.withOpacity(0.6),
+                                        fontSize: 12,
+                                        color: scheme.onSurface.withValues(alpha: 0.6),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -675,7 +681,7 @@ class _EventMapSection extends StatelessWidget {
                           child: Container(
                             decoration: BoxDecoration(
                               border: Border.all(
-                                color: scheme.onSurface.withOpacity(0.10),
+                                color: scheme.onSurface.withValues(alpha: 0.10),
                               ),
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -691,14 +697,14 @@ class _EventMapSection extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
-                              color: scheme.surface.withOpacity(0.90),
+                              color: scheme.surface.withValues(alpha: 0.90),
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+                              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
                               boxShadow: [
                                 BoxShadow(
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
-                                  color: Colors.black.withOpacity(0.12),
+                                  color: Colors.black.withValues(alpha: 0.12),
                                 ),
                               ],
                             ),
@@ -708,12 +714,12 @@ class _EventMapSection extends StatelessWidget {
                                 HugeIcon(
                                   icon: HugeIcons.strokeRoundedArrowUpRight01,
                                   size: 18,
-                                  color: scheme.onSurface.withOpacity(0.85),
+                                  color: scheme.onSurface.withValues(alpha: 0.85),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   t(lang, "listings.open_in_maps"),
-                                  style: const TextStyle(fontWeight: FontWeight.w800),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                                 ),
                               ],
                             ),
@@ -748,14 +754,14 @@ class _GlassCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.10),
+            color: scheme.surface.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.10)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
             boxShadow: [
               BoxShadow(
                 blurRadius: 18,
                 offset: const Offset(0, 10),
-                color: Colors.black.withOpacity(0.10),
+                color: Colors.black.withValues(alpha: 0.10),
               ),
             ],
           ),
@@ -781,9 +787,9 @@ class _GlassBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.14),
+            color: scheme.surface.withValues(alpha: 0.14),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.12)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: child,
         ),
@@ -815,9 +821,9 @@ class _GlassIconButton extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.12),
+            color: Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withOpacity(0.14)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
           ),
           child: HugeIcon(icon: icon, size: 20, color: Colors.white),
         ),
@@ -837,8 +843,8 @@ class _SectionTitle extends StatelessWidget {
       text,
       style: TextStyle(
         fontWeight: FontWeight.w900,
-        fontSize: 15,
-        color: scheme.onSurface.withOpacity(0.92),
+        fontSize: 12,
+        color: scheme.onSurface.withValues(alpha: 0.92),
       ),
     );
   }
@@ -855,14 +861,15 @@ class _MetaLine extends StatelessWidget {
 
     return Row(
       children: [
-        HugeIcon(icon: icon, size: 16, color: scheme.onSurface.withOpacity(0.78)),
+        HugeIcon(icon: icon, size: 16, color: scheme.onSurface.withValues(alpha: 0.78)),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withOpacity(0.86),
+              color: scheme.onSurface.withValues(alpha: 0.86),
             ),
           ),
         ),
@@ -885,19 +892,20 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: scheme.surfaceVariant.withOpacity(0.22),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.22),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 18, color: scheme.onSurface.withOpacity(0.78)),
+          HugeIcon(icon: icon, size: 18, color: scheme.onSurface.withValues(alpha: 0.78)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: scheme.onSurface.withOpacity(0.86),
+                color: scheme.onSurface.withValues(alpha: 0.86),
               ),
             ),
           ),
@@ -922,23 +930,24 @@ class _TicketTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: scheme.surfaceVariant.withOpacity(0.22),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.22),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
           HugeIcon(
             icon: HugeIcons.strokeRoundedTicket02,
             size: 18,
-            color: scheme.onSurface.withOpacity(0.78),
+            color: scheme.onSurface.withValues(alpha: 0.78),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
               style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withOpacity(0.90),
+                color: scheme.onSurface.withValues(alpha: 0.90),
               ),
             ),
           ),
@@ -946,6 +955,7 @@ class _TicketTile extends StatelessWidget {
           Text(
             price,
             style: TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w900,
               color: scheme.primary,
             ),
@@ -991,9 +1001,9 @@ class _PrimaryCtaButtonState extends State<_PrimaryCtaButton> {
     final filledBg = scheme.primary;
     final filledFg = scheme.onPrimary;
 
-    final glassBg = scheme.surface.withOpacity(0.40);
-    final glassBorder = scheme.onSurface.withOpacity(0.10);
-    final glassFg = scheme.onSurface.withOpacity(0.92);
+    final glassBg = scheme.surface.withValues(alpha: 0.40);
+    final glassBorder = scheme.onSurface.withValues(alpha: 0.10);
+    final glassFg = scheme.onSurface.withValues(alpha: 0.92);
 
     final disabled = widget.onTap == null || widget.busy;
 
@@ -1042,7 +1052,7 @@ class _PrimaryCtaButtonState extends State<_PrimaryCtaButton> {
           height: 50,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: disabled ? filledBg.withOpacity(0.60) : filledBg,
+            color: disabled ? filledBg.withValues(alpha: 0.60) : filledBg,
           ),
           child: Center(child: content(fg: filledFg)),
         );
@@ -1057,7 +1067,7 @@ class _PrimaryCtaButtonState extends State<_PrimaryCtaButton> {
             height: 50,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: disabled ? glassBg.withOpacity(0.65) : glassBg,
+              color: disabled ? glassBg.withValues(alpha: 0.65) : glassBg,
               border: Border.all(color: glassBorder),
             ),
             child: Center(child: content(fg: glassFg)),
@@ -1131,7 +1141,7 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
               height: 6 + (b * 4),
               width: 6 + (b * 4),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
+                color: Colors.white.withValues(alpha: 0.75 + b * 0.25),
                 borderRadius: BorderRadius.circular(999),
               ),
             );
@@ -1160,12 +1170,12 @@ class _BannerFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: scheme.surfaceVariant.withOpacity(0.55),
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
       child: Center(
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedImageNotFound01,
           size: 36,
-          color: scheme.onSurface.withOpacity(0.35),
+          color: scheme.onSurface.withValues(alpha: 0.35),
         ),
       ),
     );
@@ -1200,6 +1210,7 @@ class _PremiumErrorState extends StatelessWidget {
                 message,
                 textAlign: TextAlign.center,
                 style: TextStyle(
+                  fontSize: 12,
                   color: scheme.error,
                   fontWeight: FontWeight.w800,
                 ),
@@ -1248,8 +1259,8 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
       animation: _c,
       builder: (_, __) {
         final t = _c.value; // 0..1
-        final base = scheme.surfaceVariant.withOpacity(0.28);
-        final hi = scheme.surfaceVariant.withOpacity(0.45);
+        final base = scheme.surfaceContainerHighest.withValues(alpha: 0.28);
+        final hi = scheme.surfaceContainerHighest.withValues(alpha: 0.45);
         final c = Color.lerp(base, hi, t)!;
 
         return Stack(
@@ -1288,8 +1299,8 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.08),
-                                      border: Border.all(color: Colors.white.withOpacity(0.10)),
+                                      color: Colors.white.withValues(alpha: 0.08),
+                                      border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
                                       borderRadius: BorderRadius.circular(18),
                                     ),
                                     child: Row(
@@ -1392,9 +1403,9 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: scheme.surface.withOpacity(0.12),
+                          color: scheme.surface.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white.withOpacity(0.12)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                         ),
                         child: _SkelBox(color: c, h: 48, r: 14),
                       ),
@@ -1426,9 +1437,9 @@ class _SkelCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: scheme.surface.withOpacity(0.10),
+            color: scheme.surface.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(0.10)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
           ),
           child: child,
         ),
@@ -1528,7 +1539,7 @@ _StatusMeta _resolveStatus(_EventDetail e, String lang, ColorScheme scheme) {
   if (e.endAt != null && e.endAt!.isBefore(now)) {
     return _StatusMeta(
       label: t(lang, "events.status_ended"),
-      bg: Colors.red.withOpacity(0.14),
+      bg: Colors.red.withValues(alpha: 0.14),
       fg: Colors.red.shade700,
       ended: true,
     );
@@ -1540,7 +1551,7 @@ _StatusMeta _resolveStatus(_EventDetail e, String lang, ColorScheme scheme) {
     if (startDay == today) {
       return _StatusMeta(
         label: t(lang, "events.status_happening"),
-        bg: Colors.green.withOpacity(0.14),
+        bg: Colors.green.withValues(alpha: 0.14),
         fg: Colors.green.shade700,
       );
     }
@@ -1548,7 +1559,7 @@ _StatusMeta _resolveStatus(_EventDetail e, String lang, ColorScheme scheme) {
     if (startDay == tomorrow) {
       return _StatusMeta(
         label: t(lang, "events.status_tomorrow"),
-        bg: scheme.primary.withOpacity(0.14),
+        bg: scheme.primary.withValues(alpha: 0.14),
         fg: scheme.primary,
       );
     }
@@ -1556,8 +1567,8 @@ _StatusMeta _resolveStatus(_EventDetail e, String lang, ColorScheme scheme) {
 
   return _StatusMeta(
     label: t(lang, "events.status_happening"),
-    bg: scheme.surfaceVariant.withOpacity(0.40),
-    fg: scheme.onSurface.withOpacity(0.85),
+    bg: scheme.surfaceContainerHighest.withValues(alpha: 0.40),
+    fg: scheme.onSurface.withValues(alpha: 0.85),
   );
 }
 
@@ -1572,7 +1583,7 @@ class _StatusPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: status.bg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: status.fg.withOpacity(0.25)),
+        border: Border.all(color: status.fg.withValues(alpha: 0.25)),
       ),
       child: Text(
         status.label,
