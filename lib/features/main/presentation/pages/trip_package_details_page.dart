@@ -244,7 +244,7 @@ class PackageDetailData {
         [];
     final activities = (json["activities"] as List?)
             ?.whereType<Map>()
-            .map((m) => PackageActivity.fromJson(m))
+            .map((m) => PackageActivity.fromJson(Map<String, dynamic>.from(m)))
             .toList() ??
         [];
     final cover = (json["cover_url"] ?? "").toString();
