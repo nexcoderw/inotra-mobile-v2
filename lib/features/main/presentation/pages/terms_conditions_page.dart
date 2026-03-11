@@ -124,7 +124,7 @@ class TermsConditionsPage extends StatelessWidget {
     );
     final titleStyle = bodyStyle.copyWith(
       fontWeight: FontWeight.w800,
-      fontSize: 14,
+      fontSize: 13,
     );
 
     return MainScaffold(
