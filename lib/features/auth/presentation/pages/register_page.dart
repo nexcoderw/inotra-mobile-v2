@@ -21,6 +21,8 @@ import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
+import "../../../main/presentation/pages/terms_conditions_page.dart";
+import "../../../main/presentation/pages/privacy_policy_page.dart";
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -45,6 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _obscure1 = true;
   bool _obscure2 = true;
   bool _isBusy = false;
+  bool _acceptedTerms = false;
   late final GoogleSignIn _googleSignIn;
 
   @override
@@ -76,6 +79,17 @@ class _RegisterPageState extends State<RegisterPage> {
   // ---------------------------
 
   Future<void> _onCreate() async {
+    if (!_acceptedTerms) {
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(tr("auth.accept_terms_error")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isBusy = true);
@@ -489,6 +503,77 @@ class _RegisterPageState extends State<RegisterPage> {
                   if (v != _password.text) return tr("auth.passwords_mismatch");
                   return null;
                 },
+              ),
+
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Checkbox(
+                    value: _acceptedTerms,
+                    onChanged: _isBusy ? null : (v) => setState(() => _acceptedTerms = v ?? false),
+                    activeColor: scheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: TextStyle(
+                          color: onSurface.withOpacity(0.82),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                        children: [
+                          TextSpan(text: tr("auth.accept_terms_label_prefix")),
+                          WidgetSpan(
+                            child: InkWell(
+                              onTap: _isBusy
+                                  ? null
+                                  : () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const TermsConditionsPage(),
+                                        ),
+                                      ),
+                              child: Text(
+                                tr("auth.terms_link"),
+                                style: TextStyle(
+                                  color: scheme.primary,
+                                  fontWeight: FontWeight.w800,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: scheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          TextSpan(text: " ${tr("auth.and")} "),
+                          WidgetSpan(
+                            child: InkWell(
+                              onTap: _isBusy
+                                  ? null
+                                  : () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const PrivacyPolicyPage(),
+                                        ),
+                                      ),
+                              child: Text(
+                                tr("auth.privacy_link"),
+                                style: TextStyle(
+                                  color: scheme.primary,
+                                  fontWeight: FontWeight.w800,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: scheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const TextSpan(text: "."),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 18),
