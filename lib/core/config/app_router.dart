@@ -50,6 +50,7 @@ import "../../features/me/presentation/pages/settings/settings_theme_page.dart";
 import "../../features/main/presentation/pages/notifications_page.dart";
 import "../../features/main/presentation/pages/privacy_policy_page.dart";
 import "../../features/main/presentation/pages/terms_conditions_page.dart";
+import "../../features/main/presentation/pages/contact_support_page.dart";
 
 // Translations
 import "../../i18n/lang.dart";
@@ -279,6 +280,12 @@ final class AppRouter {
           featureLabel: t(lang, "settings.language"),
           description: null,
           builder: (_) => const SettingsLanguagePage(),
+        );
+      case AppRoutes.contactSupport:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "settings.support"),
+          description: null,
+          builder: (_) => const ContactSupportPage(),
         );
       case AppRoutes.privacyPolicy:
         return MaterialPageRoute(builder: (_) => const PrivacyPolicyPage());
