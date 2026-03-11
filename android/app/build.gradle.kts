@@ -15,8 +15,18 @@ if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
+fun keystoreProperty(name: String): String =
+    (keystoreProperties[name] as String?)?.trim().orEmpty()
+
+fun resolveKeystoreFile(path: String) =
+    if (path.startsWith("/") || path.matches(Regex("^[A-Za-z]:[\\\\/].*"))) {
+        file(path).canonicalFile
+    } else {
+        keystorePropertiesFile.parentFile.resolve(path).canonicalFile
+    }
+
 android {
-    namespace = "com.example.inotra"
+    namespace = "com.inotra.inotra"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -31,7 +41,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.inotra"
+        applicationId = "com.inotra.inotra"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion // Required for local_auth biometrics and encryptedSharedPreferences
@@ -42,11 +52,12 @@ android {
 
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
+            val resolvedStoreFile = resolveKeystoreFile(keystoreProperty("storeFile"))
             create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = file(keystoreProperties["storeFile"] as String)
-                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperty("keyAlias")
+                keyPassword = keystoreProperty("keyPassword")
+                storeFile = resolvedStoreFile
+                storePassword = keystoreProperty("storePassword")
             }
         }
     }
