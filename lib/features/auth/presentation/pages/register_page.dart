@@ -509,12 +509,31 @@ class _RegisterPageState extends State<RegisterPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Checkbox(
-                    value: _acceptedTerms,
-                    onChanged: _isBusy ? null : (v) => setState(() => _acceptedTerms = v ?? false),
-                    activeColor: scheme.primary,
+                  InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: _isBusy ? null : () => setState(() => _acceptedTerms = !_acceptedTerms),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        curve: Curves.easeOut,
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: onSurface.withValues(alpha: 0.28),
+                            width: 1.4,
+                          ),
+                          color: _acceptedTerms ? scheme.primary : Colors.transparent,
+                        ),
+                        child: _acceptedTerms
+                            ? const Icon(Icons.check, size: 10, color: Colors.white)
+                            : null,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: RichText(
                       text: TextSpan(
