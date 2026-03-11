@@ -38,7 +38,7 @@ class TermsConditionsPage extends StatelessWidget {
                       Row(
                         children: [
                           HugeIcon(
-                            icon: HugeIcons.strokeRoundedDocument01,
+                            icon: HugeIcons.strokeRoundedFile02,
                             size: 20,
                             color: scheme.primary,
                           ),
