@@ -64,17 +64,17 @@ class SettingsPage extends StatelessWidget {
               _GlassTile(
                 icon: HugeIcons.strokeRoundedShield02,
                 title: t(lang, "settings.privacy"),
-                subtitle: t(lang, "common.coming_soon"),
+                subtitle: t(lang, "privacy.title"),
                 onTap: () {
-                  _toast(context, t(lang, "common.coming_soon"));
+                  Navigator.pushNamed(context, AppRoutes.privacyPolicy);
                 },
               ),
               _GlassTile(
                 icon: HugeIcons.strokeRoundedFileUnlocked,
                 title: t(lang, "settings.terms"),
-                subtitle: t(lang, "common.coming_soon"),
+                subtitle: t(lang, "terms.title"),
                 onTap: () {
-                  _toast(context, t(lang, "common.coming_soon"));
+                  Navigator.pushNamed(context, AppRoutes.termsConditions);
                 },
               ),
             ],
