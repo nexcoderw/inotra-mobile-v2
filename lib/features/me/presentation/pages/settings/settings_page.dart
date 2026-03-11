@@ -94,9 +94,9 @@ class SettingsPage extends StatelessWidget {
               _GlassTile(
                 icon: HugeIcons.strokeRoundedCallRinging03,
                 title: t(lang, "settings.support"),
-                subtitle: t(lang, "common.coming_soon"),
+                subtitle: "info@naviig8.com",
                 onTap: () {
-                  _toast(context, t(lang, "common.coming_soon"));
+                  Navigator.pushNamed(context, AppRoutes.contactSupport);
                 },
               ),
             ],
