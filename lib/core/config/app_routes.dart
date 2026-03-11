@@ -47,4 +47,5 @@ final class AppRoutes {
   static const settingsLanguage = "/settings/language";
   static const privacyPolicy = "/privacy-policy";
   static const termsConditions = "/terms-conditions";
+  static const contactSupport = "/contact-support";
 }
