@@ -124,6 +124,7 @@ class TermsConditionsPage extends StatelessWidget {
     );
     final titleStyle = bodyStyle.copyWith(
       fontWeight: FontWeight.w800,
+      fontSize: 14,
     );
 
     return MainScaffold(
@@ -173,7 +174,7 @@ class TermsConditionsPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(section["title"] ?? "", style: titleStyle),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 Text(section["body"] ?? "", style: bodyStyle),
                               ],
                             );
