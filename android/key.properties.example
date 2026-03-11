@@ -1,4 +1,4 @@
-storeFile=../upload-keystore.jks
-storePassword=MyInotraKeystore@2026
+ storeFile=../upload-keystore.jks
+storePassword=your-store-password
 keyAlias=upload
-keyPassword=MyInotraKeystore@2026
+keyPassword=your-key-password
