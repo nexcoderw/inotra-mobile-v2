@@ -1,4 +1,4 @@
-package com.example.inotra
+package com.inotra.inotra
 
 import io.flutter.embedding.android.FlutterActivity
 
