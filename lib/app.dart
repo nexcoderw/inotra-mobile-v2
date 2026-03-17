@@ -6,6 +6,7 @@ import "package:provider/provider.dart";
 import "core/config/app_router.dart";
 import "core/config/app_routes.dart";
 import "core/constants/app_colors.dart";
+import "core/observers/audit_route_observer.dart";
 import "core/services/theme_notifier.dart";
 
 class App extends StatelessWidget {
@@ -60,6 +61,7 @@ class App extends StatelessWidget {
           ),
           initialRoute: AppRoutes.splash,
           onGenerateRoute: AppRouter.onGenerateRoute,
+          navigatorObservers: [AuditRouteObserver.instance],
         );
       },
     );
