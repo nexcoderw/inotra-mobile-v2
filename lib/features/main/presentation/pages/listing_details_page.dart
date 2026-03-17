@@ -20,6 +20,8 @@ import "../widgets/listing_details_reviews_tab.dart";
 import "../widgets/listing_details_transport_tab.dart";
 import "../widgets/listing_image_preview.dart";
 import "../../../auth/presentation/widgets/quick_login_dialog.dart";
+import "../../../../core/config/app_routes.dart";
+import "../../../../core/services/audit_service.dart";
 import "../../../../core/services/auth_session.dart";
 
 class ListingDetailsPage extends StatefulWidget {
@@ -139,7 +141,15 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
         final decoded = jsonDecode(resp.body);
         if (decoded is Map) {
           _place = PlaceDetails.fromJson(Map<String, dynamic>.from(decoded));
-          if (_place != null) _saved = _isFavorite(_place!.id);
+          if (_place != null) {
+            _saved = _isFavorite(_place!.id);
+            AuditService.instance.enrichEntityContext(
+              routeName: AppRoutes.listingDetails,
+              entityType: "PLACE",
+              entityId: _place!.id,
+              entityLabel: _place!.name,
+            );
+          }
         } else {
           _error = "Invalid response";
         }
