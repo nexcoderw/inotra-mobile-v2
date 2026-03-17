@@ -18,6 +18,7 @@ import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../core/services/biometric_service.dart";
+import "../../../../core/services/device_info_service.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
@@ -87,7 +88,10 @@ class _LoginPageState extends State<LoginPage> {
       final response = await http
           .post(
             uri,
-            headers: {"Content-Type": "application/json"},
+            headers: {
+              "Content-Type": "application/json",
+              ...DeviceInfoService.instance.asHeader,
+            },
             body: jsonEncode({
               "identifier": _identifier.text.trim(),
               "password": _password.text,
@@ -238,7 +242,10 @@ class _LoginPageState extends State<LoginPage> {
       final uri = Api.url(AuthEndpoints.googleLogin);
       final response = await http.post(
         uri,
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          ...DeviceInfoService.instance.asHeader,
+        },
         body: jsonEncode({"IdToken": idToken}),
       );
 
