@@ -6,7 +6,9 @@ import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
+import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/services/audit_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
@@ -57,6 +59,12 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
         _package = PackageDetailData.fromJson(decoded);
+        AuditService.instance.enrichEntityContext(
+          routeName: AppRoutes.tripPackageDetails,
+          entityType: "PACKAGE",
+          entityId: _package!.id,
+          entityLabel: _package!.title,
+        );
       } else {
         _error = "Status ${resp.statusCode}";
       }
