@@ -13,7 +13,9 @@ import "package:map_launcher/map_launcher.dart" as launcher;
 import "package:toastification/toastification.dart";
 
 import "../../../../core/config/api.dart";
+import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/services/audit_service.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -63,6 +65,12 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
         _event = _EventDetail.fromJson(decoded);
+        AuditService.instance.enrichEntityContext(
+          routeName: AppRoutes.eventDetails,
+          entityType: "EVENT",
+          entityId: _event!.id,
+          entityLabel: _event!.title,
+        );
       } else {
         _error = "Status ${resp.statusCode}";
       }
