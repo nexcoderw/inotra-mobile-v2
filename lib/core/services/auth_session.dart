@@ -1,6 +1,7 @@
 import "package:flutter/foundation.dart";
 
 import "auth_storage.dart";
+import "session_heartbeat_service.dart";
 
 /// Lightweight auth session tracker used by the mobile app header.
 enum AuthStatus { checking, signedOut, signedIn }
@@ -83,9 +84,13 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
       refreshToken: refreshToken,
       theme: theme,
     );
+
+    // Keep the server session alive while the user is active.
+    SessionHeartbeatService.instance.start();
   }
 
   Future<void> signOut() async {
+    SessionHeartbeatService.instance.stop();
     await AuthStorage.clearSession();
     value = const AuthSessionState(status: AuthStatus.signedOut, displayName: "Guest");
   }
