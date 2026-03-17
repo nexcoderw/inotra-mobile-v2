@@ -18,4 +18,7 @@ final class AuthEndpoints {
   static const meDeactivate = "api/auth/me/deactivate/";
   static const meDeleteRequest = "api/auth/me/delete/request/";
   static const meLanguage = "api/auth/me/language/";
+
+  /// Lightweight endpoint called every ~2 min to keep the session alive.
+  static const heartbeat = "api/auth/heartbeat/";
 }
