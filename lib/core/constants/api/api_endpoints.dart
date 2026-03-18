@@ -1,4 +1,5 @@
 export "audit_endpoints.dart";
+export "notification_endpoints.dart";
 export "auth_endpoints.dart";
 export "place_endpoints.dart";
 export "event_endpoints.dart";
