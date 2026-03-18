@@ -1,4 +1,4 @@
-/// A single notification received from the backend.
+/// A single notification — sourced from the backend API and persisted locally.
 class AppNotification {
   final String id;
   final String kind;       // "PLACE" | "EVENT" | "PACKAGE"
@@ -32,6 +32,17 @@ class AppNotification {
       isRead:    json["is_read"] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        "id":         id,
+        "kind":       kind,
+        "entity_id":  entityId,
+        "title":      title,
+        "body":       body,
+        "image_url":  imageUrl,
+        "created_at": createdAt.toIso8601String(),
+        "is_read":    isRead,
+      };
 
   AppNotification copyWith({bool? isRead}) => AppNotification(
         id:        id,
