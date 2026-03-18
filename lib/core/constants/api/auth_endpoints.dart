@@ -19,6 +19,10 @@ final class AuthEndpoints {
   static const meDeleteRequest = "api/auth/me/delete/request/";
   static const meLanguage = "api/auth/me/language/";
 
+  /// Exchanges a refresh token for a new access token (and optionally a new
+  /// refresh token when rotation is enabled on the server).
+  static const tokenRefresh = "api/auth/token/refresh/";
+
   /// Lightweight endpoint called every ~2 min to keep the session alive.
   static const heartbeat = "api/auth/heartbeat/";
 }
