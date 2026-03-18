@@ -1,7 +1,10 @@
 import "package:flutter/material.dart";
 
+import "package:provider/provider.dart";
+
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/notification_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/inotra_bottom_nav.dart";
@@ -144,6 +147,7 @@ class _MainShellState extends State<MainShell> {
         onProfileTap: _goToProfile,
         displayName: session.displayName,
         isAuthenticated: session.isAuthenticated,
+        unreadCount: context.watch<NotificationService>().unreadCount,
       ),
 
       drawer: InotraSidebarDrawer(
