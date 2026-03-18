@@ -1,6 +1,7 @@
+import "dart:async";
 import "dart:convert";
 
-import "package:flutter/foundation.dart";
+import "package:flutter/widgets.dart";
 import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
 
@@ -13,22 +14,25 @@ import "local_notification_service.dart";
 
 /// Manages the notifications list.
 /// - Persists to local [SharedPreferences] so the inbox works offline.
-/// - Polls the backend API to detect new notifications and shows banners
-///   via [LocalNotificationService] for any that haven't been seen before.
+/// - Polls the backend every 30 s while the app is in the foreground.
+/// - Also polls immediately when the app resumes from background.
+/// - Shows banners via [LocalNotificationService] for any new notifications.
 ///
 /// Expose via [ChangeNotifierProvider] so any widget can react to updates.
-class NotificationService extends ChangeNotifier {
+class NotificationService extends ChangeNotifier with WidgetsBindingObserver {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
 
-  static const _kStorageKey = "inotra_notifications_v1";
+  static const _kStorageKey    = "inotra_notifications_v1";
+  static const _pollInterval   = Duration(seconds: 30);
 
   // ── State ─────────────────────────────────────────────────────────────────
 
   List<AppNotification> _notifications = [];
   bool _loading     = false;
   bool _initialized = false;
+  Timer? _pollTimer;
 
   List<AppNotification> get notifications => _notifications;
   int  get unreadCount  => _notifications.where((n) => !n.isRead).length;
@@ -66,7 +70,7 @@ class NotificationService extends ChangeNotifier {
           .timeout(const Duration(seconds: 12));
 
       if (res.statusCode == 200) {
-        final json      = jsonDecode(res.body) as Map<String, dynamic>;
+        final json       = jsonDecode(res.body) as Map<String, dynamic>;
         final serverList = (json["results"] as List<dynamic>? ?? [])
             .cast<Map<String, dynamic>>()
             .map(AppNotification.fromJson)
@@ -81,8 +85,7 @@ class NotificationService extends ChangeNotifier {
         }
 
         // Server is source of truth for content; preserve local read state
-        // for any notification the server still considers unread but we've
-        // already marked read offline.
+        // for any notification we've already marked read offline.
         final localReadIds = _notifications
             .where((n) => n.isRead)
             .map((n) => n.id)
@@ -102,6 +105,14 @@ class NotificationService extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  /// Starts background polling + lifecycle observation.
+  /// Call once after the user is authenticated.
+  void startPolling() {
+    WidgetsBinding.instance.addObserver(this);
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => fetch());
   }
 
   /// Marks one notification as read locally + on the server.
@@ -140,6 +151,7 @@ class NotificationService extends ChangeNotifier {
 
   /// Clears all data when the user signs out.
   void clear() {
+    _stopPolling();
     _notifications = [];
     _initialized   = false;
     _loading       = false;
@@ -147,7 +159,23 @@ class NotificationService extends ChangeNotifier {
     _clearStorage();
   }
 
+  // ── AppLifecycleObserver ──────────────────────────────────────────────────
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Poll immediately when the user switches back to the app
+      fetch();
+    }
+  }
+
   // ── Internals ─────────────────────────────────────────────────────────────
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    WidgetsBinding.instance.removeObserver(this);
+  }
 
   bool get _isAuthed => AuthSession.instance.hasValidToken;
 
