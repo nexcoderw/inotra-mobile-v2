@@ -44,6 +44,23 @@ class AuthStorage {
     );
   }
 
+  /// Updates only the token fields inside the stored session.
+  /// Used after a silent token refresh so the user stays signed in.
+  static Future<void> updateTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kTokens);
+      if (raw == null) return;
+      final tokens = jsonDecode(raw) as Map<String, dynamic>;
+      tokens["access"] = accessToken;
+      tokens["refresh"] = refreshToken;
+      await prefs.setString(_kTokens, jsonEncode(tokens));
+    } catch (_) {}
+  }
+
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kTokens);
