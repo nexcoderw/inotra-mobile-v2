@@ -5,7 +5,7 @@ import "core/config/app_router.dart";
 import "core/config/app_routes.dart";
 import "core/constants/app_colors.dart";
 import "core/observers/audit_route_observer.dart";
-import "core/services/fcm_service.dart";
+import "core/services/local_notification_service.dart";
 import "core/services/notification_service.dart";
 import "core/services/theme_notifier.dart";
 
@@ -44,7 +44,7 @@ class App extends StatelessWidget {
           themeMode: mode,
 
           // Global navigator key used by FCMService for deep-link navigation
-          navigatorKey: FCMService.navigatorKey,
+          navigatorKey: LocalNotificationService.navigatorKey,
 
           theme: ThemeData(
             useMaterial3: true,
