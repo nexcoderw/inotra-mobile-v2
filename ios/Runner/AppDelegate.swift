@@ -2,6 +2,7 @@ import UIKit
 import Flutter
 import GoogleMaps
 import Firebase
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -15,6 +16,11 @@ import Firebase
 
     // ✅ Google Maps API Key
     GMSServices.provideAPIKey("AIzaSyBxDQkBVb0L9RtzxNoz-XqolzbE0C_xisA")
+
+    // ✅ Required for flutter_local_notifications to show foreground banners on iOS
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
+    }
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
