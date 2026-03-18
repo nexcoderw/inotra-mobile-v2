@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:convert";
 
 import "package:flutter/material.dart";
@@ -35,8 +36,10 @@ class AiChatThreadPage extends StatefulWidget {
   State<AiChatThreadPage> createState() => _AiChatThreadPageState();
 }
 
-class _AiChatThreadPageState extends State<AiChatThreadPage> {
+class _AiChatThreadPageState extends State<AiChatThreadPage>
+    with WidgetsBindingObserver {
   final List<ConvMessage> _messages = [];
+  final _knownIds = <String>{};
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _focusNode = FocusNode();
@@ -47,23 +50,39 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
   bool _hasMore = true;
   int _page = 1;
   static const int _pageSize = 50;
+  static const Duration _pollInterval = Duration(seconds: 3);
   String? _error;
   SharedItem? _pendingShared;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollCtrl.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopPolling();
     _scrollCtrl.removeListener(_onScroll);
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  // Pause polling when app goes to background; resume when it comes back.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _startPolling();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _stopPolling();
+    }
   }
 
   void _onScroll() {
@@ -76,9 +95,78 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
     }
   }
 
+  // ── Polling ───────────────────────────────────────────────────────────────
+
+  void _startPolling() {
+    if (_pollTimer?.isActive ?? false) return;
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _pollNewMessages());
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  /// Silently fetches the latest page of messages and appends any that are new.
+  /// Never triggers a loading spinner — runs completely in the background.
+  Future<void> _pollNewMessages() async {
+    if (!mounted || _loading) return;
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final uri = Api.url(ChatEndpoints.messages(widget.threadId))
+          .replace(queryParameters: {"page": "1", "page_size": "20"});
+      final resp = await http.get(uri, headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      });
+
+      if (!mounted || resp.statusCode != 200) return;
+
+      final decoded = jsonDecode(resp.body);
+      List raw = const [];
+      if (decoded is Map) {
+        raw = (decoded["results"] as List?) ?? const [];
+      } else if (decoded is List) {
+        raw = decoded;
+      }
+
+      // API returns newest-first. Filter out already-known messages, then
+      // reverse to chronological order before appending.
+      final incoming = raw
+          .whereType<Map>()
+          .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
+          .where((m) => !_knownIds.contains(m.id))
+          .toList()
+          .reversed
+          .toList();
+
+      if (incoming.isEmpty) return;
+
+      // Only auto-scroll if the user is already near the bottom (≤120 px away).
+      final atBottom = !_scrollCtrl.hasClients ||
+          _scrollCtrl.position.pixels >=
+              _scrollCtrl.position.maxScrollExtent - 120;
+
+      setState(() {
+        for (final msg in incoming) {
+          _knownIds.add(msg.id);
+          _messages.add(msg);
+        }
+      });
+
+      if (atBottom) _scrollToBottom();
+      _markRead(token);
+    } catch (_) {
+      // Silent — polling errors are non-fatal.
+    }
+  }
+
   // ── Fetch (initial / refresh) ─────────────────────────────────────────────
 
   Future<void> _fetch() async {
+    _stopPolling();
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) {
       if (mounted) setState(() { _loading = false; _error = "auth"; });
@@ -108,7 +196,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
           raw = decoded;
         }
 
-        // API returns newest-first — reverse for chronological display
+        // API returns newest-first — reverse for chronological display.
         final parsed = raw
             .whereType<Map>()
             .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
@@ -120,12 +208,16 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
           _messages
             ..clear()
             ..addAll(parsed);
+          _knownIds
+            ..clear()
+            ..addAll(parsed.map((m) => m.id));
           _loading = false;
           _hasMore = hasNext;
           _page = 1;
         });
         _scrollToBottom();
         _markRead(token);
+        _startPolling();
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
         if (mounted) setState(() { _loading = false; _error = "401"; });
@@ -174,6 +266,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
         final older = raw
             .whereType<Map>()
             .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
+            .where((m) => !_knownIds.contains(m.id))
             .toList()
             .reversed
             .toList();
@@ -183,19 +276,20 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
           return;
         }
 
-        // Save scroll offset so we don't jump after prepending
+        // Save scroll offset so we don't jump after prepending.
         final prevExtent = _scrollCtrl.hasClients
             ? _scrollCtrl.position.maxScrollExtent
             : 0.0;
 
         setState(() {
+          for (final m in older) _knownIds.add(m.id);
           _messages.insertAll(0, older);
           _page = nextPage;
           _hasMore = hasNext;
           _loadingMore = false;
         });
 
-        // Restore position after layout so the view doesn't jump
+        // Restore position after layout so the view doesn't jump.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollCtrl.hasClients) {
             final newExtent = _scrollCtrl.position.maxScrollExtent;
@@ -245,6 +339,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
     );
 
     setState(() {
+      _knownIds.add(optimisticId);
       _messages.add(optimistic);
       _inputCtrl.clear();
       _pendingShared = null;
@@ -277,10 +372,14 @@ class _AiChatThreadPageState extends State<AiChatThreadPage> {
         final serverMsgRaw = decoded["chat_message"];
         final idx = _messages.indexWhere((m) => m.id == optimisticId);
         if (serverMsgRaw is Map && idx != -1) {
+          final serverMsg = ConvMessage.fromJson(
+            Map<String, dynamic>.from(serverMsgRaw),
+          );
           setState(() {
-            _messages[idx] = ConvMessage.fromJson(
-              Map<String, dynamic>.from(serverMsgRaw),
-            );
+            // Replace optimistic ID with real server ID.
+            _knownIds.remove(optimisticId);
+            _knownIds.add(serverMsg.id);
+            _messages[idx] = serverMsg;
             _sending = false;
           });
         } else {
