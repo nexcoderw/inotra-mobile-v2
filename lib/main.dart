@@ -27,7 +27,10 @@ Future<void> main() async {
     SessionHeartbeatService.instance.start();
 
     // Initialise FCM (requests permission, registers token, hooks up listeners).
-    await FCMService.instance.initialize();
+    // Wrapped in try-catch — FCM failure must never prevent the app from launching.
+    try {
+      await FCMService.instance.initialize();
+    } catch (_) {}
 
     // Pre-fetch notifications so the badge is ready on first render.
     NotificationService.instance.fetch();
@@ -41,7 +44,7 @@ Future<void> main() async {
 
 void _onAuthChange() {
   if (AuthSession.instance.value.isAuthenticated) {
-    FCMService.instance.initialize();
+    FCMService.instance.initialize().catchError((_) {});
     NotificationService.instance.fetch();
   } else {
     FCMService.instance.deregisterToken();
