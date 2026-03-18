@@ -5,7 +5,7 @@ import "app.dart";
 import "core/config/env.dart";
 import "core/services/auth_session.dart";
 import "core/services/device_info_service.dart";
-import "core/services/fcm_service.dart";
+import "core/services/local_notification_service.dart";
 import "core/services/notification_service.dart";
 import "core/services/session_heartbeat_service.dart";
 
@@ -13,11 +13,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Env.load();
 
-  // Firebase must be initialised before any Firebase service is used.
+  // Firebase still used for Analytics — Messaging is no longer a dependency.
   await Firebase.initializeApp();
 
   // Resolve the device name once so every request can include X-Device-Name.
   await DeviceInfoService.instance.initialize();
+
+  // Initialise local notification plugin (creates Android channel, requests
+  // permission on Android 13+ and iOS).
+  await LocalNotificationService.instance.initialize();
 
   // Restore any persisted session from SharedPreferences.
   await AuthSession.instance.restore();
@@ -26,17 +30,15 @@ Future<void> main() async {
     // Resume the heartbeat so the server session stays active after a restart.
     SessionHeartbeatService.instance.start();
 
-    // Initialise FCM (requests permission, registers token, hooks up listeners).
-    // Wrapped in try-catch — FCM failure must never prevent the app from launching.
-    try {
-      await FCMService.instance.initialize();
-    } catch (_) {}
+    // Load cached notifications immediately so the badge is visible before
+    // the API fetch completes.
+    await NotificationService.instance.load();
 
-    // Pre-fetch notifications so the badge is ready on first render.
+    // Sync from the server — shows banners for any new notifications found.
     NotificationService.instance.fetch();
   }
 
-  // Listen for future sign-in to activate FCM + fetch notifications.
+  // Listen for future sign-in / sign-out to activate or clear notifications.
   AuthSession.instance.addListener(_onAuthChange);
 
   runApp(const App());
@@ -44,10 +46,10 @@ Future<void> main() async {
 
 void _onAuthChange() {
   if (AuthSession.instance.value.isAuthenticated) {
-    FCMService.instance.initialize().catchError((_) {});
-    NotificationService.instance.fetch();
+    NotificationService.instance.load().then(
+      (_) => NotificationService.instance.fetch(),
+    );
   } else {
-    FCMService.instance.deregisterToken();
     NotificationService.instance.clear();
   }
 }
