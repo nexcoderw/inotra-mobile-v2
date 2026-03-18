@@ -12,6 +12,7 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onProfileTap;
   final String displayName;
   final bool isAuthenticated;
+  final int unreadCount;
 
   const InotraAppHeader({
     super.key,
@@ -21,6 +22,7 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.onProfileTap,
     this.displayName = "Guest",
     this.isAuthenticated = false,
+    this.unreadCount = 0,
   });
 
   @override
@@ -39,6 +41,7 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
       onNotificationsTap: onNotificationsTap,
       onProfileTap: onProfileTap,
       height: _headerHeight,
+      unreadCount: unreadCount,
     );
   }
 }
