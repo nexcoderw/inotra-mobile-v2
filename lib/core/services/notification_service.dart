@@ -2,36 +2,59 @@ import "dart:convert";
 
 import "package:flutter/foundation.dart";
 import "package:http/http.dart" as http;
+import "package:shared_preferences/shared_preferences.dart";
 
 import "../config/api.dart";
 import "../constants/api/notification_endpoints.dart";
 import "../models/app_notification.dart";
 import "auth_session.dart";
 import "device_info_service.dart";
+import "local_notification_service.dart";
 
-/// Manages the notifications list and unread badge count.
+/// Manages the notifications list.
+/// - Persists to local [SharedPreferences] so the inbox works offline.
+/// - Polls the backend API to detect new notifications and shows banners
+///   via [LocalNotificationService] for any that haven't been seen before.
+///
 /// Expose via [ChangeNotifierProvider] so any widget can react to updates.
 class NotificationService extends ChangeNotifier {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
 
-  // ── State ────────────────────────────────────────────────────────────────
+  static const _kStorageKey = "inotra_notifications_v1";
+
+  // ── State ─────────────────────────────────────────────────────────────────
 
   List<AppNotification> _notifications = [];
-  int _unreadCount = 0;
-  bool _loading = false;
+  bool _loading     = false;
   bool _initialized = false;
 
   List<AppNotification> get notifications => _notifications;
-  int get unreadCount => _unreadCount;
-  bool get loading => _loading;
-  bool get initialized => _initialized;
+  int  get unreadCount  => _notifications.where((n) => !n.isRead).length;
+  bool get loading      => _loading;
+  bool get initialized  => _initialized;
 
   // ── Public API ────────────────────────────────────────────────────────────
 
+  /// Loads persisted notifications from local storage.
+  /// Call once at startup so the inbox is ready before the first API fetch.
+  Future<void> load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw   = prefs.getString(_kStorageKey);
+      if (raw != null) {
+        final list = (jsonDecode(raw) as List<dynamic>).cast<Map<String, dynamic>>();
+        _notifications = list.map(AppNotification.fromJson).toList();
+        _initialized   = true;
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
   /// Fetches the notification list from the server.
-  /// Safe to call multiple times; skips if not authenticated.
+  /// - Notifications not yet in local storage are shown as banners.
+  /// - The merged list is persisted locally so the inbox works offline.
   Future<void> fetch() async {
     if (!_isAuthed) return;
     _loading = true;
@@ -39,111 +62,92 @@ class NotificationService extends ChangeNotifier {
 
     try {
       final res = await http
-          .get(
-            Api.url(NotificationEndpoints.list),
-            headers: _authHeaders,
-          )
+          .get(Api.url(NotificationEndpoints.list), headers: _authHeaders)
           .timeout(const Duration(seconds: 12));
 
       if (res.statusCode == 200) {
-        final json = jsonDecode(res.body) as Map<String, dynamic>;
-        final results = (json["results"] as List<dynamic>? ?? [])
+        final json      = jsonDecode(res.body) as Map<String, dynamic>;
+        final serverList = (json["results"] as List<dynamic>? ?? [])
             .cast<Map<String, dynamic>>()
             .map(AppNotification.fromJson)
             .toList();
 
-        _notifications = results;
-        _unreadCount   = json["unread_count"] as int? ?? _countUnread(results);
-        _initialized   = true;
+        // Detect notifications we haven't stored locally yet → show banner
+        final localIds = _notifications.map((n) => n.id).toSet();
+        for (final notif in serverList) {
+          if (!localIds.contains(notif.id)) {
+            LocalNotificationService.instance.showNotification(notif);
+          }
+        }
+
+        // Server is source of truth for content; preserve local read state
+        // for any notification the server still considers unread but we've
+        // already marked read offline.
+        final localReadIds = _notifications
+            .where((n) => n.isRead)
+            .map((n) => n.id)
+            .toSet();
+
+        _notifications = serverList.map((n) {
+          if (localReadIds.contains(n.id)) return n.copyWith(isRead: true);
+          return n;
+        }).toList();
+
+        _initialized = true;
+        await _persist();
       }
     } catch (_) {
-      // Network errors are silently ignored — stale data is fine
+      // Network errors are silently ignored — local data is still shown
     } finally {
       _loading = false;
       notifyListeners();
     }
   }
 
-  /// Fetches only the unread count (lightweight, for badge refresh).
-  Future<void> refreshUnreadCount() async {
-    if (!_isAuthed) return;
-    try {
-      final res = await http
-          .get(
-            Api.url(NotificationEndpoints.unreadCount),
-            headers: _authHeaders,
-          )
-          .timeout(const Duration(seconds: 8));
-
-      if (res.statusCode == 200) {
-        final json = jsonDecode(res.body) as Map<String, dynamic>;
-        final count = json["unread_count"] as int? ?? _unreadCount;
-        if (count != _unreadCount) {
-          _unreadCount = count;
-          notifyListeners();
-        }
-      }
-    } catch (_) {}
-  }
-
   /// Marks one notification as read locally + on the server.
   Future<void> markRead(String id) async {
     final idx = _notifications.indexWhere((n) => n.id == id);
-    if (idx == -1) return;
-    if (_notifications[idx].isRead) return;
+    if (idx == -1 || _notifications[idx].isRead) return;
 
     // Optimistic update
     _notifications[idx] = _notifications[idx].copyWith(isRead: true);
-    if (_unreadCount > 0) _unreadCount--;
     notifyListeners();
+    await _persist();
 
-    // Persist on server (fire-and-forget)
+    // Sync to backend (fire-and-forget)
     try {
       await http
-          .post(
-            Api.url(NotificationEndpoints.markRead(id)),
-            headers: _authHeaders,
-          )
+          .post(Api.url(NotificationEndpoints.markRead(id)), headers: _authHeaders)
           .timeout(const Duration(seconds: 8));
     } catch (_) {}
   }
 
   /// Marks all notifications as read locally + on the server.
   Future<void> markAllRead() async {
-    final hasUnread = _notifications.any((n) => !n.isRead);
-    if (!hasUnread) return;
+    if (_notifications.every((n) => n.isRead)) return;
 
     // Optimistic update
     _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
-    _unreadCount   = 0;
     notifyListeners();
+    await _persist();
 
     try {
       await http
-          .post(
-            Api.url(NotificationEndpoints.markAllRead),
-            headers: _authHeaders,
-          )
+          .post(Api.url(NotificationEndpoints.markAllRead), headers: _authHeaders)
           .timeout(const Duration(seconds: 8));
     } catch (_) {}
   }
 
-  /// Bumps the unread badge by 1 (called by FCMService on foreground push).
-  void incrementUnread() {
-    _unreadCount++;
-    notifyListeners();
-  }
-
   /// Clears all data when the user signs out.
   void clear() {
-    _notifications  = [];
-    _unreadCount    = 0;
-    _initialized    = false;
-    _loading        = false;
+    _notifications = [];
+    _initialized   = false;
+    _loading       = false;
     notifyListeners();
+    _clearStorage();
   }
 
-  // ── Internals ────────────────────────────────────────────────────────────
+  // ── Internals ─────────────────────────────────────────────────────────────
 
   bool get _isAuthed => AuthSession.instance.hasValidToken;
 
@@ -153,6 +157,18 @@ class NotificationService extends ChangeNotifier {
         ...DeviceInfoService.instance.asHeader,
       };
 
-  int _countUnread(List<AppNotification> list) =>
-      list.where((n) => !n.isRead).length;
+  Future<void> _persist() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final json  = jsonEncode(_notifications.map((n) => n.toJson()).toList());
+      await prefs.setString(_kStorageKey, json);
+    } catch (_) {}
+  }
+
+  Future<void> _clearStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kStorageKey);
+    } catch (_) {}
+  }
 }
