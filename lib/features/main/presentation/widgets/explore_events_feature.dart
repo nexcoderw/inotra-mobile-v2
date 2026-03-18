@@ -36,7 +36,7 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
     });
 
     try {
-      final uri = Api.url("${EventEndpoints.list}?page=1&page_size=3&limit=3");
+      final uri = Api.url("${EventEndpoints.list}?page=1&page_size=3&limit=3&ordering=start_at");
       final resp = await http.get(uri);
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
