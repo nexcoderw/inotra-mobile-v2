@@ -1,8 +1,9 @@
 import "dart:convert";
 import "dart:io";
+import "dart:typed_data";
 
 import "package:firebase_messaging/firebase_messaging.dart";
-import "package:flutter/foundation.dart";
+import "package:flutter/widgets.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 import "package:http/http.dart" as http;
 
@@ -114,14 +115,16 @@ class FCMService {
       onDidReceiveNotificationResponse: _onLocalNotificationTap,
     );
 
-    // Create Android notification channel
+    // Create Android notification channel with custom sound
     if (Platform.isAndroid) {
-      const channel = AndroidNotificationChannel(
+      final channel = AndroidNotificationChannel(
         _channelId,
         _channelName,
         description: "INOTRA real-time alerts for new listings, events, and trip packages.",
         importance: Importance.max,
         playSound: true,
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 250, 100, 250]),
       );
       await _localNotifications
           .resolvePlatformSpecificImplementation<
