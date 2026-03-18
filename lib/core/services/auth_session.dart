@@ -1,5 +1,10 @@
-import "package:flutter/foundation.dart";
+import "dart:convert";
 
+import "package:flutter/foundation.dart";
+import "package:http/http.dart" as http;
+
+import "../config/api.dart";
+import "../constants/api/auth_endpoints.dart";
 import "auth_storage.dart";
 import "session_heartbeat_service.dart";
 
@@ -106,8 +111,62 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
     return false;
   }
 
-  /// Clears tokens and user data when the session is no longer valid (e.g., expired).
+  // ── Token refresh ─────────────────────────────────────────────────────────
+
+  /// Coalesces concurrent refresh calls so only one request is in-flight at a time.
+  Future<bool>? _pendingRefresh;
+
+  /// Silently exchanges the stored refresh token for a new access token.
+  /// Returns true and updates the session on success; returns false on failure.
+  /// Never calls [expireSession] — callers are responsible for that.
+  Future<bool> tryRefresh() {
+    _pendingRefresh ??= _doRefresh().whenComplete(() => _pendingRefresh = null);
+    return _pendingRefresh!;
+  }
+
+  Future<bool> _doRefresh() async {
+    final refresh = value.refreshToken;
+    if (refresh == null || refresh.isEmpty) return false;
+
+    try {
+      final res = await http
+          .post(
+            Api.url(AuthEndpoints.tokenRefresh),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({"refresh": refresh}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200) {
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        final newAccess = json["access"] as String?;
+        final newRefresh = (json["refresh"] as String?) ?? refresh;
+
+        if (newAccess != null && newAccess.isNotEmpty) {
+          value = value.copyWith(accessToken: newAccess, refreshToken: newRefresh);
+          await AuthStorage.updateTokens(
+            accessToken: newAccess,
+            refreshToken: newRefresh,
+          );
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  // ── Session expiry ────────────────────────────────────────────────────────
+
+  /// Attempts a silent token refresh before signing out.
+  /// If the refresh succeeds the session stays alive; if it fails [signOut] is called.
+  /// This prevents aggressive logout caused by a 30-minute access-token expiry
+  /// when the user still has a valid long-lived refresh token.
   Future<void> expireSession() async {
+    if (value.isAuthenticated &&
+        value.refreshToken != null &&
+        value.refreshToken!.isNotEmpty) {
+      if (await tryRefresh()) return;
+    }
     await signOut();
   }
 }
