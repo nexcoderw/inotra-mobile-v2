@@ -35,7 +35,9 @@ Future<void> main() async {
     await NotificationService.instance.load();
 
     // Sync from the server — shows banners for any new notifications found.
+    // Also starts the 30-second poll + app-resume listener.
     NotificationService.instance.fetch();
+    NotificationService.instance.startPolling();
   }
 
   // Listen for future sign-in / sign-out to activate or clear notifications.
@@ -46,9 +48,10 @@ Future<void> main() async {
 
 void _onAuthChange() {
   if (AuthSession.instance.value.isAuthenticated) {
-    NotificationService.instance.load().then(
-      (_) => NotificationService.instance.fetch(),
-    );
+    NotificationService.instance.load().then((_) {
+      NotificationService.instance.fetch();
+      NotificationService.instance.startPolling();
+    });
   } else {
     NotificationService.instance.clear();
   }
