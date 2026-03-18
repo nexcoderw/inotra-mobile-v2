@@ -246,6 +246,7 @@ class _EventDetailsBody extends StatelessWidget {
                                 child: _TicketTile(
                                   label: tkt.label,
                                   price: tkt.priceLabel(lang),
+                                  consumableDescription: tkt.consumableDescription,
                                 ),
                               ),
                             ),
@@ -927,12 +928,19 @@ class _InfoRow extends StatelessWidget {
 class _TicketTile extends StatelessWidget {
   final String label;
   final String price;
+  final String? consumableDescription;
 
-  const _TicketTile({required this.label, required this.price});
+  const _TicketTile({
+    required this.label,
+    required this.price,
+    this.consumableDescription,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final hasConsumable =
+        consumableDescription != null && consumableDescription!.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -942,6 +950,7 @@ class _TicketTile extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           HugeIcon(
             icon: HugeIcons.strokeRoundedTicket02,
@@ -950,13 +959,30 @@ class _TicketTile extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withValues(alpha: 0.90),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withValues(alpha: 0.90),
+                  ),
+                ),
+                if (hasConsumable) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    consumableDescription!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.primary.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(width: 10),
@@ -1626,7 +1652,14 @@ class _Ticket {
 
   String priceLabel(String lang) {
     if (price == null || price == 0) return t(lang, "events.free");
-    return "Rwf ${price!.toStringAsFixed(0)}";
+    return "Rwf ${_formatK(price!)}";
+  }
+
+  static String _formatK(double v) {
+    if (v < 1000) return v.toInt().toString();
+    final k = v / 1000;
+    final isWhole = k == k.truncateToDouble();
+    return "${isWhole ? k.toInt() : k.toStringAsFixed(1)}K";
   }
 
   factory _Ticket.fromJson(Map<String, dynamic> json) {
@@ -1635,8 +1668,7 @@ class _Ticket {
       category: (json["category"] ?? "").toString(),
       price: (json["price"] as num?)?.toDouble(),
       consumable: json["consumable"] == true,
-      consumableDescription:
-          (json["consumable_description"] ?? "").toString(),
+      consumableDescription: json["consumable_description"] as String?,
     );
   }
 }
