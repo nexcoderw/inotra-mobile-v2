@@ -19,6 +19,7 @@ class InotraAuthenticatedHeader extends StatelessWidget
   final VoidCallback onProfileTap;
   final double height;
   final String? imageUrl;
+  final int unreadCount;
 
   const InotraAuthenticatedHeader({
     super.key,
@@ -29,6 +30,7 @@ class InotraAuthenticatedHeader extends StatelessWidget
     required this.onProfileTap,
     this.imageUrl,
     this.height = defaultHeight,
+    this.unreadCount = 0,
   });
 
   @override
@@ -76,10 +78,9 @@ class InotraAuthenticatedHeader extends StatelessWidget
               icon: HugeIcons.strokeRoundedMenuCircle,
             ),
             const SizedBox(width: 6),
-            _IconPillButton(
-              tooltip: "Notifications",
+            _NotificationPillButton(
               onTap: onNotificationsTap,
-              icon: HugeIcons.strokeRoundedNotification01,
+              unreadCount: unreadCount,
             ),
           ],
         ),
@@ -200,6 +201,106 @@ class _IconPillButtonState extends State<_IconPillButton> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationPillButton extends StatefulWidget {
+  final VoidCallback onTap;
+  final int unreadCount;
+
+  const _NotificationPillButton({
+    required this.onTap,
+    required this.unreadCount,
+  });
+
+  @override
+  State<_NotificationPillButton> createState() =>
+      _NotificationPillButtonState();
+}
+
+class _NotificationPillButtonState extends State<_NotificationPillButton> {
+  bool _pressed = false;
+
+  void _setPressed(bool v) => setState(() => _pressed = v);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      label: "Notifications",
+      child: GestureDetector(
+        onTapDown: (_) => _setPressed(true),
+        onTapCancel: () => _setPressed(false),
+        onTapUp: (_) => _setPressed(false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 130),
+          curve: Curves.easeOut,
+          scale: _pressed ? 0.98 : 1,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(
+                    height: 38,
+                    width: 38,
+                    decoration: BoxDecoration(
+                      color: scheme.surface.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: scheme.onSurface.withOpacity(0.08),
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedNotification01,
+                        size: 18,
+                        strokeWidth: 2,
+                        color: scheme.onSurface.withOpacity(0.80),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.unreadCount > 0)
+                Positioned(
+                  top: -1,
+                  right: -1,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 15,
+                      minHeight: 15,
+                    ),
+                    child: Text(
+                      widget.unreadCount > 99
+                          ? "99+"
+                          : widget.unreadCount.toString(),
+                      style: const TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
