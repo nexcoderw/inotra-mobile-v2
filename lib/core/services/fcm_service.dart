@@ -134,7 +134,15 @@ class FCMService {
   }
 
   Future<void> _registerToken() async {
-    final token       = await _fcm.getToken();
+    // On iOS the APNs token may not be ready immediately at startup.
+    // Catching here is safe — onTokenRefresh will retry once the token arrives.
+    String? token;
+    try {
+      token = await _fcm.getToken();
+    } catch (_) {
+      return; // Will retry via onTokenRefresh listener
+    }
+
     final accessToken = AuthSession.instance.value.accessToken;
     if (token == null || accessToken == null || accessToken.isEmpty) return;
 
