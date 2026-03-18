@@ -96,7 +96,7 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
 
     try {
       final uri = Api.url(
-        "${EventEndpoints.list}?page=$_page&page_size=10${_query.isNotEmpty ? "&search=$_query" : ""}",
+        "${EventEndpoints.list}?page=$_page&page_size=10&ordering=start_at${_query.isNotEmpty ? "&search=$_query" : ""}",
       );
       final resp = await http.get(uri);
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
