@@ -33,7 +33,7 @@ final class AppRoutes {
   static const myEventDelete = "/events/my/delete";
   static const myEventSubmissions = "/events/my/submissions";
   static const myEventSubmissionDetail = "/events/my/submissions/detail";
-  static const eventReview = "/events/review";
+  static const eventPayments = "/events/payments";
   static const eventTickets = "/events/tickets";
   static const myListings = "/listings/my";
   static const myListingAdd = "/listings/my/add";
@@ -42,6 +42,7 @@ final class AppRoutes {
   static const myListingSubmissions = "/listings/my/submissions";
   static const myListingSubmissionDetail = "/listings/my/submissions/detail";
   static const listingReviews = "/listings/reviews";
+  static const listingPayments = "/listings/payments";
   static const listingBooking = "/listings/booking";
   static const tripReservations = "/trips/reservations";
   static const profile = "/profile";
