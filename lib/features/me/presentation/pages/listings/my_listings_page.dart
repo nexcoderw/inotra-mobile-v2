@@ -400,14 +400,19 @@ class _MyListingsPageState extends State<MyListingsPage>
                                         await _fetchPage(reset: true);
                                       }
                                     },
-                                    onDelete: () => Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.myListingDelete,
-                                      arguments: {
-                                        "listingId": item.id,
-                                        "title": item.name,
-                                      },
-                                    ),
+                                    onDelete: () async {
+                                      final deleted = await Navigator.pushNamed(
+                                        context,
+                                        AppRoutes.myListingDelete,
+                                        arguments: {
+                                          "listingId": item.id,
+                                          "title": item.name,
+                                        },
+                                      );
+                                      if (deleted == true && mounted) {
+                                        await _fetchPage(reset: true);
+                                      }
+                                    },
                                   ),
                                 ),
                               );
