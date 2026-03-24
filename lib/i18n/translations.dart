@@ -245,6 +245,28 @@ const translations = {
         "Listing submission deleted successfully",
     "my_listing_submissions.delete_failed":
         "We could not delete this listing submission right now. Please try again.",
+    "my_listings.search_hint": "Search your listings",
+    "my_listings.add_listing": "Add Listing",
+    "my_listings.edit_listing": "Edit Listing",
+    "my_listings.delete_listing": "Delete Listing",
+    "my_listings.error_title": "Unable to load your listings",
+    "my_listings.load_failed":
+        "We could not retrieve your listings right now. Please try again.",
+    "my_listings.timeout":
+        "The request took too long. Check your connection and try again.",
+    "my_listings.session_expired":
+        "Your session expired. Please sign in again to continue.",
+    "my_listings.empty_title": "No listings yet",
+    "my_listings.empty_default":
+        "Listings assigned to your account will appear here with their publication and verification state.",
+    "my_listings.empty_filtered":
+        "No listings match your current search or category filter. Reset them to broaden the results.",
+    "my_listings.reset": "Reset",
+    "my_listings.status_active": "Active",
+    "my_listings.status_inactive": "Inactive",
+    "my_listings.status_verified": "Verified",
+    "my_listings.status_unverified": "Unverified",
+    "my_listings.fallback_title": "Listing",
     "my_events.submissions_subtitle":
         "Search, filter, and track every event request you have submitted in one fast workspace.",
     "my_events.submissions_total": "Submissions",
