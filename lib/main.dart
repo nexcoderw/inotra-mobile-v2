@@ -1,4 +1,5 @@
 import "package:firebase_core/firebase_core.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
 import "app.dart";
@@ -13,8 +14,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Env.load();
 
-  // Firebase still used for Analytics — Messaging is no longer a dependency.
-  await Firebase.initializeApp();
+  // Firebase is only used for analytics. Do not block app startup on web
+  // while Firebase web options are still not provisioned for this project.
+  await _initializeFirebase();
 
   // Resolve the device name once so every request can include X-Device-Name.
   await DeviceInfoService.instance.initialize();
@@ -44,6 +46,22 @@ Future<void> main() async {
   AuthSession.instance.addListener(_onAuthChange);
 
   runApp(const App());
+}
+
+Future<void> _initializeFirebase() async {
+  try {
+    if (kIsWeb) {
+      debugPrint(
+        "Skipping Firebase initialization on web because FirebaseOptions are not configured yet.",
+      );
+      return;
+    }
+
+    await Firebase.initializeApp();
+  } catch (error, stackTrace) {
+    debugPrint("Firebase initialization skipped: $error");
+    debugPrintStack(stackTrace: stackTrace);
+  }
 }
 
 void _onAuthChange() {
