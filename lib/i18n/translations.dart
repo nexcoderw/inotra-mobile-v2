@@ -274,6 +274,8 @@ const translations = {
     "my_events.form_start_label": "Start date and time",
     "my_events.form_end_label": "End date and time",
     "my_events.form_venue_label": "Venue name",
+    "my_events.form_venue_helper":
+        "Start typing a venue and choose a Google place suggestion to auto-fill the location details.",
     "my_events.form_address_label": "Address",
     "my_events.form_city_label": "City",
     "my_events.form_country_label": "Country",
