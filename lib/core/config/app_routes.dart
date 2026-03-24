@@ -29,6 +29,7 @@ final class AppRoutes {
   static const dashboard = "/dashboard";
   static const myEvents = "/events/my";
   static const myEventSubmissions = "/events/my/submissions";
+  static const myEventSubmissionDetail = "/events/my/submissions/detail";
   static const eventReview = "/events/review";
   static const eventTickets = "/events/tickets";
   static const myListings = "/listings/my";
