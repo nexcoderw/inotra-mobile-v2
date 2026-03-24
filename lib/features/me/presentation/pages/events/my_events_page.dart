@@ -315,10 +315,12 @@ class _MyEventsPageState extends State<MyEventsPage>
                                 _ToolbarActionButton(
                                   label: t(lang, "my_events.add_event"),
                                   scheme: scheme,
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.myEventAdd,
-                                  ),
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.myEventAdd,
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -374,14 +376,19 @@ class _MyEventsPageState extends State<MyEventsPage>
                                     AppRoutes.eventDetails,
                                     arguments: item.id,
                                   ),
-                                  onEdit: () => Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.myEventEdit,
-                                    arguments: {
-                                      "eventId": item.id,
-                                      "title": item.title,
-                                    },
-                                  ),
+                                  onEdit: () async {
+                                    final refreshed = await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.myEventEdit,
+                                      arguments: {
+                                        "eventId": item.id,
+                                        "title": item.title,
+                                      },
+                                    );
+                                    if (refreshed == true && mounted) {
+                                      _fetchPage(reset: true);
+                                    }
+                                  },
                                   onDelete: () => Navigator.pushNamed(
                                     context,
                                     AppRoutes.myEventDelete,
