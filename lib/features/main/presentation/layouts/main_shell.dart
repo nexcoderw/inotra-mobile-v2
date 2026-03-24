@@ -50,22 +50,15 @@ class _MainShellState extends State<MainShell> {
   String get _lang => currentLangSync();
 
   String get _title => switch (_index) {
-        0 => t(_lang, "nav.explore"),
-        1 => t(_lang, "nav.listings"),
-        2 => t(_lang, "nav.ai_chat"),
-        3 => t(_lang, "nav.events"),
-        _ => t(_lang, "nav.highlights"),
-      };
+    0 => t(_lang, "nav.explore"),
+    1 => t(_lang, "nav.listings"),
+    2 => t(_lang, "nav.ai_chat"),
+    3 => t(_lang, "nav.events"),
+    _ => t(_lang, "nav.highlights"),
+  };
 
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
-  }
-
-  void _closeDrawer() {
-    // Only pop if drawer is open (safe to call anyway)
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
-    }
   }
 
   void _goToNotifications() {
@@ -75,18 +68,6 @@ class _MainShellState extends State<MainShell> {
   void _goToProfile() {
     Navigator.pushNamed(context, AppRoutes.profile);
   }
-
-  void _comingSoon(String label) {
-    _closeDrawer();
-    final lang = _lang;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("$label — ${t(lang, "common.coming_soon")}"),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
 
   void _onTabChange(int next) async {
     if (next == _index) return;
@@ -157,15 +138,22 @@ class _MainShellState extends State<MainShell> {
         onMyEventsTap: () => Navigator.pushNamed(context, AppRoutes.myEvents),
         onMyEventSubmissionsTap: () =>
             Navigator.pushNamed(context, AppRoutes.myEventSubmissions),
-        onEventReviewTap: () => Navigator.pushNamed(context, AppRoutes.eventReview),
-        onEventTicketsTap: () => Navigator.pushNamed(context, AppRoutes.eventTickets),
+        onEventPaymentsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.eventPayments),
+        onEventTicketsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.eventTickets),
 
         // LISTINGS dropdown
-        onMyListingsTap: () => Navigator.pushNamed(context, AppRoutes.myListings),
+        onMyListingsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.myListings),
         onMyListingSubmissionsTap: () =>
             Navigator.pushNamed(context, AppRoutes.myListingSubmissions),
-        onListingReviewsTap: () => Navigator.pushNamed(context, AppRoutes.listingReviews),
-        onListingBookingTap: () => Navigator.pushNamed(context, AppRoutes.listingBooking),
+        onListingReviewsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.listingReviews),
+        onListingPaymentsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.listingPayments),
+        onListingBookingTap: () =>
+            Navigator.pushNamed(context, AppRoutes.listingBooking),
 
         onTripReservationsTap: () =>
             Navigator.pushNamed(context, AppRoutes.tripReservations),
