@@ -5,6 +5,7 @@ final class Env {
 
   static const _baseUrlKey = "INOTRA_API_BASE_URL";
   static const _googleClientIdKey = "GOOGLE_CLIENT_ID";
+  static const _googleMapApiKeyKey = "GOOGLE_MAP_API_KEY";
 
   /// Call once before runApp()
   static Future<void> load() async {
@@ -24,6 +25,14 @@ final class Env {
     final raw = dotenv.env[_googleClientIdKey];
     if (raw == null || raw.trim().isEmpty) {
       throw StateError("Missing $_googleClientIdKey in .env");
+    }
+    return raw.trim();
+  }
+
+  static String get googleMapApiKey {
+    final raw = dotenv.env[_googleMapApiKeyKey];
+    if (raw == null || raw.trim().isEmpty) {
+      throw StateError("Missing $_googleMapApiKeyKey in .env");
     }
     return raw.trim();
   }
