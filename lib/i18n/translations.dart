@@ -227,6 +227,15 @@ const translations = {
     "my_listing_submissions.empty_filtered":
         "No listing submissions match your current search and filters. Reset them to broaden the results.",
     "my_listing_submissions.reset": "Reset",
+    "my_listing_submissions.detail_title": "Listing Submission Details",
+    "my_listing_submissions.tab_submission": "Submission",
+    "my_listing_submissions.submission_title": "Submission Review",
+    "my_listing_submissions.created_at": "Submitted on",
+    "my_listing_submissions.updated_at": "Last updated",
+    "my_listing_submissions.category": "Category",
+    "my_listing_submissions.reviewer_notes": "Reviewer Notes",
+    "my_listing_submissions.reviewer_notes_empty":
+        "No reviewer notes have been added to this submission yet.",
     "my_events.submissions_subtitle":
         "Search, filter, and track every event request you have submitted in one fast workspace.",
     "my_events.submissions_total": "Submissions",
