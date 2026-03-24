@@ -386,14 +386,20 @@ class _MyListingsPageState extends State<MyListingsPage>
                                       AppRoutes.listingDetails,
                                       arguments: item.id,
                                     ),
-                                    onEdit: () => Navigator.pushNamed(
-                                      context,
-                                      AppRoutes.myListingEdit,
-                                      arguments: {
-                                        "listingId": item.id,
-                                        "title": item.name,
-                                      },
-                                    ),
+                                    onEdit: () async {
+                                      final refreshed =
+                                          await Navigator.pushNamed(
+                                            context,
+                                            AppRoutes.myListingEdit,
+                                            arguments: {
+                                              "listingId": item.id,
+                                              "title": item.name,
+                                            },
+                                          );
+                                      if (refreshed == true && mounted) {
+                                        await _fetchPage(reset: true);
+                                      }
+                                    },
                                     onDelete: () => Navigator.pushNamed(
                                       context,
                                       AppRoutes.myListingDelete,
