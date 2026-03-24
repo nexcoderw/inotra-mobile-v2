@@ -4,6 +4,7 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../../core/config/api.dart";
 import "../../../../../core/constants/api/my_event_endpoints.dart";
@@ -217,6 +218,25 @@ class _DetailContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tabs = <_DetailTabSpec>[
+      _DetailTabSpec(
+        label: t(lang, "my_events.submissions_tab_overview"),
+        child: _OverviewCard(detail: detail, lang: lang),
+      ),
+      _DetailTabSpec(
+        label: t(lang, "my_events.submissions_tab_event"),
+        child: _EventInfoTab(detail: detail, lang: lang),
+      ),
+      _DetailTabSpec(
+        label: t(lang, "my_events.submissions_tab_organizer"),
+        child: _OrganizerInfoTab(detail: detail, lang: lang),
+      ),
+      _DetailTabSpec(
+        label: t(lang, "my_events.submissions_tab_tickets"),
+        child: _TicketCard(ticket: detail.firstTicket, lang: lang),
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,123 +247,83 @@ class _DetailContent extends StatelessWidget {
         const SizedBox(height: 10),
         _HeroCard(detail: detail, lang: lang),
         const SizedBox(height: 16),
-        _OverviewCard(detail: detail, lang: lang),
-        const SizedBox(height: 16),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final isWide = constraints.maxWidth >= 760;
-            final secondaryWidth = isWide
-                ? (constraints.maxWidth - 14) / 2
-                : constraints.maxWidth;
+        DefaultTabController(
+          length: tabs.length,
+          child: Builder(
+            builder: (context) {
+              final controller = DefaultTabController.of(context)!;
+              final scheme = Theme.of(context).colorScheme;
 
-            return Wrap(
-              spacing: 14,
-              runSpacing: 14,
-              children: [
-                SizedBox(
-                  width: secondaryWidth,
-                  child: _InfoCard(
-                    title: t(lang, "my_events.submissions_dates"),
-                    children: [
-                      _InfoRow(
-                        icon: Icons.event_rounded,
-                        label: t(lang, "my_events.submissions_dates"),
-                        value: detail.fullDateLabel(lang),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.42,
                       ),
-                      _InfoRow(
-                        icon: Icons.place_rounded,
-                        label: t(lang, "my_events.submissions_venue"),
-                        value: detail.venueName?.trim().isNotEmpty == true
-                            ? detail.venueName!.trim()
-                            : t(lang, "my_events.submissions_no_venue"),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: scheme.outlineVariant.withValues(alpha: 0.36),
                       ),
-                      _InfoRow(
-                        icon: Icons.pin_drop_rounded,
-                        label: t(lang, "my_events.submissions_location"),
-                        value: detail.locationLabel(lang),
+                    ),
+                    child: TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      dividerColor: Colors.transparent,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      indicator: BoxDecoration(
+                        color: scheme.primary,
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      if (detail.address?.trim().isNotEmpty == true)
-                        _InfoRow(
-                          icon: Icons.route_rounded,
-                          label: t(lang, "my_events.submissions_address"),
-                          value: detail.address!.trim(),
-                        ),
-                      if (detail.coordinatesLabel != null)
-                        _InfoRow(
-                          icon: Icons.my_location_rounded,
-                          label: t(lang, "my_events.submissions_coordinates"),
-                          value: detail.coordinatesLabel!,
-                        ),
-                    ],
+                      labelColor: scheme.onPrimary,
+                      unselectedLabelColor: scheme.onSurface.withValues(
+                        alpha: 0.68,
+                      ),
+                      labelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      tabs: tabs.map((tab) => Tab(text: tab.label)).toList(),
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: secondaryWidth,
-                  child: _InfoCard(
-                    title: t(lang, "my_events.submissions_organizer"),
-                    children: [
-                      _InfoRow(
-                        icon: Icons.badge_rounded,
-                        label: t(lang, "my_events.submissions_organizer"),
-                        value: detail.organizerName?.trim().isNotEmpty == true
-                            ? detail.organizerName!.trim()
-                            : t(lang, "my_events.submissions_not_available"),
-                      ),
-                      _InfoRow(
-                        icon: Icons.call_rounded,
-                        label: t(lang, "my_events.submissions_contact"),
-                        value:
-                            detail.organizerContact?.trim().isNotEmpty == true
-                            ? detail.organizerContact!.trim()
-                            : t(lang, "my_events.submissions_not_available"),
-                      ),
-                      _InfoRow(
-                        icon: Icons.schedule_rounded,
-                        label: t(lang, "my_events.submissions_status"),
-                        value: _submissionStatusLabel(lang, detail.status),
-                      ),
-                      _InfoRow(
-                        icon: Icons.upload_rounded,
-                        label: t(lang, "my_events.submissions_submitted_on"),
-                        value: detail.createdAtLabel,
-                      ),
-                      _InfoRow(
-                        icon: Icons.history_toggle_off_rounded,
-                        label: t(lang, "my_events.submissions_updated_on"),
-                        value: detail.updatedAtLabel,
-                      ),
-                      _InfoRow(
-                        icon: Icons.tag_rounded,
-                        label: t(lang, "my_events.submissions_id"),
-                        value: detail.id,
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  AnimatedBuilder(
+                    animation: controller,
+                    builder: (context, _) {
+                      final index = controller.index;
+                      return AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 240),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: KeyedSubtree(
+                          key: ValueKey(index),
+                          child: tabs[index].child,
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
-            );
-          },
-        ),
-        if (detail.firstTicket != null) ...[
-          const SizedBox(height: 16),
-          _TicketCard(ticket: detail.firstTicket!, lang: lang),
-        ],
-        if (detail.approvedEventId?.trim().isNotEmpty == true) ...[
-          const SizedBox(height: 16),
-          _InfoCard(
-            title: t(lang, "my_events.submissions_approved_event"),
-            children: [
-              _InfoRow(
-                icon: Icons.verified_rounded,
-                label: t(lang, "my_events.submissions_approved_event"),
-                value: detail.approvedEventId!.trim(),
-              ),
-            ],
+                ],
+              );
+            },
           ),
-        ],
+        ),
       ],
     );
   }
+}
+
+class _DetailTabSpec {
+  final String label;
+  final Widget child;
+
+  const _DetailTabSpec({required this.label, required this.child});
 }
 
 class _HeroCard extends StatelessWidget {
@@ -460,58 +440,166 @@ class _OverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _InfoCard(
-      title: t(lang, "my_events.submissions_overview"),
-      children: [
-        Text(
-          detail.description?.trim().isNotEmpty == true
-              ? detail.description!.trim()
-              : t(lang, "my_events.submissions_description_empty"),
-          style: TextStyle(
-            fontSize: 13.5,
-            height: 1.6,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.78),
-            fontWeight: FontWeight.w500,
+    return _GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(t(lang, "my_events.submissions_overview")),
+          const SizedBox(height: 10),
+          Text(
+            detail.description?.trim().isNotEmpty == true
+                ? detail.description!.trim()
+                : t(lang, "my_events.submissions_description_empty"),
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.6,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.82),
+              fontWeight: FontWeight.w500,
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EventInfoTab extends StatelessWidget {
+  final _EventSubmissionDetail detail;
+  final String lang;
+
+  const _EventInfoTab({required this.detail, required this.lang});
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoCard(
+      title: t(lang, "my_events.submissions_dates"),
+      children: [
+        _InfoRow(
+          icon: Icons.event_rounded,
+          label: t(lang, "my_events.submissions_dates"),
+          value: detail.fullDateLabel(lang),
         ),
+        _InfoRow(
+          icon: Icons.place_rounded,
+          label: t(lang, "my_events.submissions_venue"),
+          value: detail.venueName?.trim().isNotEmpty == true
+              ? detail.venueName!.trim()
+              : t(lang, "my_events.submissions_no_venue"),
+        ),
+        _InfoRow(
+          icon: Icons.pin_drop_rounded,
+          label: t(lang, "my_events.submissions_location"),
+          value: detail.locationLabel(lang),
+        ),
+        if (detail.address?.trim().isNotEmpty == true)
+          _InfoRow(
+            icon: Icons.route_rounded,
+            label: t(lang, "my_events.submissions_address"),
+            value: detail.address!.trim(),
+          ),
+        if (detail.coordinatesLabel != null)
+          _InfoRow(
+            icon: Icons.my_location_rounded,
+            label: t(lang, "my_events.submissions_coordinates"),
+            value: detail.coordinatesLabel!,
+          ),
+      ],
+    );
+  }
+}
+
+class _OrganizerInfoTab extends StatelessWidget {
+  final _EventSubmissionDetail detail;
+  final String lang;
+
+  const _OrganizerInfoTab({required this.detail, required this.lang});
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoCard(
+      title: t(lang, "my_events.submissions_organizer"),
+      children: [
+        _InfoRow(
+          icon: Icons.badge_rounded,
+          label: t(lang, "my_events.submissions_organizer"),
+          value: detail.organizerName?.trim().isNotEmpty == true
+              ? detail.organizerName!.trim()
+              : t(lang, "my_events.submissions_not_available"),
+        ),
+        _InfoRow(
+          icon: Icons.call_rounded,
+          label: t(lang, "my_events.submissions_contact"),
+          value: detail.organizerContact?.trim().isNotEmpty == true
+              ? detail.organizerContact!.trim()
+              : t(lang, "my_events.submissions_not_available"),
+        ),
+        _InfoRow(
+          icon: Icons.schedule_rounded,
+          label: t(lang, "my_events.submissions_status"),
+          value: _submissionStatusLabel(lang, detail.status),
+        ),
+        _InfoRow(
+          icon: Icons.upload_rounded,
+          label: t(lang, "my_events.submissions_submitted_on"),
+          value: detail.createdAtLabel,
+        ),
+        _InfoRow(
+          icon: Icons.history_toggle_off_rounded,
+          label: t(lang, "my_events.submissions_updated_on"),
+          value: detail.updatedAtLabel,
+        ),
+        if (detail.approvedEventId?.trim().isNotEmpty == true)
+          _InfoRow(
+            icon: Icons.verified_rounded,
+            label: t(lang, "my_events.submissions_approved_event"),
+            value: detail.approvedEventId!.trim(),
+          ),
       ],
     );
   }
 }
 
 class _TicketCard extends StatelessWidget {
-  final _SubmissionTicket ticket;
+  final _SubmissionTicket? ticket;
   final String lang;
 
   const _TicketCard({required this.ticket, required this.lang});
 
   @override
   Widget build(BuildContext context) {
-    return _InfoCard(
-      title: t(lang, "my_events.submissions_ticket"),
-      children: [
-        _InfoRow(
-          icon: Icons.confirmation_number_rounded,
-          label: t(lang, "my_events.submissions_ticket"),
-          value: ticket.categoryLabel(lang),
-        ),
-        _InfoRow(
-          icon: Icons.payments_rounded,
-          label: t(lang, "my_events.submissions_price"),
-          value: ticket.priceLabel(lang),
-        ),
-        _InfoRow(
-          icon: Icons.restaurant_rounded,
-          label: t(lang, "my_events.submissions_consumable"),
-          value: ticket.consumable
-              ? (ticket.consumableDescription?.trim().isNotEmpty == true
-                    ? ticket.consumableDescription!.trim()
-                    : t(lang, "common.all"))
-              : t(lang, "my_events.submissions_not_available"),
-        ),
-      ],
+    if (ticket == null) {
+      return _InfoCard(
+        title: t(lang, "events.tickets"),
+        children: [
+          Text(
+            t(lang, "my_events.submissions_ticket_none"),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.76),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(t(lang, "events.tickets")),
+          const SizedBox(height: 10),
+          _TicketTile(
+            label: ticket!.categoryLabel(lang),
+            price: ticket!.priceLabel(lang),
+            consumableDescription: ticket!.consumableDescription,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -614,6 +702,135 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+
+  const _GlassCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: scheme.surface.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+                color: Colors.black.withValues(alpha: 0.10),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Text(
+      text,
+      style: TextStyle(
+        fontWeight: FontWeight.w900,
+        fontSize: 12,
+        color: scheme.onSurface.withValues(alpha: 0.92),
+      ),
+    );
+  }
+}
+
+class _TicketTile extends StatelessWidget {
+  final String label;
+  final String price;
+  final String? consumableDescription;
+
+  const _TicketTile({
+    required this.label,
+    required this.price,
+    this.consumableDescription,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasConsumable =
+        consumableDescription != null && consumableDescription!.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.22),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedTicket02,
+            size: 18,
+            color: scheme.onSurface.withValues(alpha: 0.78),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withValues(alpha: 0.90),
+                  ),
+                ),
+                if (hasConsumable) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    consumableDescription!,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.primary.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            price,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: scheme.primary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
