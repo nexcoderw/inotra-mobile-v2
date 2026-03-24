@@ -158,6 +158,7 @@ const translations = {
     "auth.member_body":
         "Sign in or create an account to access {feature} and keep your experience in sync across devices.",
     "common.coming_soon": "Coming soon",
+    "common.cancel": "Cancel",
     "common.tap_details": "Tap to view details",
     "common.all": "All",
     "common.empty": "Nothing here yet",
@@ -236,6 +237,14 @@ const translations = {
     "my_listing_submissions.reviewer_notes": "Reviewer Notes",
     "my_listing_submissions.reviewer_notes_empty":
         "No reviewer notes have been added to this submission yet.",
+    "my_listing_submissions.delete_title": "Delete listing submission?",
+    "my_listing_submissions.delete_message":
+        "This will permanently remove the submission and its uploaded content. This action cannot be undone.",
+    "my_listing_submissions.delete_action": "Delete Submission",
+    "my_listing_submissions.delete_success":
+        "Listing submission deleted successfully",
+    "my_listing_submissions.delete_failed":
+        "We could not delete this listing submission right now. Please try again.",
     "my_events.submissions_subtitle":
         "Search, filter, and track every event request you have submitted in one fast workspace.",
     "my_events.submissions_total": "Submissions",
