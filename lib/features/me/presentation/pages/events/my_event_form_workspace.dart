@@ -19,6 +19,11 @@ import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
 
 const double _kPageFontSize = 12;
+const TextStyle _kInputTextStyle = TextStyle(
+  fontSize: _kPageFontSize,
+  fontFamily: "DMSans",
+  height: 1.2,
+);
 
 class MyEventFormWorkspace extends StatefulWidget {
   final bool isEditing;
@@ -1423,14 +1428,26 @@ class _VenueAutocompleteField extends StatelessWidget {
           focusNode: focusNode,
           enabled: enabled,
           onChanged: onChanged,
-          style: const TextStyle(
-            fontSize: _kPageFontSize,
-            fontFamily: "DMSans",
-          ),
+          style: _kInputTextStyle,
           decoration: InputDecoration(
             labelText: label,
             filled: true,
             fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.16),
+            labelStyle: TextStyle(
+              fontSize: _kPageFontSize,
+              fontFamily: "DMSans",
+              color: scheme.onSurface.withValues(alpha: 0.72),
+            ),
+            floatingLabelStyle: TextStyle(
+              fontSize: _kPageFontSize,
+              fontFamily: "DMSans",
+              color: scheme.primary,
+            ),
+            hintStyle: TextStyle(
+              fontSize: _kPageFontSize,
+              fontFamily: "DMSans",
+              color: scheme.onSurface.withValues(alpha: 0.45),
+            ),
             suffixIcon: isLoading
                 ? Padding(
                     padding: const EdgeInsets.all(14),
@@ -1561,7 +1578,7 @@ class _InputField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       validator: validator,
-      style: const TextStyle(fontSize: _kPageFontSize, fontFamily: "DMSans"),
+      style: _kInputTextStyle,
       decoration: InputDecoration(
         labelText: label,
         filled: true,
@@ -1570,6 +1587,16 @@ class _InputField extends StatelessWidget {
           fontSize: _kPageFontSize,
           fontFamily: "DMSans",
           color: scheme.onSurface.withValues(alpha: 0.72),
+        ),
+        floatingLabelStyle: TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+          color: scheme.primary,
+        ),
+        hintStyle: TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+          color: scheme.onSurface.withValues(alpha: 0.45),
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
