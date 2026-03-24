@@ -182,16 +182,18 @@ final class AppRouter {
           ),
         );
       case AppRoutes.myEventSubmissionDetail:
-        final title = settings.arguments as String?;
-        final resolvedTitle = (title ?? "").trim().isNotEmpty
-            ? title!.trim()
-            : t(lang, "nav.my_event_submissions");
+        final args = settings.arguments is MyEventSubmissionDetailArgs
+            ? settings.arguments as MyEventSubmissionDetailArgs
+            : null;
         return AuthGuard.protect(
           featureLabel: t(lang, "nav.my_event_submissions"),
           description: null,
           builder: (_) => MeShell(
-            title: resolvedTitle,
-            child: MyEventSubmissionDetailPage(title: title),
+            title: t(lang, "nav.my_event_submissions"),
+            child: MyEventSubmissionDetailPage(
+              submissionId: args?.submissionId,
+              title: args?.title,
+            ),
           ),
         );
       case AppRoutes.eventReview:
