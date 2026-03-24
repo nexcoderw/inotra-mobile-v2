@@ -16,13 +16,14 @@ class InotraSidebarDrawer extends StatelessWidget {
   // EVENTS
   final VoidCallback onMyEventsTap;
   final VoidCallback onMyEventSubmissionsTap;
-  final VoidCallback onEventReviewTap;
+  final VoidCallback onEventPaymentsTap;
   final VoidCallback onEventTicketsTap;
 
   // LISTINGS
   final VoidCallback onMyListingsTap;
   final VoidCallback onMyListingSubmissionsTap;
   final VoidCallback onListingReviewsTap;
+  final VoidCallback onListingPaymentsTap;
   final VoidCallback onListingBookingTap;
 
   final VoidCallback onTripReservationsTap;
@@ -36,11 +37,12 @@ class InotraSidebarDrawer extends StatelessWidget {
     required this.onDashboardTap,
     required this.onMyEventsTap,
     required this.onMyEventSubmissionsTap,
-    required this.onEventReviewTap,
+    required this.onEventPaymentsTap,
     required this.onEventTicketsTap,
     required this.onMyListingsTap,
     required this.onMyListingSubmissionsTap,
     required this.onListingReviewsTap,
+    required this.onListingPaymentsTap,
     required this.onListingBookingTap,
     required this.onTripReservationsTap,
     required this.onSettingsTap,
@@ -92,8 +94,6 @@ class InotraSidebarDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final logoAsset =
-        isDark ? "assets/branding/logo_color.png" : "assets/branding/logo_black.png";
 
     return Drawer(
       elevation: 0,
@@ -101,7 +101,7 @@ class InotraSidebarDrawer extends StatelessWidget {
       child: Container(
         height: MediaQuery.of(context).size.height,
         decoration: BoxDecoration(
-          color: scheme.surface.withOpacity(isDark ? 0.50 : 0.78),
+          color: scheme.surface.withValues(alpha: isDark ? 0.50 : 0.78),
         ),
         child: ClipRRect(
           child: BackdropFilter(
@@ -137,9 +137,9 @@ class InotraSidebarDrawer extends StatelessWidget {
                             onTap: onMyEventSubmissionsTap,
                           ),
                           _GlassSubTile(
-                            title: t(_lang, "nav.event_review"),
-                            icon: HugeIcons.strokeRoundedStar,
-                            onTap: onEventReviewTap,
+                            title: t(_lang, "nav.event_payments"),
+                            icon: HugeIcons.strokeRoundedCreditCard,
+                            onTap: onEventPaymentsTap,
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.event_tickets"),
@@ -167,6 +167,11 @@ class InotraSidebarDrawer extends StatelessWidget {
                             title: t(_lang, "nav.listing_reviews"),
                             icon: HugeIcons.strokeRoundedStar,
                             onTap: onListingReviewsTap,
+                          ),
+                          _GlassSubTile(
+                            title: t(_lang, "nav.listing_payments"),
+                            icon: HugeIcons.strokeRoundedWallet02,
+                            onTap: onListingPaymentsTap,
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.listing_booking"),
@@ -215,7 +220,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: scheme.onSurface.withOpacity(0.55),
+                          color: scheme.onSurface.withValues(alpha: 0.55),
                         ),
                       ),
                     ],
@@ -240,8 +245,9 @@ class _GlassHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final logoAsset =
-        isDark ? "assets/branding/logo_color.png" : "assets/branding/logo_black.png";
+    final logoAsset = isDark
+        ? "assets/branding/logo_color.png"
+        : "assets/branding/logo_black.png";
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
@@ -252,10 +258,10 @@ class _GlassHeader extends StatelessWidget {
             width: 44,
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: scheme.surface.withOpacity(isDark ? 0.16 : 0.10),
+              color: scheme.surface.withValues(alpha: isDark ? 0.16 : 0.10),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(isDark ? 0.10 : 0.20),
+                color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.20),
               ),
             ),
             child: Image.asset(logoAsset, fit: BoxFit.contain),
@@ -270,7 +276,7 @@ class _GlassHeader extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0.6,
-                    color: scheme.onSurface.withOpacity(0.96),
+                    color: scheme.onSurface.withValues(alpha: 0.96),
                     fontSize: 14,
                   ),
                 ),
@@ -280,7 +286,7 @@ class _GlassHeader extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 11,
-                    color: scheme.onSurface.withOpacity(0.78),
+                    color: scheme.onSurface.withValues(alpha: 0.78),
                     height: 1.1,
                   ),
                 ),
@@ -314,7 +320,7 @@ class _GlassNavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final divider = scheme.onSurface.withOpacity(0.10);
+    final divider = scheme.onSurface.withValues(alpha: 0.10);
 
     return _SeparatedTile(
       dividerColor: divider,
@@ -341,7 +347,7 @@ class _GlassNavTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 12,
-                          color: scheme.onSurface.withOpacity(0.94),
+                          color: scheme.onSurface.withValues(alpha: 0.94),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -352,7 +358,7 @@ class _GlassNavTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 11,
-                          color: scheme.onSurface.withOpacity(0.72),
+                          color: scheme.onSurface.withValues(alpha: 0.72),
                         ),
                       ),
                     ],
@@ -363,7 +369,7 @@ class _GlassNavTile extends StatelessWidget {
                     icon: HugeIcons.strokeRoundedArrowRight01,
                     size: 18,
                     strokeWidth: 2.0,
-                    color: scheme.onSurface.withOpacity(0.55),
+                    color: scheme.onSurface.withValues(alpha: 0.55),
                   ),
               ],
             ),
@@ -391,7 +397,7 @@ class _GlassDangerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final divider = scheme.onSurface.withOpacity(0.10);
+    final divider = scheme.onSurface.withValues(alpha: 0.10);
 
     return _SeparatedTile(
       dividerColor: divider,
@@ -409,7 +415,7 @@ class _GlassDangerTile extends StatelessWidget {
                   width: 40,
                   decoration: BoxDecoration(
                     // ✅ no border, transparent-ish bg
-                    color: Colors.red.withOpacity(isDark ? 0.16 : 0.10),
+                    color: Colors.red.withValues(alpha: isDark ? 0.16 : 0.10),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
@@ -434,7 +440,7 @@ class _GlassDangerTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 12,
-                          color: scheme.onSurface.withOpacity(0.94),
+                          color: scheme.onSurface.withValues(alpha: 0.94),
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -445,7 +451,7 @@ class _GlassDangerTile extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 11,
-                          color: scheme.onSurface.withOpacity(0.72),
+                          color: scheme.onSurface.withValues(alpha: 0.72),
                         ),
                       ),
                     ],
@@ -455,7 +461,7 @@ class _GlassDangerTile extends StatelessWidget {
                   icon: HugeIcons.strokeRoundedArrowRight01,
                   size: 18,
                   strokeWidth: 2.0,
-                  color: scheme.onSurface.withOpacity(0.50),
+                  color: scheme.onSurface.withValues(alpha: 0.50),
                 ),
               ],
             ),
@@ -493,7 +499,7 @@ class _GlassSectionState extends State<_GlassSection>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final divider = scheme.onSurface.withOpacity(0.10);
+    final divider = scheme.onSurface.withValues(alpha: 0.10);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -523,7 +529,7 @@ class _GlassSectionState extends State<_GlassSection>
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 12,
-                              color: scheme.onSurface.withOpacity(0.94),
+                              color: scheme.onSurface.withValues(alpha: 0.94),
                             ),
                           ),
                           const SizedBox(height: 3),
@@ -534,7 +540,7 @@ class _GlassSectionState extends State<_GlassSection>
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
-                              color: scheme.onSurface.withOpacity(0.70),
+                              color: scheme.onSurface.withValues(alpha: 0.70),
                             ),
                           ),
                         ],
@@ -548,7 +554,7 @@ class _GlassSectionState extends State<_GlassSection>
                         icon: HugeIcons.strokeRoundedArrowDown01,
                         size: 14,
                         strokeWidth: 2.0,
-                        color: scheme.onSurface.withOpacity(0.55),
+                        color: scheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
                   ],
@@ -566,8 +572,9 @@ class _GlassSectionState extends State<_GlassSection>
             curve: Curves.easeOut,
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
-              constraints:
-                  _expanded ? const BoxConstraints() : const BoxConstraints(maxHeight: 0),
+              constraints: _expanded
+                  ? const BoxConstraints()
+                  : const BoxConstraints(maxHeight: 0),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(52, 6, 6, 10),
                 child: Column(children: widget.children),
@@ -597,7 +604,7 @@ class _GlassSubTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final divider = scheme.onSurface.withOpacity(0.10);
+    final divider = scheme.onSurface.withValues(alpha: 0.10);
 
     return _SeparatedTile(
       dividerColor: divider,
@@ -613,7 +620,7 @@ class _GlassSubTile extends StatelessWidget {
                 icon: icon,
                 size: 18,
                 strokeWidth: 2.0,
-                color: scheme.onSurface.withOpacity(0.88),
+                color: scheme.onSurface.withValues(alpha: 0.88),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -622,7 +629,7 @@ class _GlassSubTile extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
-                    color: scheme.onSurface.withOpacity(0.92),
+                    color: scheme.onSurface.withValues(alpha: 0.92),
                   ),
                 ),
               ),
@@ -630,7 +637,7 @@ class _GlassSubTile extends StatelessWidget {
                 icon: HugeIcons.strokeRoundedArrowRight01,
                 size: 18,
                 strokeWidth: 2.0,
-                color: scheme.onSurface.withOpacity(0.50),
+                color: scheme.onSurface.withValues(alpha: 0.50),
               ),
             ],
           ),
@@ -659,19 +666,12 @@ class _SeparatedTile extends StatelessWidget {
     return Column(
       children: [
         // ✅ transparent background + no border
-        Material(
-          color: Colors.transparent,
-          child: child,
-        ),
+        Material(color: Colors.transparent, child: child),
 
         // ✅ separator line
         Padding(
           padding: inset,
-          child: Divider(
-            height: 1,
-            thickness: 1,
-            color: dividerColor,
-          ),
+          child: Divider(height: 1, thickness: 1, color: dividerColor),
         ),
       ],
     );
