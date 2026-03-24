@@ -1,3 +1,4 @@
+import "dart:async";
 import "dart:convert";
 import "dart:typed_data";
 import "dart:ui";
@@ -10,11 +11,14 @@ import "package:toastification/toastification.dart";
 
 import "../../../../../core/config/api.dart";
 import "../../../../../core/config/app_routes.dart";
+import "../../../../../core/config/env.dart";
 import "../../../../../core/constants/api/my_event_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
 import "../../../../main/presentation/widgets/page_header.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
+
+const double _kPageFontSize = 12;
 
 class MyEventFormWorkspace extends StatefulWidget {
   final bool isEditing;
@@ -45,8 +49,10 @@ class _MyEventFormWorkspaceState extends State<MyEventFormWorkspace> {
   late final TextEditingController _longitudeCtrl;
   late final TextEditingController _organizerNameCtrl;
   late final TextEditingController _organizerContactCtrl;
+  late final FocusNode _venueFocusNode;
 
   final List<_TicketDraft> _tickets = [];
+  final List<_GooglePlaceSuggestion> _venueSuggestions = [];
 
   DateTime? _startAt;
   DateTime? _endAt;
@@ -56,7 +62,11 @@ class _MyEventFormWorkspaceState extends State<MyEventFormWorkspace> {
   bool _removeBanner = false;
   bool _busy = false;
   bool _loading = false;
+  bool _venueLoading = false;
+  bool _isApplyingVenueSelection = false;
   String? _loadError;
+  String _venueSessionToken = _buildPlacesSessionToken();
+  Timer? _venueDebounce;
 
   String get _lang => currentLangSync();
 
@@ -75,6 +85,7 @@ class _MyEventFormWorkspaceState extends State<MyEventFormWorkspace> {
     _longitudeCtrl = TextEditingController();
     _organizerNameCtrl = TextEditingController();
     _organizerContactCtrl = TextEditingController();
+    _venueFocusNode = FocusNode();
 
     if (_isEditing) {
       _loadEvent();
@@ -85,6 +96,7 @@ class _MyEventFormWorkspaceState extends State<MyEventFormWorkspace> {
 
   @override
   void dispose() {
+    _venueDebounce?.cancel();
     _titleCtrl.dispose();
     _descriptionCtrl.dispose();
     _venueCtrl.dispose();
@@ -95,6 +107,7 @@ class _MyEventFormWorkspaceState extends State<MyEventFormWorkspace> {
     _longitudeCtrl.dispose();
     _organizerNameCtrl.dispose();
     _organizerContactCtrl.dispose();
+    _venueFocusNode.dispose();
     for (final ticket in _tickets) {
       ticket.dispose();
     }
@@ -125,219 +138,492 @@ class _MyEventFormWorkspaceState extends State<MyEventFormWorkspace> {
       );
     }
 
-    return SafeArea(
-      child: Form(
-        key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
-          children: [
-            PageHeader(
-              title: _isEditing
-                  ? t(_lang, "my_events.edit_event")
-                  : t(_lang, "my_events.add_event"),
-            ),
-            const SizedBox(height: 10),
-            _HeroCard(
-              isEditing: _isEditing,
-              title: _isEditing
-                  ? t(_lang, "my_events.form_edit_title")
-                  : t(_lang, "my_events.form_add_title"),
-              subtitle: _isEditing
-                  ? t(_lang, "my_events.form_edit_subtitle")
-                  : t(_lang, "my_events.form_add_subtitle"),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: t(_lang, "my_events.form_banner_section"),
-              icon: Icons.image_outlined,
-              child: _BannerDropzone(
-                bytes: _bannerBytes,
-                imageUrl: _bannerUrl,
-                fileName: _bannerFileName,
-                onPick: _busy ? null : _pickBanner,
-                onRemove: _busy ? null : _removeSelectedBanner,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: t(_lang, "my_events.form_basic_section"),
-              icon: Icons.edit_note_rounded,
-              child: Column(
-                children: [
-                  _InputField(
-                    label: t(_lang, "my_events.form_title_label"),
-                    controller: _titleCtrl,
-                    enabled: !_busy,
-                    validator: (value) {
-                      if ((value ?? "").trim().isEmpty) {
-                        return t(_lang, "auth.required_field");
-                      }
-                      return null;
-                    },
+    return Theme(
+      data: _buildPageTheme(context),
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(fontSize: _kPageFontSize, fontFamily: "DMSans"),
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+              children: [
+                PageHeader(
+                  title: _isEditing
+                      ? t(_lang, "my_events.edit_event")
+                      : t(_lang, "my_events.add_event"),
+                  titleStyle: const TextStyle(
+                    fontSize: _kPageFontSize,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: "DMSans",
                   ),
-                  const SizedBox(height: 14),
-                  _InputField(
-                    label: t(_lang, "my_events.form_description_label"),
-                    controller: _descriptionCtrl,
-                    enabled: !_busy,
-                    maxLines: 5,
-                    textInputAction: TextInputAction.newline,
+                ),
+                const SizedBox(height: 10),
+                _HeroCard(
+                  isEditing: _isEditing,
+                  title: _isEditing
+                      ? t(_lang, "my_events.form_edit_title")
+                      : t(_lang, "my_events.form_add_title"),
+                  subtitle: _isEditing
+                      ? t(_lang, "my_events.form_edit_subtitle")
+                      : t(_lang, "my_events.form_add_subtitle"),
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: t(_lang, "my_events.form_banner_section"),
+                  icon: Icons.image_outlined,
+                  child: _BannerDropzone(
+                    bytes: _bannerBytes,
+                    imageUrl: _bannerUrl,
+                    fileName: _bannerFileName,
+                    onPick: _busy ? null : _pickBanner,
+                    onRemove: _busy ? null : _removeSelectedBanner,
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: t(_lang, "my_events.form_schedule_section"),
-              icon: Icons.schedule_rounded,
-              child: Column(
-                children: [
-                  _DateTimeTile(
-                    label: t(_lang, "my_events.form_start_label"),
-                    value: _startAt,
-                    onTap: _busy ? null : () => _pickDateTime(isStart: true),
-                  ),
-                  const SizedBox(height: 12),
-                  _DateTimeTile(
-                    label: t(_lang, "my_events.form_end_label"),
-                    value: _endAt,
-                    onTap: _busy ? null : () => _pickDateTime(isStart: false),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: t(_lang, "my_events.form_location_section"),
-              icon: Icons.location_on_outlined,
-              child: Column(
-                children: [
-                  _InputField(
-                    label: t(_lang, "my_events.form_venue_label"),
-                    controller: _venueCtrl,
-                    enabled: !_busy,
-                  ),
-                  const SizedBox(height: 14),
-                  _InputField(
-                    label: t(_lang, "my_events.form_address_label"),
-                    controller: _addressCtrl,
-                    enabled: !_busy,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: t(_lang, "my_events.form_basic_section"),
+                  icon: Icons.edit_note_rounded,
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _InputField(
-                          label: t(_lang, "my_events.form_city_label"),
-                          controller: _cityCtrl,
-                          enabled: !_busy,
-                        ),
+                      _InputField(
+                        label: t(_lang, "my_events.form_title_label"),
+                        controller: _titleCtrl,
+                        enabled: !_busy,
+                        validator: (value) {
+                          if ((value ?? "").trim().isEmpty) {
+                            return t(_lang, "auth.required_field");
+                          }
+                          return null;
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _InputField(
-                          label: t(_lang, "my_events.form_country_label"),
-                          controller: _countryCtrl,
-                          enabled: !_busy,
-                        ),
+                      const SizedBox(height: 14),
+                      _InputField(
+                        label: t(_lang, "my_events.form_description_label"),
+                        controller: _descriptionCtrl,
+                        enabled: !_busy,
+                        maxLines: 5,
+                        textInputAction: TextInputAction.newline,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  Row(
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: t(_lang, "my_events.form_schedule_section"),
+                  icon: Icons.schedule_rounded,
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _InputField(
-                          label: t(_lang, "my_events.form_latitude_label"),
-                          controller: _latitudeCtrl,
-                          enabled: !_busy,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: true,
-                          ),
-                        ),
+                      _DateTimeTile(
+                        label: t(_lang, "my_events.form_start_label"),
+                        value: _startAt,
+                        onTap: _busy
+                            ? null
+                            : () => _pickDateTime(isStart: true),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _InputField(
-                          label: t(_lang, "my_events.form_longitude_label"),
-                          controller: _longitudeCtrl,
-                          enabled: !_busy,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                            signed: true,
-                          ),
-                        ),
+                      const SizedBox(height: 12),
+                      _DateTimeTile(
+                        label: t(_lang, "my_events.form_end_label"),
+                        value: _endAt,
+                        onTap: _busy
+                            ? null
+                            : () => _pickDateTime(isStart: false),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: t(_lang, "my_events.form_organizer_section"),
-              icon: Icons.groups_rounded,
-              child: Column(
-                children: [
-                  _InputField(
-                    label: t(_lang, "my_events.form_organizer_name_label"),
-                    controller: _organizerNameCtrl,
-                    enabled: !_busy,
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: t(_lang, "my_events.form_location_section"),
+                  icon: Icons.location_on_outlined,
+                  child: Column(
+                    children: [
+                      _VenueAutocompleteField(
+                        label: t(_lang, "my_events.form_venue_label"),
+                        controller: _venueCtrl,
+                        focusNode: _venueFocusNode,
+                        enabled: !_busy,
+                        isLoading: _venueLoading,
+                        suggestions: _venueSuggestions,
+                        helperText: t(_lang, "my_events.form_venue_helper"),
+                        onChanged: _onVenueChanged,
+                        onSuggestionTap: _selectVenueSuggestion,
+                      ),
+                      const SizedBox(height: 14),
+                      _InputField(
+                        label: t(_lang, "my_events.form_address_label"),
+                        controller: _addressCtrl,
+                        enabled: !_busy,
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _InputField(
+                              label: t(_lang, "my_events.form_city_label"),
+                              controller: _cityCtrl,
+                              enabled: !_busy,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _InputField(
+                              label: t(_lang, "my_events.form_country_label"),
+                              controller: _countryCtrl,
+                              enabled: !_busy,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _InputField(
+                              label: t(_lang, "my_events.form_latitude_label"),
+                              controller: _latitudeCtrl,
+                              enabled: !_busy,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: true,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _InputField(
+                              label: t(_lang, "my_events.form_longitude_label"),
+                              controller: _longitudeCtrl,
+                              enabled: !_busy,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                    signed: true,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 14),
-                  _InputField(
-                    label: t(_lang, "my_events.form_organizer_contact_label"),
-                    controller: _organizerContactCtrl,
-                    enabled: !_busy,
-                    keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: t(_lang, "my_events.form_organizer_section"),
+                  icon: Icons.groups_rounded,
+                  child: Column(
+                    children: [
+                      _InputField(
+                        label: t(_lang, "my_events.form_organizer_name_label"),
+                        controller: _organizerNameCtrl,
+                        enabled: !_busy,
+                      ),
+                      const SizedBox(height: 14),
+                      _InputField(
+                        label: t(
+                          _lang,
+                          "my_events.form_organizer_contact_label",
+                        ),
+                        controller: _organizerContactCtrl,
+                        enabled: !_busy,
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: t(_lang, "my_events.form_tickets_section"),
-              icon: Icons.confirmation_number_outlined,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < _tickets.length; i++) ...[
-                    _TicketEditorCard(
-                      key: ValueKey(_tickets[i]),
-                      index: i,
-                      ticket: _tickets[i],
-                      enabled: !_busy,
-                      onRemove: _tickets.length > 1
-                          ? () => _removeTicket(i)
-                          : null,
-                    ),
-                    if (i != _tickets.length - 1) const SizedBox(height: 12),
-                  ],
-                  const SizedBox(height: 14),
-                  _InlineSecondaryButton(
-                    icon: Icons.add_rounded,
-                    label: t(_lang, "my_events.form_add_ticket"),
-                    onTap: _busy ? null : _addTicket,
+                ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  title: t(_lang, "my_events.form_tickets_section"),
+                  icon: Icons.confirmation_number_outlined,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < _tickets.length; i++) ...[
+                        _TicketEditorCard(
+                          key: ValueKey(_tickets[i]),
+                          index: i,
+                          ticket: _tickets[i],
+                          enabled: !_busy,
+                          onRemove: _tickets.length > 1
+                              ? () => _removeTicket(i)
+                              : null,
+                        ),
+                        if (i != _tickets.length - 1)
+                          const SizedBox(height: 12),
+                      ],
+                      const SizedBox(height: 14),
+                      _InlineSecondaryButton(
+                        icon: Icons.add_rounded,
+                        label: t(_lang, "my_events.form_add_ticket"),
+                        onTap: _busy ? null : _addTicket,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 22),
+                _PrimarySubmitButton(
+                  busy: _busy,
+                  label: _isEditing
+                      ? t(_lang, "my_events.form_update_action")
+                      : t(_lang, "my_events.form_submit_action"),
+                  onTap: _busy ? null : _submit,
+                ),
+              ],
             ),
-            const SizedBox(height: 22),
-            _PrimarySubmitButton(
-              busy: _busy,
-              label: _isEditing
-                  ? t(_lang, "my_events.form_update_action")
-                  : t(_lang, "my_events.form_submit_action"),
-              onTap: _busy ? null : _submit,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+
+  ThemeData _buildPageTheme(BuildContext context) {
+    final base = Theme.of(context);
+    final textTheme = base.textTheme;
+
+    TextStyle normalize(
+      TextStyle? style, {
+      FontWeight? weight,
+      double? height,
+    }) {
+      return (style ?? const TextStyle()).copyWith(
+        fontSize: _kPageFontSize,
+        fontFamily: "DMSans",
+        fontWeight: weight ?? style?.fontWeight,
+        height: height ?? style?.height,
+      );
+    }
+
+    return base.copyWith(
+      textTheme: textTheme.copyWith(
+        displayLarge: normalize(textTheme.displayLarge),
+        displayMedium: normalize(textTheme.displayMedium),
+        displaySmall: normalize(textTheme.displaySmall),
+        headlineLarge: normalize(textTheme.headlineLarge),
+        headlineMedium: normalize(textTheme.headlineMedium),
+        headlineSmall: normalize(textTheme.headlineSmall),
+        titleLarge: normalize(textTheme.titleLarge, weight: FontWeight.w700),
+        titleMedium: normalize(textTheme.titleMedium, weight: FontWeight.w700),
+        titleSmall: normalize(textTheme.titleSmall, weight: FontWeight.w700),
+        bodyLarge: normalize(textTheme.bodyLarge),
+        bodyMedium: normalize(textTheme.bodyMedium),
+        bodySmall: normalize(textTheme.bodySmall),
+        labelLarge: normalize(textTheme.labelLarge, weight: FontWeight.w700),
+        labelMedium: normalize(textTheme.labelMedium, weight: FontWeight.w700),
+        labelSmall: normalize(textTheme.labelSmall, weight: FontWeight.w700),
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        labelStyle: TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+          color: base.colorScheme.onSurface.withValues(alpha: 0.72),
+        ),
+        hintStyle: TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+          color: base.colorScheme.onSurface.withValues(alpha: 0.45),
+        ),
+        errorStyle: const TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          textStyle: const TextStyle(
+            fontSize: _kPageFontSize,
+            fontFamily: "DMSans",
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          textStyle: const TextStyle(
+            fontSize: _kPageFontSize,
+            fontFamily: "DMSans",
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      chipTheme: base.chipTheme.copyWith(
+        labelStyle: const TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  void _onVenueChanged(String value) {
+    if (_isApplyingVenueSelection) return;
+
+    _venueDebounce?.cancel();
+    final query = value.trim();
+
+    if (query.length < 2) {
+      if (mounted) {
+        setState(() {
+          _venueSuggestions.clear();
+          _venueLoading = false;
+        });
+      }
+      return;
+    }
+
+    _venueDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () => _fetchVenueSuggestions(query),
+    );
+  }
+
+  Future<void> _fetchVenueSuggestions(String query) async {
+    final apiKey = _googleMapApiKeyOrNull();
+    if (apiKey == null) return;
+
+    if (mounted) {
+      setState(() => _venueLoading = true);
+    }
+
+    try {
+      final uri = Uri.https(
+        "maps.googleapis.com",
+        "/maps/api/place/autocomplete/json",
+        {
+          "input": query,
+          "key": apiKey,
+          "sessiontoken": _venueSessionToken,
+          "components": "country:rw",
+        },
+      );
+
+      final response = await http.get(uri);
+      final body = _safeJson(response.body);
+      final predictions = (body?["predictions"] as List?) ?? const [];
+
+      if (!mounted || _venueCtrl.text.trim() != query) return;
+
+      setState(() {
+        _venueSuggestions
+          ..clear()
+          ..addAll(
+            predictions
+                .whereType<Map>()
+                .map(
+                  (item) => _GooglePlaceSuggestion.fromJson(
+                    Map<String, dynamic>.from(item),
+                  ),
+                )
+                .toList(),
+          );
+        _venueLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _venueSuggestions.clear();
+        _venueLoading = false;
+      });
+    }
+  }
+
+  Future<void> _selectVenueSuggestion(_GooglePlaceSuggestion suggestion) async {
+    final apiKey = _googleMapApiKeyOrNull();
+    if (apiKey == null) return;
+
+    FocusScope.of(context).unfocus();
+
+    if (mounted) {
+      setState(() => _venueLoading = true);
+    }
+
+    try {
+      final uri =
+          Uri.https("maps.googleapis.com", "/maps/api/place/details/json", {
+            "place_id": suggestion.placeId,
+            "key": apiKey,
+            "sessiontoken": _venueSessionToken,
+            "fields": "name,formatted_address,geometry,address_component",
+          });
+
+      final response = await http.get(uri);
+      final body = _safeJson(response.body);
+      final result = body?["result"];
+      if (result is! Map) {
+        throw const _ApiException("Place details could not be loaded.");
+      }
+
+      final place = Map<String, dynamic>.from(result);
+      final components =
+          (place["address_components"] as List?)
+              ?.whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList() ??
+          const <Map<String, dynamic>>[];
+
+      String? componentOf(String type) {
+        for (final component in components) {
+          final types =
+              (component["types"] as List?)
+                  ?.map((item) => item.toString())
+                  .toList() ??
+              const <String>[];
+          if (types.contains(type)) {
+            return component["long_name"]?.toString();
+          }
+        }
+        return null;
+      }
+
+      final geometry = place["geometry"] as Map?;
+      final location = geometry?["location"] as Map?;
+      final lat = location?["lat"];
+      final lng = location?["lng"];
+
+      _isApplyingVenueSelection = true;
+      _venueCtrl.text =
+          (place["name"] ?? suggestion.primaryText ?? suggestion.description)
+              .toString();
+      _addressCtrl.text = (place["formatted_address"] ?? suggestion.description)
+          .toString();
+      _cityCtrl.text =
+          componentOf("locality") ??
+          componentOf("administrative_area_level_2") ??
+          componentOf("administrative_area_level_1") ??
+          _cityCtrl.text;
+      _countryCtrl.text = componentOf("country") ?? _countryCtrl.text;
+      _latitudeCtrl.text = lat == null ? _latitudeCtrl.text : lat.toString();
+      _longitudeCtrl.text = lng == null ? _longitudeCtrl.text : lng.toString();
+      _isApplyingVenueSelection = false;
+
+      if (!mounted) return;
+      setState(() {
+        _venueSuggestions.clear();
+        _venueLoading = false;
+        _venueSessionToken = _buildPlacesSessionToken();
+      });
+    } catch (_) {
+      _isApplyingVenueSelection = false;
+      if (!mounted) return;
+      setState(() {
+        _venueLoading = false;
+      });
+    }
+  }
+
+  String? _googleMapApiKeyOrNull() {
+    try {
+      return Env.googleMapApiKey;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String _buildPlacesSessionToken() =>
+      DateTime.now().microsecondsSinceEpoch.toString();
 
   Future<void> _loadEvent() async {
     final eventId = widget.eventId;
@@ -787,7 +1073,7 @@ class _HeroCard extends StatelessWidget {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: _kPageFontSize,
                     fontWeight: FontWeight.w900,
                     color: scheme.onSurface,
                   ),
@@ -796,7 +1082,7 @@ class _HeroCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: _kPageFontSize,
                     height: 1.45,
                     color: scheme.onSurface.withValues(alpha: 0.70),
                   ),
@@ -864,7 +1150,7 @@ class _SectionCard extends StatelessWidget {
                     child: Text(
                       title,
                       style: TextStyle(
-                        fontSize: 15.5,
+                        fontSize: _kPageFontSize,
                         fontWeight: FontWeight.w900,
                         color: scheme.onSurface,
                       ),
@@ -983,7 +1269,8 @@ class _BannerDropzone extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
-                            fontSize: 14,
+                            fontSize: _kPageFontSize,
+                            fontFamily: "DMSans",
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -992,7 +1279,8 @@ class _BannerDropzone extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.84),
                             fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                            fontSize: _kPageFontSize,
+                            fontFamily: "DMSans",
                           ),
                         ),
                       ],
@@ -1035,7 +1323,7 @@ class _BannerPlaceholder extends StatelessWidget {
               t(lang, "my_events.form_pick_banner"),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: _kPageFontSize,
                 fontWeight: FontWeight.w900,
                 color: scheme.onSurface,
               ),
@@ -1045,7 +1333,7 @@ class _BannerPlaceholder extends StatelessWidget {
               t(lang, "my_events.form_banner_hint"),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: _kPageFontSize,
                 height: 1.45,
                 color: scheme.onSurface.withValues(alpha: 0.68),
               ),
@@ -1088,13 +1376,157 @@ class _BannerActionChip extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 11.5,
+                  fontSize: _kPageFontSize,
+                  fontFamily: "DMSans",
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _VenueAutocompleteField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final bool enabled;
+  final bool isLoading;
+  final String helperText;
+  final List<_GooglePlaceSuggestion> suggestions;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<_GooglePlaceSuggestion> onSuggestionTap;
+
+  const _VenueAutocompleteField({
+    required this.label,
+    required this.controller,
+    required this.focusNode,
+    required this.enabled,
+    required this.isLoading,
+    required this.helperText,
+    required this.suggestions,
+    required this.onChanged,
+    required this.onSuggestionTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          enabled: enabled,
+          onChanged: onChanged,
+          style: const TextStyle(
+            fontSize: _kPageFontSize,
+            fontFamily: "DMSans",
+          ),
+          decoration: InputDecoration(
+            labelText: label,
+            filled: true,
+            fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.16),
+            suffixIcon: isLoading
+                ? Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  )
+                : const Icon(Icons.travel_explore_rounded, size: 18),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(
+                color: scheme.outlineVariant.withValues(alpha: 0.65),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(
+                color: scheme.outlineVariant.withValues(alpha: 0.65),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(color: scheme.primary, width: 1.3),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          helperText,
+          style: TextStyle(
+            fontSize: _kPageFontSize,
+            fontFamily: "DMSans",
+            color: scheme.onSurface.withValues(alpha: 0.62),
+          ),
+        ),
+        if (suggestions.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.16),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: 0.55),
+              ),
+            ),
+            child: Column(
+              children: [
+                for (var i = 0; i < suggestions.length; i++) ...[
+                  Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      dense: true,
+                      leading: Icon(
+                        Icons.place_outlined,
+                        size: 18,
+                        color: scheme.primary,
+                      ),
+                      title: Text(
+                        suggestions[i].primaryText ??
+                            suggestions[i].description,
+                        style: TextStyle(
+                          fontSize: _kPageFontSize,
+                          fontFamily: "DMSans",
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                      subtitle: suggestions[i].secondaryText == null
+                          ? null
+                          : Text(
+                              suggestions[i].secondaryText!,
+                              style: TextStyle(
+                                fontSize: _kPageFontSize,
+                                fontFamily: "DMSans",
+                                color: scheme.onSurface.withValues(alpha: 0.62),
+                              ),
+                            ),
+                      onTap: () => onSuggestionTap(suggestions[i]),
+                    ),
+                  ),
+                  if (i != suggestions.length - 1)
+                    Divider(
+                      height: 1,
+                      color: scheme.outlineVariant.withValues(alpha: 0.45),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -1129,10 +1561,16 @@ class _InputField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       validator: validator,
+      style: const TextStyle(fontSize: _kPageFontSize, fontFamily: "DMSans"),
       decoration: InputDecoration(
         labelText: label,
         filled: true,
         fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.16),
+        labelStyle: TextStyle(
+          fontSize: _kPageFontSize,
+          fontFamily: "DMSans",
+          color: scheme.onSurface.withValues(alpha: 0.72),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide(
@@ -1204,7 +1642,7 @@ class _DateTimeTile extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: _kPageFontSize,
                         fontWeight: FontWeight.w800,
                         color: scheme.onSurface.withValues(alpha: 0.72),
                       ),
@@ -1217,7 +1655,7 @@ class _DateTimeTile extends StatelessWidget {
                               "EEE, dd MMM yyyy · hh:mm a",
                             ).format(value!),
                       style: TextStyle(
-                        fontSize: 13.5,
+                        fontSize: _kPageFontSize,
                         fontWeight: FontWeight.w800,
                         color: scheme.onSurface,
                       ),
@@ -1315,7 +1753,7 @@ class _TicketEditorCardState extends State<_TicketEditorCard> {
               Text(
                 "${t(lang, "my_events.form_ticket_title")} ${widget.index + 1}",
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: _kPageFontSize,
                   fontWeight: FontWeight.w900,
                   color: scheme.onSurface,
                 ),
@@ -1347,7 +1785,14 @@ class _TicketEditorCardState extends State<_TicketEditorCard> {
             children: [
               for (final option in _suggestedCategories)
                 ChoiceChip(
-                  label: Text(option),
+                  label: Text(
+                    option,
+                    style: const TextStyle(
+                      fontSize: _kPageFontSize,
+                      fontFamily: "DMSans",
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   selected: categoryText == option,
                   onSelected: widget.enabled
                       ? (_) {
@@ -1392,7 +1837,7 @@ class _TicketEditorCardState extends State<_TicketEditorCard> {
             title: Text(
               t(lang, "my_events.form_ticket_consumable_label"),
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: _kPageFontSize,
                 fontWeight: FontWeight.w800,
                 color: scheme.onSurface,
               ),
@@ -1482,7 +1927,8 @@ class _PrimarySubmitButton extends StatelessWidget {
               label,
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
-                fontSize: 14.5,
+                fontSize: _kPageFontSize,
+                fontFamily: "DMSans",
               ),
             ),
     );
@@ -1524,7 +1970,7 @@ class _StatePanel extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: _kPageFontSize,
                 fontWeight: FontWeight.w900,
                 color: scheme.onSurface,
               ),
@@ -1534,7 +1980,7 @@ class _StatePanel extends StatelessWidget {
               description,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: _kPageFontSize,
                 height: 1.5,
                 color: scheme.onSurface.withValues(alpha: 0.68),
               ),
@@ -1598,4 +2044,28 @@ class _ApiException implements Exception {
   final String message;
 
   const _ApiException(this.message);
+}
+
+class _GooglePlaceSuggestion {
+  final String placeId;
+  final String description;
+  final String? primaryText;
+  final String? secondaryText;
+
+  const _GooglePlaceSuggestion({
+    required this.placeId,
+    required this.description,
+    this.primaryText,
+    this.secondaryText,
+  });
+
+  factory _GooglePlaceSuggestion.fromJson(Map<String, dynamic> json) {
+    final formatting = json["structured_formatting"] as Map?;
+    return _GooglePlaceSuggestion(
+      placeId: (json["place_id"] ?? "").toString(),
+      description: (json["description"] ?? "").toString(),
+      primaryText: formatting?["main_text"]?.toString(),
+      secondaryText: formatting?["secondary_text"]?.toString(),
+    );
+  }
 }
