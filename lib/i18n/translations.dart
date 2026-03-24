@@ -206,6 +206,27 @@ const translations = {
     "my_event_reviews.reported": "Reported",
     "my_event_reviews.not_reported": "Clean",
     "my_event_reviews.rating": "Rating",
+    "my_listing_submissions.search_hint": "Search your listing submissions",
+    "my_listing_submissions.status_pending": "Pending",
+    "my_listing_submissions.status_approved": "Approved",
+    "my_listing_submissions.status_rejected": "Rejected",
+    "my_listing_submissions.images_short": "images",
+    "my_listing_submissions.services_short": "services",
+    "my_listing_submissions.note_available": "Review note",
+    "my_listing_submissions.fallback_title": "Listing submission",
+    "my_listing_submissions.error_title": "Unable to load submissions",
+    "my_listing_submissions.load_failed":
+        "We could not retrieve your listing submissions right now. Please try again.",
+    "my_listing_submissions.timeout":
+        "The request took too long. Check your connection and try again.",
+    "my_listing_submissions.session_expired":
+        "Your session expired. Please sign in again to continue.",
+    "my_listing_submissions.empty_title": "No listing submissions yet",
+    "my_listing_submissions.empty_default":
+        "Listings you submit for review will appear here with their category, status, and media summary.",
+    "my_listing_submissions.empty_filtered":
+        "No listing submissions match your current search and filters. Reset them to broaden the results.",
+    "my_listing_submissions.reset": "Reset",
     "my_events.submissions_subtitle":
         "Search, filter, and track every event request you have submitted in one fast workspace.",
     "my_events.submissions_total": "Submissions",
