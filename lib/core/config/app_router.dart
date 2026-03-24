@@ -33,6 +33,9 @@ import "../../features/main/presentation/pages/trip_package_details_page.dart";
 import "../../features/me/presentation/pages/dashboard_page.dart";
 import "../../features/me/presentation/pages/events/event_review_page.dart";
 import "../../features/me/presentation/pages/events/event_tickets_page.dart";
+import "../../features/me/presentation/pages/events/my_event_delete_page.dart";
+import "../../features/me/presentation/pages/events/my_event_edit_page.dart";
+import "../../features/me/presentation/pages/events/my_event_submission_add.dart";
 import "../../features/me/presentation/pages/events/my_event_submission_detail_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
 import "../../features/me/presentation/pages/events/my_events_page.dart";
@@ -170,6 +173,45 @@ final class AppRouter {
           builder: (_) => MeShell(
             title: t(lang, "nav.my_events"),
             child: const MyEventsPage(),
+          ),
+        );
+      case AppRoutes.myEventAdd:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "my_events.add_event"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_events.add_event"),
+            child: const MyEventSubmissionAddPage(),
+          ),
+        );
+      case AppRoutes.myEventEdit:
+        final editArgs = settings.arguments is Map
+            ? Map<String, dynamic>.from(settings.arguments as Map)
+            : const <String, dynamic>{};
+        return AuthGuard.protect(
+          featureLabel: t(lang, "my_events.edit_event"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_events.edit_event"),
+            child: MyEventEditPage(
+              eventId: editArgs["eventId"]?.toString(),
+              title: editArgs["title"]?.toString(),
+            ),
+          ),
+        );
+      case AppRoutes.myEventDelete:
+        final deleteArgs = settings.arguments is Map
+            ? Map<String, dynamic>.from(settings.arguments as Map)
+            : const <String, dynamic>{};
+        return AuthGuard.protect(
+          featureLabel: t(lang, "my_events.delete_event"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_events.delete_event"),
+            child: MyEventDeletePage(
+              eventId: deleteArgs["eventId"]?.toString(),
+              title: deleteArgs["title"]?.toString(),
+            ),
           ),
         );
       case AppRoutes.myEventSubmissions:
