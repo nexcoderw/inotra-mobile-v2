@@ -1,7 +1,7 @@
 import "dart:convert";
 import "dart:io";
-import "dart:typed_data";
 
+import "package:flutter/foundation.dart";
 import "package:flutter/widgets.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 
@@ -24,7 +24,7 @@ class LocalNotificationService {
 
   static final LocalNotificationService instance = LocalNotificationService._();
 
-  static const _channelId   = "inotra_high_importance";
+  static const _channelId = "inotra_high_importance";
   static const _channelName = "INOTRA Notifications";
 
   final _plugin = FlutterLocalNotificationsPlugin();
@@ -36,8 +36,10 @@ class LocalNotificationService {
   // ── Initialisation ─────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
+    if (kIsWeb) return;
+
     const android = AndroidInitializationSettings("@mipmap/ic_launcher");
-    const ios     = DarwinInitializationSettings(
+    const ios = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
@@ -45,20 +47,23 @@ class LocalNotificationService {
 
     await _plugin.initialize(
       const InitializationSettings(android: android, iOS: ios),
-      onDidReceiveNotificationResponse:           _onForegroundTap,
+      onDidReceiveNotificationResponse: _onForegroundTap,
       onDidReceiveBackgroundNotificationResponse: _onBackgroundNotificationTap,
     );
 
     if (Platform.isAndroid) {
       final impl = _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
 
       // Create the high-importance channel (idempotent — safe to call every launch)
       await impl?.createNotificationChannel(
         AndroidNotificationChannel(
           _channelId,
           _channelName,
-          description: "INOTRA real-time alerts for new listings, events, and trip packages.",
+          description:
+              "INOTRA real-time alerts for new listings, events, and trip packages.",
           importance: Importance.max,
           playSound: true,
           enableVibration: true,
@@ -74,6 +79,8 @@ class LocalNotificationService {
   // ── Show a banner ──────────────────────────────────────────────────────────
 
   Future<void> showNotification(AppNotification notif) async {
+    if (kIsWeb) return;
+
     await _plugin.show(
       // Stable int ID derived from the UUID — same notification won't appear twice
       notif.id.hashCode.abs(),
@@ -98,10 +105,7 @@ class LocalNotificationService {
         ),
       ),
       // Deep-link payload so taps can navigate to the right page
-      payload: jsonEncode({
-        "kind":      notif.kind,
-        "entity_id": notif.entityId,
-      }),
+      payload: jsonEncode({"kind": notif.kind, "entity_id": notif.entityId}),
     );
   }
 
@@ -114,8 +118,8 @@ class LocalNotificationService {
   static void _navigate(String? payload) {
     if (payload == null || payload.isEmpty) return;
     try {
-      final data     = jsonDecode(payload) as Map<String, dynamic>;
-      final kind     = data["kind"]      as String?;
+      final data = jsonDecode(payload) as Map<String, dynamic>;
+      final kind = data["kind"] as String?;
       final entityId = data["entity_id"] as String?;
       if (kind == null || entityId == null) return;
 
