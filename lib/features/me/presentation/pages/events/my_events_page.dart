@@ -389,14 +389,19 @@ class _MyEventsPageState extends State<MyEventsPage>
                                       _fetchPage(reset: true);
                                     }
                                   },
-                                  onDelete: () => Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.myEventDelete,
-                                    arguments: {
-                                      "eventId": item.id,
-                                      "title": item.title,
-                                    },
-                                  ),
+                                  onDelete: () async {
+                                    final deleted = await Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.myEventDelete,
+                                      arguments: {
+                                        "eventId": item.id,
+                                        "title": item.title,
+                                      },
+                                    );
+                                    if (deleted == true && mounted) {
+                                      _fetchPage(reset: true);
+                                    }
+                                  },
                                 ),
                               );
                             },
