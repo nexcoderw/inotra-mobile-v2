@@ -28,12 +28,16 @@ final class AppRoutes {
 
   static const dashboard = "/dashboard";
   static const myEvents = "/events/my";
+  static const myEventAdd = "/events/my/add";
+  static const myEventEdit = "/events/my/edit";
+  static const myEventDelete = "/events/my/delete";
   static const myEventSubmissions = "/events/my/submissions";
   static const myEventSubmissionDetail = "/events/my/submissions/detail";
   static const eventReview = "/events/review";
   static const eventTickets = "/events/tickets";
   static const myListings = "/listings/my";
   static const myListingSubmissions = "/listings/my/submissions";
+  static const myListingSubmissionDetail = "/listings/my/submissions/detail";
   static const listingReviews = "/listings/reviews";
   static const listingBooking = "/listings/booking";
   static const tripReservations = "/trips/reservations";
