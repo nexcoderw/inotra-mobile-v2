@@ -8,12 +8,14 @@ class PageHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onBack;
   final dynamic icon;
+  final TextStyle? titleStyle;
 
   const PageHeader({
     super.key,
     required this.title,
     this.onBack,
     this.icon = HugeIcons.strokeRoundedArrowLeft01,
+    this.titleStyle,
   });
 
   @override
@@ -39,7 +41,9 @@ class PageHeader extends StatelessWidget {
               title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              style:
+                  titleStyle ??
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ),
         ],
