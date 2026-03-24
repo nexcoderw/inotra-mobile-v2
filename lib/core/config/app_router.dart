@@ -34,12 +34,13 @@ import "../../features/me/presentation/pages/dashboard_page.dart";
 import "../../features/me/presentation/pages/events/event_tickets_page.dart";
 import "../../features/me/presentation/pages/events/my_event_delete_page.dart";
 import "../../features/me/presentation/pages/events/my_event_edit_page.dart";
-import "../../features/me/presentation/pages/events/my_event_reviews_page.dart";
+import "../../features/me/presentation/pages/events/event_payments_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submission_add.dart";
 import "../../features/me/presentation/pages/events/my_event_submission_detail_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
 import "../../features/me/presentation/pages/events/my_events_page.dart";
 import "../../features/me/presentation/pages/listings/listing_booking_page.dart";
+import "../../features/me/presentation/pages/listings/listing_payments_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_reviews_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_add_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_delete_page.dart";
@@ -242,13 +243,13 @@ final class AppRouter {
             ),
           ),
         );
-      case AppRoutes.eventReview:
+      case AppRoutes.eventPayments:
         return AuthGuard.protect(
-          featureLabel: t(lang, "my_event_reviews.title"),
+          featureLabel: t(lang, "nav.event_payments"),
           description: null,
           builder: (_) => MeShell(
-            title: t(lang, "my_event_reviews.title"),
-            child: const MyEventReviewsPage(),
+            title: t(lang, "nav.event_payments"),
+            child: const EventPaymentsPage(),
           ),
         );
       case AppRoutes.eventTickets:
@@ -339,6 +340,15 @@ final class AppRouter {
           builder: (_) => MeShell(
             title: t(lang, "my_listing_reviews.title"),
             child: const MyListingReviewsPage(),
+          ),
+        );
+      case AppRoutes.listingPayments:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.listing_payments"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "nav.listing_payments"),
+            child: const ListingPaymentsPage(),
           ),
         );
       case AppRoutes.listingBooking:
