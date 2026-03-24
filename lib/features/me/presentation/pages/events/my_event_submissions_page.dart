@@ -13,6 +13,7 @@ import "../../../../../core/constants/api/my_event_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
+import "my_event_submission_detail_page.dart";
 
 class MyEventSubmissionsPage extends StatefulWidget {
   const MyEventSubmissionsPage({super.key});
@@ -637,7 +638,10 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
                               onTap: () => Navigator.pushNamed(
                                 context,
                                 AppRoutes.myEventSubmissionDetail,
-                                arguments: item.title,
+                                arguments: MyEventSubmissionDetailArgs(
+                                  submissionId: item.id,
+                                  title: item.title,
+                                ),
                               ),
                             ),
                           );
