@@ -41,6 +41,7 @@ import "../../features/me/presentation/pages/events/my_event_submissions_page.da
 import "../../features/me/presentation/pages/events/my_events_page.dart";
 import "../../features/me/presentation/pages/listings/listing_booking_page.dart";
 import "../../features/me/presentation/pages/listings/listing_reviews_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_submission_detail_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_submissions_page.dart";
 import "../../features/me/presentation/pages/listings/my_listings_page.dart";
 import "../../features/me/presentation/pages/trips/trip_reservations_page.dart";
@@ -272,6 +273,21 @@ final class AppRouter {
           builder: (_) => MeShell(
             title: t(lang, "nav.my_listing_submissions"),
             child: const MyListingSubmissionsPage(),
+          ),
+        );
+      case AppRoutes.myListingSubmissionDetail:
+        final args = settings.arguments is MyListingSubmissionDetailArgs
+            ? settings.arguments as MyListingSubmissionDetailArgs
+            : null;
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.my_listing_submissions"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_listing_submissions.detail_title"),
+            child: MyListingSubmissionDetailPage(
+              submissionId: args?.submissionId,
+              title: args?.title,
+            ),
           ),
         );
       case AppRoutes.listingReviews:
