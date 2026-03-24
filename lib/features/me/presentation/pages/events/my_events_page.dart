@@ -299,13 +299,28 @@ class _MyEventsPageState extends State<MyEventsPage>
                               ),
                             ),
                             const SizedBox(height: 14),
-                            _PremiumSearchBar(
-                              controller: _searchCtrl,
-                              hintText: t(lang, "my_events.search_hint"),
-                              onChanged: _onSearchChanged,
-                              onClear: _clearSearch,
-                              isDark: isDark,
-                              scheme: scheme,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _PremiumSearchBar(
+                                    controller: _searchCtrl,
+                                    hintText: t(lang, "my_events.search_hint"),
+                                    onChanged: _onSearchChanged,
+                                    onClear: _clearSearch,
+                                    isDark: isDark,
+                                    scheme: scheme,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                _ToolbarActionButton(
+                                  label: t(lang, "my_events.add_event"),
+                                  scheme: scheme,
+                                  onTap: () => Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.myEventAdd,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -358,6 +373,22 @@ class _MyEventsPageState extends State<MyEventsPage>
                                     context,
                                     AppRoutes.eventDetails,
                                     arguments: item.id,
+                                  ),
+                                  onEdit: () => Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.myEventEdit,
+                                    arguments: {
+                                      "eventId": item.id,
+                                      "title": item.title,
+                                    },
+                                  ),
+                                  onDelete: () => Navigator.pushNamed(
+                                    context,
+                                    AppRoutes.myEventDelete,
+                                    arguments: {
+                                      "eventId": item.id,
+                                      "title": item.title,
+                                    },
                                   ),
                                 ),
                               );
@@ -451,11 +482,15 @@ class _MyEventPosterCard extends StatefulWidget {
   final _MyEventItem item;
   final String lang;
   final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const _MyEventPosterCard({
     required this.item,
     required this.lang,
     required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   @override
@@ -549,6 +584,25 @@ class _MyEventPosterCardState extends State<_MyEventPosterCard>
                 ),
               ),
               Positioned(
+                top: 14,
+                right: 14,
+                child: Row(
+                  children: [
+                    _PosterActionButton(
+                      icon: Icons.edit_outlined,
+                      tooltip: t(widget.lang, "my_events.edit_event"),
+                      onTap: widget.onEdit,
+                    ),
+                    const SizedBox(width: 8),
+                    _PosterActionButton(
+                      icon: Icons.delete_outline_rounded,
+                      tooltip: t(widget.lang, "my_events.delete_event"),
+                      onTap: widget.onDelete,
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
                 left: 14,
                 right: 14,
                 bottom: 14,
@@ -559,6 +613,55 @@ class _MyEventPosterCardState extends State<_MyEventPosterCard>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PosterActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _PosterActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
+
+    return Tooltip(
+      message: tooltip,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Material(
+            color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.16),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: Colors.white.withValues(alpha: 0.96),
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -988,6 +1091,60 @@ class _PremiumSearchBar extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _ToolbarActionButton extends StatelessWidget {
+  final String label;
+  final ColorScheme scheme;
+  final VoidCallback onTap;
+
+  const _ToolbarActionButton({
+    required this.label,
+    required this.scheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: 0.24),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: -0.1,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
