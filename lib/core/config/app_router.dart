@@ -41,6 +41,9 @@ import "../../features/me/presentation/pages/events/my_event_submissions_page.da
 import "../../features/me/presentation/pages/events/my_events_page.dart";
 import "../../features/me/presentation/pages/listings/listing_booking_page.dart";
 import "../../features/me/presentation/pages/listings/listing_reviews_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_add_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_delete_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_edit_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_submission_detail_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_submissions_page.dart";
 import "../../features/me/presentation/pages/listings/my_listings_page.dart";
@@ -264,6 +267,45 @@ final class AppRouter {
           builder: (_) => MeShell(
             title: t(lang, "nav.my_listings"),
             child: const MyListingsPage(),
+          ),
+        );
+      case AppRoutes.myListingAdd:
+        return AuthGuard.protect(
+          featureLabel: t(lang, "my_listings.add_listing"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_listings.add_listing"),
+            child: const MyListingAddPage(),
+          ),
+        );
+      case AppRoutes.myListingEdit:
+        final editArgs = settings.arguments is Map
+            ? Map<String, dynamic>.from(settings.arguments as Map)
+            : const <String, dynamic>{};
+        return AuthGuard.protect(
+          featureLabel: t(lang, "my_listings.edit_listing"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_listings.edit_listing"),
+            child: MyListingEditPage(
+              listingId: editArgs["listingId"]?.toString(),
+              title: editArgs["title"]?.toString(),
+            ),
+          ),
+        );
+      case AppRoutes.myListingDelete:
+        final deleteArgs = settings.arguments is Map
+            ? Map<String, dynamic>.from(settings.arguments as Map)
+            : const <String, dynamic>{};
+        return AuthGuard.protect(
+          featureLabel: t(lang, "my_listings.delete_listing"),
+          description: null,
+          builder: (_) => MeShell(
+            title: t(lang, "my_listings.delete_listing"),
+            child: MyListingDeletePage(
+              listingId: deleteArgs["listingId"]?.toString(),
+              title: deleteArgs["title"]?.toString(),
+            ),
           ),
         );
       case AppRoutes.myListingSubmissions:
