@@ -40,7 +40,7 @@ import "../../features/me/presentation/pages/events/my_event_submission_detail_p
 import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
 import "../../features/me/presentation/pages/events/my_events_page.dart";
 import "../../features/me/presentation/pages/listings/listing_booking_page.dart";
-import "../../features/me/presentation/pages/listings/listing_reviews_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_reviews_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_add_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_delete_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_edit_page.dart";
@@ -337,8 +337,8 @@ final class AppRouter {
           featureLabel: t(lang, "nav.listing_reviews"),
           description: null,
           builder: (_) => MeShell(
-            title: t(lang, "nav.listing_reviews"),
-            child: const ListingReviewsPage(),
+            title: t(lang, "my_listing_reviews.title"),
+            child: const MyListingReviewsPage(),
           ),
         );
       case AppRoutes.listingBooking:
