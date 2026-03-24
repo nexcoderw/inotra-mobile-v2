@@ -239,6 +239,21 @@ const translations = {
     "my_events.ticket_vip": "VIP",
     "my_events.ticket_vvip": "VVIP",
     "my_events.ticket_table": "Table",
+    "my_events.search_hint": "Search your events",
+    "my_events.error_title": "Unable to load your events",
+    "my_events.load_failed":
+        "We could not retrieve your events right now. Please try again.",
+    "my_events.timeout":
+        "The request took too long. Check your connection and try again.",
+    "my_events.session_expired":
+        "Your session expired. Please sign in again to continue.",
+    "my_events.empty_title": "No events yet",
+    "my_events.empty_default":
+        "Events you create and publish will appear here with their date and first ticket summary.",
+    "my_events.empty_filtered":
+        "No events match your current search. Try a different keyword.",
+    "my_events.no_dates": "Dates not set",
+    "my_events.ticket_none": "No ticket added",
     "under.title": "Under construction",
     "under.subtitle": "We are polishing this page. Check back soon.",
     "packages.title": "Trip Packages",
