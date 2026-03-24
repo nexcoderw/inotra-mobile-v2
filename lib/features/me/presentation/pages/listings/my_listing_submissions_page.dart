@@ -6,6 +6,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
+import "package:toastification/toastification.dart";
 
 import "../../../../../core/config/api.dart";
 import "../../../../../core/config/app_routes.dart";
@@ -45,6 +46,7 @@ class _MyListingSubmissionsPageState extends State<MyListingSubmissionsPage>
   final ScrollController _scrollCtrl = ScrollController();
   final TextEditingController _searchCtrl = TextEditingController();
   final List<_ListingSubmission> _items = [];
+  final Set<String> _deletingIds = <String>{};
 
   Timer? _debounce;
   bool _loading = false;
@@ -291,6 +293,264 @@ class _MyListingSubmissionsPageState extends State<MyListingSubmissionsPage>
     _fetchPage(reset: true);
   }
 
+  bool _canDeleteSubmission(_ListingSubmission submission) {
+    return submission.status.toUpperCase() != "APPROVED";
+  }
+
+  Future<void> _confirmDeleteSubmission(_ListingSubmission submission) async {
+    if (_deletingIds.contains(submission.id) ||
+        !_canDeleteSubmission(submission)) {
+      return;
+    }
+
+    final lang = _lang;
+    final scheme = Theme.of(context).colorScheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+              decoration: BoxDecoration(
+                color: scheme.surface.withValues(alpha: 0.96),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: scheme.error.withValues(alpha: 0.14)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.10),
+                    blurRadius: 26,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 48,
+                    width: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      color: scheme.error.withValues(alpha: 0.12),
+                      border: Border.all(
+                        color: scheme.error.withValues(alpha: 0.20),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 22,
+                      color: scheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    t(lang, "my_listing_submissions.delete_title"),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: scheme.onSurface.withValues(alpha: 0.92),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    t(lang, "my_listing_submissions.delete_message"),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.45,
+                      color: scheme.onSurface.withValues(alpha: 0.68),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest.withValues(
+                        alpha: 0.35,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          submission.name.trim().isEmpty
+                              ? t(lang, "my_listing_submissions.fallback_title")
+                              : submission.name.trim(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: scheme.onSurface.withValues(alpha: 0.88),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _compactLocation(submission.city, submission.country),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurface.withValues(alpha: 0.56),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DialogGhostButton(
+                          label: t(lang, "common.cancel"),
+                          onTap: () => Navigator.of(context).pop(false),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _DialogDangerButton(
+                          label: t(
+                            lang,
+                            "my_listing_submissions.delete_action",
+                          ),
+                          tone: scheme.error,
+                          onTap: () => Navigator.of(context).pop(true),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteSubmission(submission);
+    }
+  }
+
+  Future<void> _deleteSubmission(_ListingSubmission submission) async {
+    final valid = await AuthSession.instance.ensureValid();
+    if (!valid) {
+      if (!mounted) return;
+      setState(
+        () => _error = t(_lang, "my_listing_submissions.session_expired"),
+      );
+      return;
+    }
+
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) {
+      if (!mounted) return;
+      setState(
+        () => _error = t(_lang, "my_listing_submissions.session_expired"),
+      );
+      return;
+    }
+
+    setState(() => _deletingIds.add(submission.id));
+
+    try {
+      final uri = Api.url(MyListingEndpoints.submissionDelete(submission.id));
+      final response = await http
+          .delete(
+            uri,
+            headers: {
+              "Accept": "application/json",
+              "Authorization": "Bearer $token",
+            },
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        await AuthSession.instance.expireSession();
+        if (!mounted) return;
+        setState(() {
+          _deletingIds.remove(submission.id);
+          _error = t(_lang, "my_listing_submissions.session_expired");
+        });
+        return;
+      }
+
+      final decoded = response.body.isEmpty ? null : jsonDecode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw _ApiException(
+          _extractMessage(decoded) ??
+              t(_lang, "my_listing_submissions.delete_failed"),
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _deletingIds.remove(submission.id);
+        _items.removeWhere((item) => item.id == submission.id);
+      });
+
+      toastification.show(
+        context: context,
+        type: ToastificationType.success,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(_lang, "my_listing_submissions.delete_success")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 2),
+      );
+
+      if (_items.isEmpty && _hasMore) {
+        _fetchPage(reset: false);
+      }
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() => _deletingIds.remove(submission.id));
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(_lang, "my_listing_submissions.timeout")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+    } on _ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _deletingIds.remove(submission.id));
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(error.message),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _deletingIds.remove(submission.id));
+      toastification.show(
+        context: context,
+        type: ToastificationType.error,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(_lang, "my_listing_submissions.delete_failed")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = _lang;
@@ -382,6 +642,9 @@ class _MyListingSubmissionsPageState extends State<MyListingSubmissionsPage>
                                     submission: submission,
                                     isTablet: isTablet,
                                     lang: lang,
+                                    isDeleting: _deletingIds.contains(
+                                      submission.id,
+                                    ),
                                     onOpen: () => Navigator.pushNamed(
                                       context,
                                       AppRoutes.myListingSubmissionDetail,
@@ -390,6 +653,11 @@ class _MyListingSubmissionsPageState extends State<MyListingSubmissionsPage>
                                         title: submission.name,
                                       ),
                                     ),
+                                    onDelete: _canDeleteSubmission(submission)
+                                        ? () => _confirmDeleteSubmission(
+                                            submission,
+                                          )
+                                        : null,
                                   ),
                                 ),
                               );
@@ -801,13 +1069,17 @@ class _ListingSubmissionCard extends StatelessWidget {
   final _ListingSubmission submission;
   final bool isTablet;
   final String lang;
+  final bool isDeleting;
   final VoidCallback onOpen;
+  final VoidCallback? onDelete;
 
   const _ListingSubmissionCard({
     required this.submission,
     required this.isTablet,
     required this.lang,
+    required this.isDeleting,
     required this.onOpen,
+    required this.onDelete,
   });
 
   @override
@@ -890,9 +1162,21 @@ class _ListingSubmissionCard extends StatelessWidget {
               Positioned(
                 top: 12,
                 right: 12,
-                child: _SubmissionStatusBadge(
-                  status: submission.status,
-                  lang: lang,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SubmissionStatusBadge(
+                      status: submission.status,
+                      lang: lang,
+                    ),
+                    if (onDelete != null) ...[
+                      const SizedBox(width: 8),
+                      _SubmissionDeleteButton(
+                        busy: isDeleting,
+                        onTap: onDelete!,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               Positioned(
@@ -1104,6 +1388,62 @@ class _SubmissionStatusBadge extends StatelessWidget {
   }
 }
 
+class _SubmissionDeleteButton extends StatelessWidget {
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _SubmissionDeleteButton({required this.busy, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.error.withValues(alpha: 0.88),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+              boxShadow: [
+                BoxShadow(
+                  color: scheme.error.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: busy
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white.withValues(alpha: 0.96),
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GlassFooter extends StatelessWidget {
   final Widget child;
 
@@ -1161,6 +1501,76 @@ class _InfoPill extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DialogGhostButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const _DialogGhostButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(
+          height: 46,
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: scheme.onSurface.withValues(alpha: 0.82),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogDangerButton extends StatelessWidget {
+  final String label;
+  final Color tone;
+  final VoidCallback? onTap;
+
+  const _DialogDangerButton({
+    required this.label,
+    required this.tone,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: tone,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: SizedBox(
+          height: 46,
+          child: Center(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
