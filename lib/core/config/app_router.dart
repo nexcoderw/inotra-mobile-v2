@@ -31,10 +31,10 @@ import "../../features/main/presentation/pages/trip_package_details_page.dart";
 
 // Me area (dashboard, profile, settings)
 import "../../features/me/presentation/pages/dashboard_page.dart";
-import "../../features/me/presentation/pages/events/event_review_page.dart";
 import "../../features/me/presentation/pages/events/event_tickets_page.dart";
 import "../../features/me/presentation/pages/events/my_event_delete_page.dart";
 import "../../features/me/presentation/pages/events/my_event_edit_page.dart";
+import "../../features/me/presentation/pages/events/my_event_reviews_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submission_add.dart";
 import "../../features/me/presentation/pages/events/my_event_submission_detail_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
@@ -240,11 +240,11 @@ final class AppRouter {
         );
       case AppRoutes.eventReview:
         return AuthGuard.protect(
-          featureLabel: t(lang, "nav.event_review"),
+          featureLabel: t(lang, "my_event_reviews.title"),
           description: null,
           builder: (_) => MeShell(
-            title: t(lang, "nav.event_review"),
-            child: const EventReviewPage(),
+            title: t(lang, "my_event_reviews.title"),
+            child: const MyEventReviewsPage(),
           ),
         );
       case AppRoutes.eventTickets:
