@@ -34,11 +34,12 @@ class PageHeader extends StatelessWidget {
             tooltip: tr("nav.back"),
           ),
           const SizedBox(width: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
             ),
           ),
         ],
