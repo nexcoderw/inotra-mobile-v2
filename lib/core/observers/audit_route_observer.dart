@@ -26,51 +26,52 @@ class AuditRouteObserver extends RouteObserver<ModalRoute<void>> {
   /// Human-readable label for each named route.
   static const Map<String, String> _labels = {
     // ── Main tabs ─────────────────────────────────────────────────────────
-    AppRoutes.home:               "Explore",
-    AppRoutes.listings:           "Listings",
-    AppRoutes.aiChat:             "AI Chat",
-    AppRoutes.events:             "Events",
-    AppRoutes.highlights:         "Highlights",
+    AppRoutes.home: "Explore",
+    AppRoutes.listings: "Listings",
+    AppRoutes.aiChat: "AI Chat",
+    AppRoutes.events: "Events",
+    AppRoutes.highlights: "Highlights",
 
     // ── Discover & details ────────────────────────────────────────────────
-    AppRoutes.tripPackages:       "Trip Packages",
+    AppRoutes.tripPackages: "Trip Packages",
     AppRoutes.tripPackageDetails: "Trip Package Details",
-    AppRoutes.listingDetails:     "Listing Details",
-    AppRoutes.eventDetails:       "Event Details",
+    AppRoutes.listingDetails: "Listing Details",
+    AppRoutes.eventDetails: "Event Details",
 
     // ── AI Chat ───────────────────────────────────────────────────────────
     AppRoutes.aiChatConversations: "AI Chat Conversations",
 
     // ── Me area ───────────────────────────────────────────────────────────
-    AppRoutes.dashboard:            "Dashboard",
-    AppRoutes.myEvents:             "My Events",
-    AppRoutes.myEventSubmissions:   "My Event Submissions",
-    AppRoutes.eventReview:          "Event Review",
-    AppRoutes.eventTickets:         "Event Tickets",
-    AppRoutes.myListings:           "My Listings",
+    AppRoutes.dashboard: "Dashboard",
+    AppRoutes.myEvents: "My Events",
+    AppRoutes.myEventSubmissions: "My Event Submissions",
+    AppRoutes.eventPayments: "Event Payments",
+    AppRoutes.eventTickets: "Event Tickets",
+    AppRoutes.myListings: "My Listings",
     AppRoutes.myListingSubmissions: "My Listing Submissions",
-    AppRoutes.listingReviews:       "Listing Reviews",
-    AppRoutes.listingBooking:       "Listing Booking",
-    AppRoutes.tripReservations:     "Trip Reservations",
+    AppRoutes.listingReviews: "Listing Reviews",
+    AppRoutes.listingPayments: "Listing Payments",
+    AppRoutes.listingBooking: "Listing Booking",
+    AppRoutes.tripReservations: "Trip Reservations",
 
     // ── Profile ───────────────────────────────────────────────────────────
-    AppRoutes.profile:         "Profile",
-    AppRoutes.profileAccount:  "Profile Account Details",
+    AppRoutes.profile: "Profile",
+    AppRoutes.profileAccount: "Profile Account Details",
     AppRoutes.profilePassword: "Change Password",
-    AppRoutes.profileDanger:   "Account Danger Zone",
+    AppRoutes.profileDanger: "Account Danger Zone",
 
     // ── Notifications ─────────────────────────────────────────────────────
     AppRoutes.notifications: "Notifications",
 
     // ── Settings ──────────────────────────────────────────────────────────
-    AppRoutes.settings:         "Settings",
-    AppRoutes.settingsTheme:    "Theme Settings",
+    AppRoutes.settings: "Settings",
+    AppRoutes.settingsTheme: "Theme Settings",
     AppRoutes.settingsLanguage: "Language Settings",
 
     // ── Static pages ──────────────────────────────────────────────────────
-    AppRoutes.privacyPolicy:    "Privacy Policy",
-    AppRoutes.termsConditions:  "Terms & Conditions",
-    AppRoutes.contactSupport:   "Contact Support",
+    AppRoutes.privacyPolicy: "Privacy Policy",
+    AppRoutes.termsConditions: "Terms & Conditions",
+    AppRoutes.contactSupport: "Contact Support",
   };
 
   /// Entry timestamps keyed by route name.
