@@ -1238,7 +1238,7 @@ class _SubmissionTicket {
 
   factory _SubmissionTicket.fromJson(Map<String, dynamic> json) {
     return _SubmissionTicket(
-      category: (json["category"] ?? "REGULAR").toString(),
+      category: (json["category"] ?? "").toString().trim(),
       price: json["price"] is num
           ? json["price"] as num
           : num.tryParse("${json["price"] ?? ""}"),
@@ -1248,9 +1248,13 @@ class _SubmissionTicket {
   }
 
   String categoryLabel(String lang) {
-    switch (category.toUpperCase()) {
+    final normalized = category.trim().toUpperCase();
+
+    switch (normalized) {
       case "FREE":
         return t(lang, "my_events.ticket_free");
+      case "REGULAR":
+        return t(lang, "my_events.ticket_regular");
       case "VIP":
         return t(lang, "my_events.ticket_vip");
       case "VVIP":
@@ -1258,7 +1262,9 @@ class _SubmissionTicket {
       case "TABLE":
         return t(lang, "my_events.ticket_table");
       default:
-        return t(lang, "my_events.ticket_regular");
+        return category.trim().isNotEmpty
+            ? category.trim()
+            : t(lang, "my_events.submissions_not_available");
     }
   }
 
