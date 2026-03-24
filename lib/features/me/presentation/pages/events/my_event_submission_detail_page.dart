@@ -1148,13 +1148,15 @@ class _EventSubmissionDetail {
               json["first_ticket"] as Map<String, dynamic>,
             )
           : null,
-      tickets: (json["tickets"] as List?)
-          ?.whereType<Map>()
-          .map(
-            (item) =>
-                _SubmissionTicket.fromJson(Map<String, dynamic>.from(item)),
-          )
-          .toList(),
+      tickets:
+          (json["tickets"] as List?)
+              ?.whereType<Map>()
+              .map(
+                (item) =>
+                    _SubmissionTicket.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList() ??
+          const [],
       createdAt: _parseDate(json["created_at"]),
       updatedAt: _parseDate(json["updated_at"]),
     );
