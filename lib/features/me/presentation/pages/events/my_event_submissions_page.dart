@@ -5,10 +5,11 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
+import "package:intl/intl.dart";
 
 import "../../../../../core/config/api.dart";
+import "../../../../../core/config/app_routes.dart";
 import "../../../../../core/constants/api/my_event_endpoints.dart";
-import "../../../../../core/constants/app_colors.dart";
 import "../../../../../core/services/auth_session.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
@@ -36,66 +37,65 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
     "city",
   ];
 
-  final TextEditingController _searchCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
+  final TextEditingController _searchCtrl = TextEditingController();
 
-  Timer? _searchDebounce;
+  final List<_SubmissionItem> _items = [];
 
-  List<_MyEventSubmissionItem> _items = const [];
+  Timer? _debounce;
   bool _loading = false;
-  bool _hydrated = false;
+  bool _hasMore = true;
   bool _showBackToTop = false;
-  String? _error;
-
+  bool _hydrated = false;
   int _page = 1;
   int _pageSize = 10;
-  int _count = 0;
-  bool _hasNext = false;
-  bool _hasPrevious = false;
-
+  String _query = "";
   String? _status;
   String _ordering = "created_at";
   String _sort = "desc";
-
-  String get _lang => currentLangSync();
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _scrollCtrl.addListener(_handleScroll);
-    unawaited(_fetchSubmissions());
+    _scrollCtrl.addListener(_onScroll);
+    _fetchPage(reset: true);
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
+    _debounce?.cancel();
+    _scrollCtrl.dispose();
     _searchCtrl.dispose();
-    _scrollCtrl
-      ..removeListener(_handleScroll)
-      ..dispose();
     super.dispose();
   }
 
-  void _handleScroll() {
-    final shouldShow = _scrollCtrl.hasClients && _scrollCtrl.offset > 420;
-    if (shouldShow != _showBackToTop && mounted) {
-      setState(() => _showBackToTop = shouldShow);
+  String get _lang => currentLangSync();
+
+  void _onScroll() {
+    final px = _scrollCtrl.position.pixels;
+
+    if (px >= _scrollCtrl.position.maxScrollExtent - 220 &&
+        !_loading &&
+        _hasMore) {
+      _fetchPage(reset: false);
+    }
+
+    final show = px > 320;
+    if (show != _showBackToTop && mounted) {
+      setState(() => _showBackToTop = show);
     }
   }
 
-  Future<void> _fetchSubmissions({bool resetPage = false}) async {
-    if (resetPage) _page = 1;
-
+  Future<void> _fetchPage({required bool reset}) async {
     final valid = await AuthSession.instance.ensureValid();
     if (!valid) {
       if (!mounted) return;
       setState(() {
         _loading = false;
         _hydrated = true;
-        _items = const [];
-        _count = 0;
-        _hasNext = false;
-        _hasPrevious = false;
+        _items.clear();
+        _hasMore = false;
         _error = t(_lang, "my_events.submissions_session_expired");
       });
       return;
@@ -107,7 +107,8 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
       setState(() {
         _loading = false;
         _hydrated = true;
-        _items = const [];
+        _items.clear();
+        _hasMore = false;
         _error = t(_lang, "my_events.submissions_session_expired");
       });
       return;
@@ -115,29 +116,27 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
 
     setState(() {
       _loading = true;
+      if (reset) {
+        _page = 1;
+        _hasMore = true;
+        _items.clear();
+      }
       _error = null;
     });
 
-    final query = <String, String>{
+    final params = <String, String>{
       "page": "$_page",
       "page_size": "$_pageSize",
       "ordering": _ordering,
       "sort": _sort,
     };
-
-    final search = _searchCtrl.text.trim();
-    if (search.isNotEmpty) {
-      query["search"] = search;
-    }
-    if (_status != null && _status!.isNotEmpty) {
-      query["status"] = _status!;
-    }
-
-    final uri = Api.url(
-      MyEventEndpoints.submissions,
-    ).replace(queryParameters: query);
+    if (_query.isNotEmpty) params["search"] = _query;
+    if (_status != null && _status!.isNotEmpty) params["status"] = _status!;
 
     try {
+      final uri = Api.url(
+        MyEventEndpoints.submissions,
+      ).replace(queryParameters: params);
       final resp = await http
           .get(
             uri,
@@ -154,42 +153,46 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
         setState(() {
           _loading = false;
           _hydrated = true;
-          _items = const [];
+          _items.clear();
+          _hasMore = false;
           _error = t(_lang, "my_events.submissions_session_expired");
         });
         return;
       }
 
-      final dynamic decoded = resp.body.isEmpty ? null : jsonDecode(resp.body);
+      final decoded = resp.body.isEmpty ? null : jsonDecode(resp.body);
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw _ApiException(
           _extractMessage(decoded) ?? "Status ${resp.statusCode}",
         );
       }
 
-      final map = decoded is Map<String, dynamic>
-          ? decoded
-          : decoded is Map
-          ? Map<String, dynamic>.from(decoded)
-          : <String, dynamic>{};
+      List<dynamic> results = const [];
+      if (decoded is Map) {
+        results = (decoded["results"] ?? const []) as List? ?? const [];
+      } else if (decoded is List) {
+        results = decoded;
+      }
 
-      final results = (map["results"] as List<dynamic>? ?? const [])
+      final incoming = results
           .whereType<Map>()
           .map(
-            (item) => _MyEventSubmissionItem.fromJson(
-              Map<String, dynamic>.from(item),
-            ),
+            (item) => _SubmissionItem.fromJson(Map<String, dynamic>.from(item)),
           )
-          .toList(growable: false);
+          .toList();
+
+      final existingIds = _items.map((e) => e.id).toSet();
+      final unique = incoming
+          .where((e) => !existingIds.contains(e.id))
+          .toList();
 
       if (!mounted) return;
       setState(() {
-        _items = results;
-        _count = (map["count"] as num?)?.toInt() ?? results.length;
-        _hasNext = map["next"] != null;
-        _hasPrevious = map["previous"] != null;
-        _loading = false;
+        _items.addAll(unique);
+        _hasMore = incoming.length >= _pageSize;
+        if (_hasMore) _page += 1;
         _hydrated = true;
+        _loading = false;
       });
     } on TimeoutException {
       if (!mounted) return;
@@ -222,14 +225,24 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
     return null;
   }
 
+  Future<void> _onRefresh() async => _fetchPage(reset: true);
+
   void _onSearchChanged(String value) {
-    if (mounted) setState(() {});
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 360), () {
-      if (!mounted) return;
-      _page = 1;
-      unawaited(_fetchSubmissions());
+    setState(() {});
+    _query = value.trim();
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _fetchPage(reset: true);
     });
+  }
+
+  void _clearSearch() {
+    if (_searchCtrl.text.isEmpty) return;
+    setState(() {
+      _searchCtrl.clear();
+      _query = "";
+    });
+    _fetchPage(reset: true);
   }
 
   Future<void> _openFilters() async {
@@ -240,7 +253,7 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
     String draftSort = _sort;
     int draftPageSize = _pageSize;
 
-    final applied = await showModalBottomSheet<_FilterResult>(
+    final result = await showModalBottomSheet<_FilterResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -250,7 +263,7 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
 
         return StatefulBuilder(
           builder: (context, setModalState) {
-            Widget buildChoiceChip({
+            Widget chip({
               required String label,
               required bool selected,
               required VoidCallback onTap,
@@ -269,13 +282,13 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
                             alpha: isDark ? 0.78 : 0.72,
                           ),
                   ),
-                  selectedColor: AppColors.primary,
+                  selectedColor: scheme.primary,
                   backgroundColor: isDark
                       ? Colors.white.withValues(alpha: 0.06)
                       : Colors.black.withValues(alpha: 0.045),
                   side: BorderSide(
                     color: selected
-                        ? AppColors.primary.withValues(alpha: 0.90)
+                        ? scheme.primary.withValues(alpha: 0.94)
                         : scheme.outline.withValues(alpha: 0.16),
                   ),
                   shape: RoundedRectangleBorder(
@@ -355,7 +368,7 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
                             ),
                             Wrap(
                               children: _statusOptions.map((value) {
-                                return buildChoiceChip(
+                                return chip(
                                   label: _statusLabel(_lang, value),
                                   selected: draftStatus == value,
                                   onTap: () =>
@@ -372,7 +385,7 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
                             ),
                             Wrap(
                               children: _orderingOptions.map((value) {
-                                return buildChoiceChip(
+                                return chip(
                                   label: _orderingLabel(_lang, value),
                                   selected: draftOrdering == value,
                                   onTap: () => setModalState(
@@ -390,7 +403,7 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
                             ),
                             Wrap(
                               children: ["desc", "asc"].map((value) {
-                                return buildChoiceChip(
+                                return chip(
                                   label: _sortLabel(_lang, value),
                                   selected: draftSort == value,
                                   onTap: () =>
@@ -466,10 +479,6 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: FilledButton(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                    ),
                                     onPressed: () {
                                       Navigator.pop(
                                         context,
@@ -501,899 +510,354 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
       },
     );
 
-    if (applied == null || !mounted) return;
+    if (result == null || !mounted) return;
 
     setState(() {
-      _status = applied.status;
-      _ordering = applied.ordering;
-      _sort = applied.sort;
-      _pageSize = applied.pageSize;
-      _page = 1;
+      _status = result.status;
+      _ordering = result.ordering;
+      _sort = result.sort;
+      _pageSize = result.pageSize;
     });
-    unawaited(_fetchSubmissions());
+    _fetchPage(reset: true);
   }
 
-  void _clearSearch() {
-    if (_searchCtrl.text.isEmpty) return;
-    setState(() {
-      _searchCtrl.clear();
-      _page = 1;
-    });
-    unawaited(_fetchSubmissions());
+  bool get _hasActiveFilters {
+    return _query.isNotEmpty ||
+        _status != null ||
+        _ordering != "created_at" ||
+        _sort != "desc" ||
+        _pageSize != 10;
   }
 
-  Future<void> _refresh() => _fetchSubmissions();
+  @override
+  Widget build(BuildContext context) {
+    final lang = _lang;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isTablet = screenWidth >= 700;
+    final hPad = isTablet ? 24.0 : 18.0;
+    final crossCount = isTablet ? 2 : 1;
+    final cardAspect = isTablet ? 0.64 : 0.68;
 
-  int get _totalPages {
-    if (_count <= 0) return 1;
-    return ((_count + _pageSize - 1) / _pageSize).floor();
+    return SafeArea(
+      child: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _onRefresh,
+            color: scheme.primary,
+            child: CustomScrollView(
+              controller: _scrollCtrl,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t(lang, "nav.my_event_submissions"),
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.6,
+                            color: scheme.onSurface,
+                            height: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _PremiumSearchBar(
+                                controller: _searchCtrl,
+                                hintText: t(
+                                  lang,
+                                  "my_events.submissions_search_hint",
+                                ),
+                                onChanged: _onSearchChanged,
+                                onClear: _clearSearch,
+                                isDark: isDark,
+                                scheme: scheme,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            _FilterButton(
+                              scheme: scheme,
+                              isDark: isDark,
+                              onTap: _openFilters,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_loading && _items.isEmpty)
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossCount,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: cardAspect,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (_, i) => _EventCardSkeleton(index: i),
+                        childCount: 4,
+                      ),
+                    ),
+                  ),
+                if (_items.isNotEmpty)
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossCount,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: cardAspect,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final showLoader = _loading && _items.isNotEmpty;
+                          if (index >= _items.length) {
+                            return showLoader
+                                ? _EventCardSkeleton(index: index)
+                                : const SizedBox.shrink();
+                          }
+                          final item = _items[index];
+                          return _AnimatedGridItem(
+                            index: index,
+                            child: _SubmissionPosterCard(
+                              item: item,
+                              lang: lang,
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                AppRoutes.myEventSubmissionDetail,
+                                arguments: item.title,
+                              ),
+                            ),
+                          );
+                        },
+                        childCount:
+                            _items.length +
+                            ((_loading && _items.isNotEmpty) ? 2 : 0),
+                      ),
+                    ),
+                  ),
+                if (_error != null && _items.isNotEmpty)
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: _InlineErrorPanel(
+                        message: _error!,
+                        onRetry: () => _fetchPage(reset: false),
+                        actionLabel: t(lang, "common.try_again"),
+                        scheme: scheme,
+                      ),
+                    ),
+                  ),
+                if (!_loading && _items.isEmpty && _error != null)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _LoadStatePanel(
+                      icon: Icons.wifi_tethering_error_rounded,
+                      title: t(lang, "my_events.submissions_error_title"),
+                      description: _error!,
+                      actionLabel: t(lang, "common.try_again"),
+                      onAction: () => _fetchPage(reset: true),
+                    ),
+                  ),
+                if (!_loading && _items.isEmpty && _error == null && _hydrated)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _LoadStatePanel(
+                      icon: Icons.event_busy_rounded,
+                      title: t(lang, "my_events.submissions_empty_title"),
+                      description: _hasActiveFilters
+                          ? t(lang, "my_events.submissions_empty_filtered")
+                          : t(lang, "my_events.submissions_empty_default"),
+                      actionLabel: _hasActiveFilters
+                          ? t(lang, "my_events.submissions_reset")
+                          : null,
+                      onAction: _hasActiveFilters
+                          ? () {
+                              setState(() {
+                                _query = "";
+                                _searchCtrl.clear();
+                                _status = null;
+                                _ordering = "created_at";
+                                _sort = "desc";
+                                _pageSize = 10;
+                              });
+                              _fetchPage(reset: true);
+                            }
+                          : null,
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 96)),
+              ],
+            ),
+          ),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            right: 18,
+            bottom: _showBackToTop ? 24 : -72,
+            child: FloatingActionButton.small(
+              heroTag: "my-event-submissions-top",
+              backgroundColor: scheme.primary,
+              foregroundColor: Colors.white,
+              onPressed: () => _scrollCtrl.animateTo(
+                0,
+                duration: const Duration(milliseconds: 420),
+                curve: Curves.easeOutCubic,
+              ),
+              child: const Icon(Icons.arrow_upward_rounded),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubmissionPosterCard extends StatefulWidget {
+  final _SubmissionItem item;
+  final String lang;
+  final VoidCallback onTap;
+
+  const _SubmissionPosterCard({
+    required this.item,
+    required this.lang,
+    required this.onTap,
+  });
+
+  @override
+  State<_SubmissionPosterCard> createState() => _SubmissionPosterCardState();
+}
+
+class _SubmissionPosterCardState extends State<_SubmissionPosterCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pressCtrl;
+  late Animation<double> _pressScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 130),
+    );
+    _pressScale = Tween<double>(
+      begin: 1.0,
+      end: 0.974,
+    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
   }
 
-  int get _fromItem => _count == 0 ? 0 : ((_page - 1) * _pageSize) + 1;
-
-  int get _toItem {
-    if (_count == 0) return 0;
-    final raw = _page * _pageSize;
-    return raw > _count ? _count : raw;
+  @override
+  void dispose() {
+    _pressCtrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
-    final size = MediaQuery.sizeOf(context);
-    final hPad = size.width >= 900
-        ? 28.0
-        : size.width >= 600
-        ? 22.0
-        : 16.0;
-
-    return Stack(
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                scheme.surface,
-                scheme.surface.withValues(alpha: isDark ? 0.96 : 0.98),
-                scheme.surface,
-              ],
-            ),
-          ),
-          child: RefreshIndicator(
-            onRefresh: _refresh,
-            color: AppColors.primary,
-            child: ScrollConfiguration(
-              behavior: const _NoGlowBehavior(),
-              child: CustomScrollView(
-                controller: _scrollCtrl,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _HeroSummaryCard(
-                            lang: _lang,
-                            scheme: scheme,
-                            count: _count,
-                            page: _page,
-                            totalPages: _totalPages,
-                            loading: _loading,
-                            activeStatus: _status,
-                            ordering: _ordering,
-                            sort: _sort,
-                            onRefresh: _fetchSubmissions,
-                          ),
-                          const SizedBox(height: 14),
-                          _SearchToolbar(
-                            lang: _lang,
-                            controller: _searchCtrl,
-                            scheme: scheme,
-                            loading: _loading,
-                            onChanged: _onSearchChanged,
-                            onClear: _clearSearch,
-                            onFilterTap: _openFilters,
-                          ),
-                          if (_hasActiveFilters) ...[
-                            const SizedBox(height: 12),
-                            _ActiveFilterWrap(
-                              lang: _lang,
-                              scheme: scheme,
-                              search: _searchCtrl.text.trim(),
-                              status: _status,
-                              ordering: _ordering,
-                              sort: _sort,
-                              pageSize: _pageSize,
-                            ),
-                          ],
-                          if (_loading && _hydrated) ...[
-                            const SizedBox(height: 12),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(999),
-                              child: const LinearProgressIndicator(
-                                minHeight: 3.2,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (!_hydrated && _loading)
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 0),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, index) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _SubmissionSkeletonCard(scheme: scheme),
-                          ),
-                          childCount: 3,
-                        ),
-                      ),
-                    )
-                  else if (_error != null && _items.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _LoadStatePanel(
-                        icon: Icons.wifi_tethering_error_rounded,
-                        title: t(_lang, "my_events.submissions_error_title"),
-                        description: _error!,
-                        actionLabel: t(_lang, "common.try_again"),
-                        onAction: () => _fetchSubmissions(),
-                      ),
-                    )
-                  else if (_items.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _LoadStatePanel(
-                        icon: Icons.event_busy_rounded,
-                        title: t(_lang, "my_events.submissions_empty_title"),
-                        description: _hasActiveFilters
-                            ? t(_lang, "my_events.submissions_empty_filtered")
-                            : t(_lang, "my_events.submissions_empty_default"),
-                        actionLabel: _hasActiveFilters
-                            ? t(_lang, "my_events.submissions_reset")
-                            : null,
-                        onAction: _hasActiveFilters
-                            ? () {
-                                setState(() {
-                                  _searchCtrl.clear();
-                                  _status = null;
-                                  _ordering = "created_at";
-                                  _sort = "desc";
-                                  _pageSize = 10;
-                                  _page = 1;
-                                });
-                                _fetchSubmissions();
-                              }
-                            : null,
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (_, index) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _SubmissionPremiumCard(
-                              item: _items[index],
-                              lang: _lang,
-                              scheme: scheme,
-                            ),
-                          ),
-                          childCount: _items.length,
-                        ),
-                      ),
-                    ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(hPad, 6, hPad, 96),
-                      child: _PaginationPanel(
-                        lang: _lang,
-                        scheme: scheme,
-                        count: _count,
-                        currentPage: _page,
-                        totalPages: _totalPages,
-                        fromItem: _fromItem,
-                        toItem: _toItem,
-                        pageSize: _pageSize,
-                        loading: _loading,
-                        hasPrevious: _hasPrevious,
-                        hasNext: _hasNext,
-                        onPrevious: _hasPrevious
-                            ? () {
-                                setState(() => _page -= 1);
-                                _fetchSubmissions();
-                              }
-                            : null,
-                        onNext: _hasNext
-                            ? () {
-                                setState(() => _page += 1);
-                                _fetchSubmissions();
-                              }
-                            : null,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOutCubic,
-          right: 18,
-          bottom: _showBackToTop ? 18 : -72,
-          child: FloatingActionButton.small(
-            heroTag: "event-submissions-top",
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            onPressed: () {
-              _scrollCtrl.animateTo(
-                0,
-                duration: const Duration(milliseconds: 380),
-                curve: Curves.easeOutCubic,
-              );
-            },
-            child: const Icon(Icons.arrow_upward_rounded),
-          ),
-        ),
-      ],
+    final radius = BorderRadius.circular(24);
+    final statusInfo = _resolveSubmissionStatus(
+      widget.item,
+      widget.lang,
+      scheme,
     );
-  }
 
-  bool get _hasActiveFilters {
-    return _searchCtrl.text.trim().isNotEmpty ||
-        _status != null ||
-        _ordering != "created_at" ||
-        _sort != "desc" ||
-        _pageSize != 10;
-  }
-}
-
-class _HeroSummaryCard extends StatelessWidget {
-  final String lang;
-  final ColorScheme scheme;
-  final int count;
-  final int page;
-  final int totalPages;
-  final bool loading;
-  final String? activeStatus;
-  final String ordering;
-  final String sort;
-  final Future<void> Function({bool resetPage}) onRefresh;
-
-  const _HeroSummaryCard({
-    required this.lang,
-    required this.scheme,
-    required this.count,
-    required this.page,
-    required this.totalPages,
-    required this.loading,
-    required this.activeStatus,
-    required this.ordering,
-    required this.sort,
-    required this.onRefresh,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = scheme.brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  const Color(0xFF0B331D),
-                  const Color(0xFF103F2A),
-                  const Color(0xFF1A5C3E),
-                ]
-              : [
-                  const Color(0xFF072C18),
-                  const Color(0xFF0E4C2C),
-                  const Color(0xFF1D6F45),
-                ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: isDark ? 0.28 : 0.18),
-            blurRadius: 28,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -18,
-            top: -10,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -20,
-            bottom: -34,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t(lang, "nav.my_event_submissions"),
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            t(lang, "my_events.submissions_subtitle"),
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              height: 1.45,
-                              color: Colors.white.withValues(alpha: 0.74),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: loading ? null : () => onRefresh(),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.10),
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: Icon(
-                        loading
-                            ? Icons.hourglass_top_rounded
-                            : Icons.refresh_rounded,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _HeroMetricPill(
-                      icon: Icons.layers_rounded,
-                      label: t(lang, "my_events.submissions_total"),
-                      value: "$count",
-                    ),
-                    _HeroMetricPill(
-                      icon: Icons.auto_awesome_mosaic_rounded,
-                      label: t(lang, "my_events.submissions_page"),
-                      value: "$page/$totalPages",
-                    ),
-                    _HeroMetricPill(
-                      icon: Icons.swap_vert_rounded,
-                      label: _orderingLabel(lang, ordering),
-                      value: _sortLabel(lang, sort),
-                    ),
-                    _HeroMetricPill(
-                      icon: Icons.flag_circle_rounded,
-                      label: t(lang, "my_events.submissions_status"),
-                      value: _statusLabel(lang, activeStatus),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroMetricPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _HeroMetricPill({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.92)),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+    return ScaleTransition(
+      scale: _pressScale,
+      child: GestureDetector(
+        onTapDown: (_) => _pressCtrl.forward(),
+        onTapUp: (_) => _pressCtrl.reverse(),
+        onTapCancel: () => _pressCtrl.reverse(),
+        onTap: widget.onTap,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.68),
+              _BannerImage(url: widget.item.bannerUrl, scheme: scheme),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.35, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.78),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.center,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.20),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: Colors.white.withValues(
+                        alpha: isDark ? 0.10 : 0.14,
+                      ),
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 14,
+                left: 14,
+                child: _StatusBadge(info: statusInfo),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 14,
+                child: _SubmissionGlassFooter(
+                  title: widget.item.title,
+                  eventDateLabel: widget.item.eventDateLabel(widget.lang),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SearchToolbar extends StatelessWidget {
-  final String lang;
-  final TextEditingController controller;
-  final ColorScheme scheme;
-  final bool loading;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-  final VoidCallback onFilterTap;
-
-  const _SearchToolbar({
-    required this.lang,
-    required this.controller,
-    required this.scheme,
-    required this.loading,
-    required this.onChanged,
-    required this.onClear,
-    required this.onFilterTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = scheme.brightness == Brightness.dark;
-
-    return Row(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: scheme.surface.withValues(alpha: isDark ? 0.80 : 0.92),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: scheme.outline.withValues(alpha: 0.10),
-                  ),
-                ),
-                child: TextField(
-                  controller: controller,
-                  onChanged: onChanged,
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      color: scheme.onSurface.withValues(alpha: 0.68),
-                    ),
-                    hintText: t(lang, "my_events.submissions_search_hint"),
-                    hintStyle: TextStyle(
-                      color: scheme.onSurface.withValues(alpha: 0.48),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    suffixIcon: controller.text.isEmpty
-                        ? null
-                        : IconButton(
-                            onPressed: onClear,
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                  ),
-                ),
-              ),
-            ),
-          ),
         ),
-        const SizedBox(width: 10),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(22),
-            onTap: loading ? null : onFilterTap,
-            child: Ink(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: scheme.surface.withValues(alpha: isDark ? 0.84 : 0.94),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: scheme.outline.withValues(alpha: 0.10),
-                ),
-              ),
-              child: Icon(
-                Icons.tune_rounded,
-                color: scheme.onSurface.withValues(alpha: 0.82),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ActiveFilterWrap extends StatelessWidget {
-  final String lang;
-  final ColorScheme scheme;
-  final String search;
-  final String? status;
-  final String ordering;
-  final String sort;
-  final int pageSize;
-
-  const _ActiveFilterWrap({
-    required this.lang,
-    required this.scheme,
-    required this.search,
-    required this.status,
-    required this.ordering,
-    required this.sort,
-    required this.pageSize,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final chips = <String>[
-      if (search.isNotEmpty)
-        '${t(lang, "my_events.submissions_search")} "$search"',
-      if (status != null) _statusLabel(lang, status),
-      if (ordering != "created_at") _orderingLabel(lang, ordering),
-      if (sort != "desc") _sortLabel(lang, sort),
-      if (pageSize != 10)
-        "${t(lang, "my_events.submissions_page_size_short")}: $pageSize",
-    ];
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: chips
-          .map(
-            (chip) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: scheme.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: scheme.primary.withValues(alpha: 0.12),
-                ),
-              ),
-              child: Text(
-                chip,
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: scheme.onSurface.withValues(alpha: 0.78),
-                ),
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _SubmissionPremiumCard extends StatelessWidget {
-  final _MyEventSubmissionItem item;
-  final String lang;
-  final ColorScheme scheme;
-
-  const _SubmissionPremiumCard({
-    required this.item,
-    required this.lang,
-    required this.scheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = scheme.brightness == Brightness.dark;
-    final radius = BorderRadius.circular(28);
-    final ticket = item.firstTicket;
-    final submissionStatus = _submissionStatusInfo(lang, item.status);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: isDark ? 0.92 : 0.98),
-        borderRadius: radius,
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            child: AspectRatio(
-              aspectRatio: 16 / 10,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _SubmissionBannerImage(url: item.bannerUrl, scheme: scheme),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const [0.0, 0.34, 1.0],
-                          colors: [
-                            Colors.black.withValues(alpha: 0.12),
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.78),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.center,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.18),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 14,
-                    left: 14,
-                    child: _SubmissionStatusBadge(info: submissionStatus),
-                  ),
-                  Positioned(
-                    top: 14,
-                    right: 14,
-                    child: _TopMetaGlassPill(
-                      icon: Icons.schedule_rounded,
-                      label: _formatShortDate(item.createdAt),
-                    ),
-                  ),
-                  Positioned(
-                    left: 14,
-                    right: 14,
-                    bottom: 14,
-                    child: _SubmissionGlassFooter(
-                      title: item.title,
-                      locationLabel: item.locationLabel,
-                      ticketLabel: item.ticketLabel(lang),
-                      isFree: item.isFreeTicket,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _DetailChip(
-                      icon: Icons.event_available_rounded,
-                      label: t(lang, "my_events.submissions_dates"),
-                      value: item.dateRangeLabel(lang),
-                      scheme: scheme,
-                    ),
-                    _DetailChip(
-                      icon: Icons.location_city_rounded,
-                      label: t(lang, "my_events.submissions_venue"),
-                      value: item.venueLabel(lang),
-                      scheme: scheme,
-                    ),
-                    _DetailChip(
-                      icon: Icons.pin_drop_rounded,
-                      label: t(lang, "my_events.submissions_location"),
-                      value: item.locationLabel,
-                      scheme: scheme,
-                    ),
-                    _DetailChip(
-                      icon: Icons.inventory_2_rounded,
-                      label: t(lang, "my_events.submissions_ticket"),
-                      value:
-                          ticket?.categoryLabel(lang) ??
-                          t(lang, "my_events.submissions_ticket_none"),
-                      scheme: scheme,
-                    ),
-                  ],
-                ),
-                if (ticket?.consumableDescription.trim().isNotEmpty ??
-                    false) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: scheme.primary.withValues(alpha: 0.08),
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.local_bar_rounded,
-                          size: 18,
-                          color: scheme.primary,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                t(lang, "my_events.submissions_consumable"),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: scheme.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                ticket!.consumableDescription,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  height: 1.45,
-                                  color: scheme.onSurface.withValues(
-                                    alpha: 0.72,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _TimelineMeta(
-                        icon: Icons.upload_rounded,
-                        label: t(lang, "my_events.submissions_submitted_on"),
-                        value: _formatLongDate(item.createdAt),
-                        scheme: scheme,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TimelineMeta(
-                        icon: Icons.update_rounded,
-                        label: t(lang, "my_events.submissions_updated_on"),
-                        value: _formatLongDate(item.updatedAt),
-                        scheme: scheme,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "${t(lang, "my_events.submissions_id")}: ${item.shortId}",
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onSurface.withValues(alpha: 0.58),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 7,
-                      ),
-                      decoration: BoxDecoration(
-                        color: submissionStatus.softBackground,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: submissionStatus.borderColor),
-                      ),
-                      child: Text(
-                        submissionStatus.helperLabel,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                          color: submissionStatus.textColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _SubmissionBannerImage extends StatelessWidget {
+class _BannerImage extends StatelessWidget {
   final String? url;
   final ColorScheme scheme;
 
-  const _SubmissionBannerImage({required this.url, required this.scheme});
+  const _BannerImage({required this.url, required this.scheme});
 
   @override
   Widget build(BuildContext context) {
@@ -1401,41 +865,38 @@ class _SubmissionBannerImage extends StatelessWidget {
       return Image.network(
         url!,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) =>
-            _SubmissionImagePlaceholder(scheme: scheme),
-        loadingBuilder: (_, child, progress) => progress == null
-            ? child
-            : _SubmissionImagePlaceholder(scheme: scheme),
+        errorBuilder: (_, __, ___) => _ImagePlaceholder(scheme: scheme),
+        loadingBuilder: (_, child, evt) =>
+            evt == null ? child : _ImagePlaceholder(scheme: scheme),
       );
     }
-
-    return _SubmissionImagePlaceholder(scheme: scheme);
+    return _ImagePlaceholder(scheme: scheme);
   }
 }
 
-class _SubmissionImagePlaceholder extends StatelessWidget {
+class _ImagePlaceholder extends StatelessWidget {
   final ColorScheme scheme;
 
-  const _SubmissionImagePlaceholder({required this.scheme});
+  const _ImagePlaceholder({required this.scheme});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          colors: [
+            scheme.surfaceContainerHighest.withValues(alpha: 0.80),
+            scheme.surfaceContainerHighest.withValues(alpha: 0.50),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            scheme.surfaceContainerHighest.withValues(alpha: 0.90),
-            scheme.surfaceContainerHighest.withValues(alpha: 0.54),
-          ],
         ),
       ),
       child: Center(
         child: Icon(
-          Icons.event_note_rounded,
-          size: 42,
-          color: scheme.onSurfaceVariant.withValues(alpha: 0.26),
+          Icons.event_outlined,
+          size: 44,
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.22),
         ),
       ),
     );
@@ -1444,15 +905,11 @@ class _SubmissionImagePlaceholder extends StatelessWidget {
 
 class _SubmissionGlassFooter extends StatelessWidget {
   final String title;
-  final String locationLabel;
-  final String ticketLabel;
-  final bool isFree;
+  final String eventDateLabel;
 
   const _SubmissionGlassFooter({
     required this.title,
-    required this.locationLabel,
-    required this.ticketLabel,
-    required this.isFree,
+    required this.eventDateLabel,
   });
 
   @override
@@ -1489,23 +946,9 @@ class _SubmissionGlassFooter extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 9),
-              Row(
-                children: [
-                  Expanded(
-                    child: _FooterMetaPill(
-                      icon: Icons.place_rounded,
-                      label: locationLabel,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _FooterMetaPill(
-                    icon: isFree
-                        ? Icons.celebration_rounded
-                        : Icons.confirmation_number_outlined,
-                    label: ticketLabel,
-                    highlight: isFree,
-                  ),
-                ],
+              _MetaPill(
+                icon: Icons.event_available_rounded,
+                label: eventDateLabel,
               ),
             ],
           ),
@@ -1515,32 +958,20 @@ class _SubmissionGlassFooter extends StatelessWidget {
   }
 }
 
-class _FooterMetaPill extends StatelessWidget {
+class _MetaPill extends StatelessWidget {
   final IconData icon;
   final String label;
-  final bool highlight;
 
-  const _FooterMetaPill({
-    required this.icon,
-    required this.label,
-    this.highlight = false,
-  });
+  const _MetaPill({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final bg = highlight
-        ? Colors.green.withValues(alpha: 0.28)
-        : Colors.black.withValues(alpha: 0.26);
-    final border = highlight
-        ? Colors.green.withValues(alpha: 0.40)
-        : Colors.white.withValues(alpha: 0.15);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: bg,
+        color: Colors.black.withValues(alpha: 0.26),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: border),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1565,50 +996,10 @@ class _FooterMetaPill extends StatelessWidget {
   }
 }
 
-class _TopMetaGlassPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _StatusBadge extends StatelessWidget {
+  final _StatusInfo info;
 
-  const _TopMetaGlassPill({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.24),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.92)),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SubmissionStatusBadge extends StatelessWidget {
-  final _SubmissionStatusInfo info;
-
-  const _SubmissionStatusBadge({required this.info});
+  const _StatusBadge({required this.info});
 
   @override
   Widget build(BuildContext context) {
@@ -1619,7 +1010,7 @@ class _SubmissionStatusBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
-            color: info.background,
+            color: info.bgColor,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: info.borderColor, width: 1),
           ),
@@ -1638,257 +1029,94 @@ class _SubmissionStatusBadge extends StatelessWidget {
   }
 }
 
-class _DetailChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final ColorScheme scheme;
+class _AnimatedGridItem extends StatefulWidget {
+  final int index;
+  final Widget child;
 
-  const _DetailChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.scheme,
-  });
+  const _AnimatedGridItem({required this.index, required this.child});
+
+  @override
+  State<_AnimatedGridItem> createState() => _AnimatedGridItemState();
+}
+
+class _AnimatedGridItemState extends State<_AnimatedGridItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    final delay = Duration(milliseconds: (widget.index * 55).clamp(0, 280));
+    Future.delayed(delay, () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 120, maxWidth: 240),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.22),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: scheme.primary),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface.withValues(alpha: 0.52),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface.withValues(alpha: 0.86),
-                    height: 1.25,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
 
-class _TimelineMeta extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
+class _InlineErrorPanel extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  final String actionLabel;
   final ColorScheme scheme;
 
-  const _TimelineMeta({
-    required this.icon,
-    required this.label,
-    required this.value,
+  const _InlineErrorPanel({
+    required this.message,
+    required this.onRetry,
+    required this.actionLabel,
     required this.scheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: scheme.primary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: scheme.onSurface.withValues(alpha: 0.52),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface.withValues(alpha: 0.82),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PaginationPanel extends StatelessWidget {
-  final String lang;
-  final ColorScheme scheme;
-  final int count;
-  final int currentPage;
-  final int totalPages;
-  final int fromItem;
-  final int toItem;
-  final int pageSize;
-  final bool loading;
-  final bool hasPrevious;
-  final bool hasNext;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  const _PaginationPanel({
-    required this.lang,
-    required this.scheme,
-    required this.count,
-    required this.currentPage,
-    required this.totalPages,
-    required this.fromItem,
-    required this.toItem,
-    required this.pageSize,
-    required this.loading,
-    required this.hasPrevious,
-    required this.hasNext,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = scheme.brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: isDark ? 0.90 : 0.98),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.10)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              _InfoBadge(
-                icon: Icons.format_list_bulleted_rounded,
-                label:
-                    "${t(lang, "my_events.submissions_showing")} $fromItem-$toItem ${t(lang, "my_events.submissions_of")} $count",
-                scheme: scheme,
-              ),
-              _InfoBadge(
-                icon: Icons.pages_rounded,
-                label:
-                    "${t(lang, "my_events.submissions_page")} $currentPage ${t(lang, "my_events.submissions_of")} $totalPages",
-                scheme: scheme,
-              ),
-              _InfoBadge(
-                icon: Icons.data_object_rounded,
-                label:
-                    "${t(lang, "my_events.submissions_page_size_short")}: $pageSize",
-                scheme: scheme,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: loading ? null : onPrevious,
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  label: Text(t(lang, "my_events.submissions_previous")),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  onPressed: loading ? null : onNext,
-                  icon: const Icon(Icons.arrow_forward_rounded),
-                  label: Text(t(lang, "my_events.submissions_next")),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoBadge extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final ColorScheme scheme;
-
-  const _InfoBadge({
-    required this.icon,
-    required this.label,
-    required this.scheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
+        color: scheme.errorContainer.withValues(alpha: 0.80),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.14)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: scheme.primary),
-          const SizedBox(width: 8),
-          Flexible(
+          Icon(Icons.error_outline_rounded, color: scheme.error),
+          const SizedBox(width: 12),
+          Expanded(
             child: Text(
-              label,
+              message,
               style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withValues(alpha: 0.78),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: scheme.onErrorContainer,
               ),
             ),
           ),
+          const SizedBox(width: 12),
+          TextButton(onPressed: onRetry, child: Text(actionLabel)),
         ],
       ),
     );
@@ -1950,14 +1178,7 @@ class _LoadStatePanel extends StatelessWidget {
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 16),
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
+              FilledButton(onPressed: onAction, child: Text(actionLabel!)),
             ],
           ],
         ),
@@ -1966,116 +1187,132 @@ class _LoadStatePanel extends StatelessWidget {
   }
 }
 
-class _SubmissionSkeletonCard extends StatelessWidget {
+class _FilterButton extends StatelessWidget {
   final ColorScheme scheme;
+  final bool isDark;
+  final VoidCallback onTap;
 
-  const _SubmissionSkeletonCard({required this.scheme});
+  const _FilterButton({
+    required this.scheme,
+    required this.isDark,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final base = scheme.surfaceContainerHighest.withValues(alpha: 0.45);
-    final soft = scheme.surfaceContainerHighest.withValues(alpha: 0.24);
-
-    Widget line(double width, {double height = 12}) {
-      return Container(
-        width: width,
-        height: height,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        width: 48,
         decoration: BoxDecoration(
-          color: base,
-          borderRadius: BorderRadius.circular(999),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.07)
+              : Colors.black.withValues(alpha: 0.055),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.10)
+                : Colors.black.withValues(alpha: 0.08),
+            width: 1.2,
+          ),
         ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        children: [
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: soft,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                line(180, height: 14),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _SkeletonChip(base: base, width: 118),
-                    _SkeletonChip(base: base, width: 138),
-                    _SkeletonChip(base: base, width: 126),
-                    _SkeletonChip(base: base, width: 114),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: soft,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: soft,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: soft,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        child: Icon(
+          Icons.tune_rounded,
+          size: 18,
+          color: scheme.onSurface.withValues(alpha: 0.72),
+        ),
       ),
     );
   }
 }
 
-class _SkeletonChip extends StatelessWidget {
-  final Color base;
-  final double width;
+class _PremiumSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final bool isDark;
+  final ColorScheme scheme;
 
-  const _SkeletonChip({required this.base, required this.width});
+  const _PremiumSearchBar({
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+    required this.onClear,
+    required this.isDark,
+    required this.scheme,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: 48,
+      height: 44,
       decoration: BoxDecoration(
-        color: base,
-        borderRadius: BorderRadius.circular(18),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.07)
+            : Colors.black.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.08),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 13),
+          Icon(
+            Icons.search_rounded,
+            size: 17,
+            color: scheme.onSurface.withValues(alpha: 0.45),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: scheme.onSurface.withValues(alpha: 0.38),
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          if (controller.text.isNotEmpty)
+            GestureDetector(
+              onTap: onClear,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: scheme.onSurface.withValues(alpha: 0.15),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 13,
+                    color: scheme.onSurface.withValues(alpha: 0.65),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(width: 4),
+        ],
       ),
     );
   }
@@ -2103,218 +1340,232 @@ class _SheetLabel extends StatelessWidget {
   }
 }
 
-class _FilterResult {
-  final String? status;
-  final String ordering;
-  final String sort;
-  final int pageSize;
+class _EventCardSkeleton extends StatefulWidget {
+  final int index;
 
-  const _FilterResult({
-    required this.status,
-    required this.ordering,
-    required this.sort,
-    required this.pageSize,
-  });
+  const _EventCardSkeleton({required this.index});
+
+  @override
+  State<_EventCardSkeleton> createState() => _EventCardSkeletonState();
 }
 
-class _MyEventSubmissionItem {
+class _EventCardSkeletonState extends State<_EventCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shimmer;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmer = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return AnimatedBuilder(
+      animation: _shimmer,
+      builder: (_, __) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment(-1.5 + _shimmer.value * 3, 0),
+                    end: Alignment(-0.5 + _shimmer.value * 3, 0),
+                    colors: [
+                      scheme.surfaceContainerHighest.withValues(
+                        alpha: isDark ? 0.42 : 0.56,
+                      ),
+                      scheme.surfaceContainerHighest.withValues(
+                        alpha: isDark ? 0.22 : 0.28,
+                      ),
+                      scheme.surfaceContainerHighest.withValues(
+                        alpha: isDark ? 0.42 : 0.56,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 14,
+                left: 14,
+                child: Container(
+                  width: 84,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 14,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.08 : 0.12,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.10),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 160,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          const SizedBox(height: 9),
+                          Container(
+                            width: 132,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SubmissionItem {
   final String id;
   final String title;
   final String? bannerUrl;
-  final _SubmissionTicket? firstTicket;
   final DateTime? startAt;
   final DateTime? endAt;
-  final String venueName;
-  final String city;
-  final String country;
   final String status;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
 
-  const _MyEventSubmissionItem({
+  const _SubmissionItem({
     required this.id,
     required this.title,
     required this.bannerUrl,
-    required this.firstTicket,
     required this.startAt,
     required this.endAt,
-    required this.venueName,
-    required this.city,
-    required this.country,
     required this.status,
-    required this.createdAt,
-    required this.updatedAt,
   });
 
-  factory _MyEventSubmissionItem.fromJson(Map<String, dynamic> json) {
-    DateTime? parseDt(dynamic raw) {
-      final value = raw?.toString();
-      if (value == null || value.isEmpty) return null;
+  factory _SubmissionItem.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDt(String? raw) {
+      if (raw == null || raw.isEmpty) return null;
       try {
-        return DateTime.parse(value).toLocal();
+        return DateTime.parse(raw).toLocal();
       } catch (_) {
         return null;
       }
     }
 
-    final ticketJson = json["first_ticket"];
-    return _MyEventSubmissionItem(
+    return _SubmissionItem(
       id: (json["id"] ?? "").toString(),
       title: (json["title"] ?? "Event submission").toString(),
-      bannerUrl: (json["banner_url"] ?? "").toString().trim().isEmpty
-          ? null
-          : json["banner_url"].toString(),
-      firstTicket: ticketJson is Map
-          ? _SubmissionTicket.fromJson(Map<String, dynamic>.from(ticketJson))
+      bannerUrl: (json["banner_url"] as String?)?.trim().isNotEmpty == true
+          ? json["banner_url"] as String
           : null,
-      startAt: parseDt(json["start_at"]),
-      endAt: parseDt(json["end_at"]),
-      venueName: (json["venue_name"] ?? "").toString(),
-      city: (json["city"] ?? "").toString(),
-      country: (json["country"] ?? "").toString(),
+      startAt: parseDt(json["start_at"]?.toString()),
+      endAt: parseDt(json["end_at"]?.toString()),
       status: (json["status"] ?? "PENDING").toString(),
-      createdAt: parseDt(json["created_at"]),
-      updatedAt: parseDt(json["updated_at"]),
     );
   }
 
-  String get shortId => id.length <= 8 ? id : id.substring(0, 8).toUpperCase();
-
-  bool get isFreeTicket => (firstTicket?.price ?? 0) <= 0;
-
-  String get locationLabel {
-    final parts = [
-      venueName,
-      city,
-      country,
-    ].where((e) => e.trim().isNotEmpty).toList();
-    return parts.isEmpty ? "—" : parts.join(" · ");
-  }
-
-  String ticketLabel(String lang) {
-    final ticket = firstTicket;
-    if (ticket == null) return t(lang, "my_events.submissions_ticket_none");
-    final category = ticket.categoryLabel(lang);
-    if (ticket.price == null || ticket.price! <= 0) {
-      return "$category · ${t(lang, "events.free")}";
-    }
-    return "$category · Rwf ${_formatPrice(ticket.price!)}";
-  }
-
-  String dateRangeLabel(String lang) {
-    final start = startAt;
-    final end = endAt;
-    if (start == null && end == null) {
+  String eventDateLabel(String lang) {
+    if (startAt == null && endAt == null) {
       return t(lang, "my_events.submissions_no_dates");
     }
-    if (start != null && end != null) {
+
+    if (startAt != null && endAt != null) {
       final sameDay =
-          start.year == end.year &&
-          start.month == end.month &&
-          start.day == end.day;
+          startAt!.year == endAt!.year &&
+          startAt!.month == endAt!.month &&
+          startAt!.day == endAt!.day;
+
       if (sameDay) {
-        return "${_formatShortDate(start)} · ${_formatTime(start)}-${_formatTime(end)}";
+        return DateFormat("dd MMM · hh:mm a").format(startAt!);
       }
-      return "${_formatShortDate(start)} → ${_formatShortDate(end)}";
+      return "${DateFormat("dd MMM").format(startAt!)} - ${DateFormat("dd MMM").format(endAt!)}";
     }
-    final fallback = start ?? end!;
-    return _formatShortDate(fallback);
-  }
 
-  String venueLabel(String lang) {
-    if (venueName.trim().isNotEmpty) return venueName.trim();
-    return t(lang, "my_events.submissions_no_venue");
+    return DateFormat("dd MMM · hh:mm a").format((startAt ?? endAt)!);
   }
 }
 
-class _SubmissionTicket {
-  final String category;
-  final double? price;
-  final bool consumable;
-  final String consumableDescription;
-
-  const _SubmissionTicket({
-    required this.category,
-    required this.price,
-    required this.consumable,
-    required this.consumableDescription,
-  });
-
-  factory _SubmissionTicket.fromJson(Map<String, dynamic> json) {
-    return _SubmissionTicket(
-      category: (json["category"] ?? "").toString(),
-      price: (json["price"] as num?)?.toDouble(),
-      consumable: json["consumable"] == true,
-      consumableDescription: (json["consumable_description"] ?? "").toString(),
-    );
-  }
-
-  String categoryLabel(String lang) {
-    switch (category.toUpperCase()) {
-      case "FREE":
-        return t(lang, "my_events.ticket_free");
-      case "REGULAR":
-        return t(lang, "my_events.ticket_regular");
-      case "VIP":
-        return t(lang, "my_events.ticket_vip");
-      case "VVIP":
-        return t(lang, "my_events.ticket_vvip");
-      case "TABLE":
-        return t(lang, "my_events.ticket_table");
-      default:
-        return category.isEmpty
-            ? t(lang, "my_events.submissions_ticket_none")
-            : category;
-    }
-  }
-}
-
-class _SubmissionStatusInfo {
+class _StatusInfo {
   final String label;
-  final String helperLabel;
-  final Color background;
-  final Color softBackground;
-  final Color borderColor;
+  final Color bgColor;
   final Color textColor;
+  final Color borderColor;
 
-  const _SubmissionStatusInfo({
+  const _StatusInfo({
     required this.label,
-    required this.helperLabel,
-    required this.background,
-    required this.softBackground,
-    required this.borderColor,
+    required this.bgColor,
     required this.textColor,
+    required this.borderColor,
   });
 }
 
-_SubmissionStatusInfo _submissionStatusInfo(String lang, String rawStatus) {
-  switch (rawStatus.toUpperCase()) {
+_StatusInfo _resolveSubmissionStatus(
+  _SubmissionItem item,
+  String lang,
+  ColorScheme scheme,
+) {
+  switch (item.status.toUpperCase()) {
     case "APPROVED":
-      return _SubmissionStatusInfo(
+      return _StatusInfo(
         label: t(lang, "my_events.submissions_approved"),
-        helperLabel: t(lang, "my_events.submissions_approved_hint"),
-        background: Colors.green.withValues(alpha: 0.52),
-        softBackground: Colors.green.withValues(alpha: 0.10),
-        borderColor: Colors.green.withValues(alpha: 0.34),
-        textColor: Colors.green.shade700,
+        bgColor: Colors.green.withValues(alpha: 0.52),
+        textColor: Colors.white,
+        borderColor: Colors.green.withValues(alpha: 0.38),
       );
     case "REJECTED":
-      return _SubmissionStatusInfo(
+      return _StatusInfo(
         label: t(lang, "my_events.submissions_rejected"),
-        helperLabel: t(lang, "my_events.submissions_rejected_hint"),
-        background: Colors.red.withValues(alpha: 0.52),
-        softBackground: Colors.red.withValues(alpha: 0.10),
-        borderColor: Colors.red.withValues(alpha: 0.34),
-        textColor: Colors.red.shade700,
+        bgColor: Colors.red.withValues(alpha: 0.52),
+        textColor: Colors.white,
+        borderColor: Colors.red.withValues(alpha: 0.38),
       );
     default:
-      return _SubmissionStatusInfo(
+      return _StatusInfo(
         label: t(lang, "my_events.submissions_pending"),
-        helperLabel: t(lang, "my_events.submissions_pending_hint"),
-        background: Colors.orange.withValues(alpha: 0.50),
-        softBackground: Colors.orange.withValues(alpha: 0.10),
-        borderColor: Colors.orange.withValues(alpha: 0.34),
-        textColor: Colors.orange.shade800,
+        bgColor: Colors.orange.withValues(alpha: 0.52),
+        textColor: Colors.white,
+        borderColor: Colors.orange.withValues(alpha: 0.38),
       );
   }
 }
@@ -2342,7 +1593,6 @@ String _orderingLabel(String lang, String value) {
       return t(lang, "my_events.submissions_order_status");
     case "city":
       return t(lang, "my_events.submissions_order_city");
-    case "created_at":
     default:
       return t(lang, "my_events.submissions_order_created");
   }
@@ -2354,59 +1604,22 @@ String _sortLabel(String lang, String value) {
       : t(lang, "my_events.submissions_sort_desc");
 }
 
-String _formatShortDate(DateTime? date) {
-  if (date == null) return "—";
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  final month = months[(date.month - 1).clamp(0, 11)];
-  return "${date.day.toString().padLeft(2, '0')} $month ${date.year}";
-}
+class _FilterResult {
+  final String? status;
+  final String ordering;
+  final String sort;
+  final int pageSize;
 
-String _formatLongDate(DateTime? date) {
-  if (date == null) return "—";
-  return "${_formatShortDate(date)} · ${_formatTime(date)}";
-}
-
-String _formatTime(DateTime date) {
-  final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-  final minute = date.minute.toString().padLeft(2, "0");
-  final suffix = date.hour >= 12 ? "PM" : "AM";
-  return "$hour:$minute $suffix";
-}
-
-String _formatPrice(double value) {
-  if (value >= 1000000) return "${(value / 1000000).toStringAsFixed(1)}M";
-  if (value >= 1000) return "${(value / 1000).toStringAsFixed(0)}k";
-  return value.toStringAsFixed(0);
+  const _FilterResult({
+    required this.status,
+    required this.ordering,
+    required this.sort,
+    required this.pageSize,
+  });
 }
 
 class _ApiException implements Exception {
   final String message;
 
   const _ApiException(this.message);
-}
-
-class _NoGlowBehavior extends ScrollBehavior {
-  const _NoGlowBehavior();
-
-  @override
-  Widget buildOverscrollIndicator(
-    BuildContext context,
-    Widget child,
-    ScrollableDetails details,
-  ) {
-    return child;
-  }
 }
