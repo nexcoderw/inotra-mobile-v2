@@ -233,7 +233,7 @@ class _DetailContent extends StatelessWidget {
       ),
       _DetailTabSpec(
         label: t(lang, "my_events.submissions_tab_tickets"),
-        child: _TicketCard(ticket: detail.firstTicket, lang: lang),
+        child: _TicketCard(tickets: detail.tickets, lang: lang),
       ),
     ];
 
@@ -562,14 +562,14 @@ class _OrganizerInfoTab extends StatelessWidget {
 }
 
 class _TicketCard extends StatelessWidget {
-  final _SubmissionTicket? ticket;
+  final List<_SubmissionTicket> tickets;
   final String lang;
 
-  const _TicketCard({required this.ticket, required this.lang});
+  const _TicketCard({required this.tickets, required this.lang});
 
   @override
   Widget build(BuildContext context) {
-    if (ticket == null) {
+    if (tickets.isEmpty) {
       return _InfoCard(
         title: t(lang, "events.tickets"),
         children: [
@@ -593,11 +593,19 @@ class _TicketCard extends StatelessWidget {
         children: [
           _SectionTitle(t(lang, "events.tickets")),
           const SizedBox(height: 10),
-          _TicketTile(
-            label: ticket!.categoryLabel(lang),
-            price: ticket!.priceLabel(lang),
-            consumableDescription: ticket!.consumableDescription,
-          ),
+          ...tickets.asMap().entries.map((entry) {
+            final ticket = entry.value;
+            final isLast = entry.key == tickets.length - 1;
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: isLast ? 0 : 10),
+              child: _TicketTile(
+                label: ticket.categoryLabel(lang),
+                price: ticket.priceLabel(lang),
+                consumableDescription: ticket.consumableDescription,
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -1090,6 +1098,7 @@ class _EventSubmissionDetail {
   final String? approvedEventId;
   final String? bannerUrl;
   final _SubmissionTicket? firstTicket;
+  final List<_SubmissionTicket> tickets;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -1111,6 +1120,7 @@ class _EventSubmissionDetail {
     required this.approvedEventId,
     required this.bannerUrl,
     required this.firstTicket,
+    required this.tickets,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1138,6 +1148,13 @@ class _EventSubmissionDetail {
               json["first_ticket"] as Map<String, dynamic>,
             )
           : null,
+      tickets: (json["tickets"] as List?)
+          ?.whereType<Map>()
+          .map(
+            (item) =>
+                _SubmissionTicket.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .toList(),
       createdAt: _parseDate(json["created_at"]),
       updatedAt: _parseDate(json["updated_at"]),
     );
