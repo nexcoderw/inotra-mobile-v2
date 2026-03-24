@@ -36,6 +36,9 @@ final class AppRoutes {
   static const eventReview = "/events/review";
   static const eventTickets = "/events/tickets";
   static const myListings = "/listings/my";
+  static const myListingAdd = "/listings/my/add";
+  static const myListingEdit = "/listings/my/edit";
+  static const myListingDelete = "/listings/my/delete";
   static const myListingSubmissions = "/listings/my/submissions";
   static const myListingSubmissionDetail = "/listings/my/submissions/detail";
   static const listingReviews = "/listings/reviews";
