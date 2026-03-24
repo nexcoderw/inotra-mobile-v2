@@ -2,8 +2,6 @@ import "package:flutter/material.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/services/auth_session.dart";
-import "../../../../i18n/lang.dart";
-import "../../../../i18n/translations.dart";
 import "../../../main/presentation/widgets/inotra_app_header.dart";
 import "../../../main/presentation/widgets/inotra_bottom_nav.dart";
 import "../../../main/presentation/widgets/inotra_sidebar_drawer.dart";
@@ -31,7 +29,6 @@ class MeShell extends StatefulWidget {
 class _MeShellState extends State<MeShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  String get _lang => currentLangSync();
   AuthSession get _session => AuthSession.instance;
 
   void _openDrawer() => _scaffoldKey.currentState?.openDrawer();
@@ -77,11 +74,12 @@ class _MeShellState extends State<MeShell> {
         onDashboardTap: () => _goTo(AppRoutes.dashboard),
         onMyEventsTap: () => _goTo(AppRoutes.myEvents),
         onMyEventSubmissionsTap: () => _goTo(AppRoutes.myEventSubmissions),
-        onEventReviewTap: () => _goTo(AppRoutes.eventReview),
+        onEventPaymentsTap: () => _goTo(AppRoutes.eventPayments),
         onEventTicketsTap: () => _goTo(AppRoutes.eventTickets),
         onMyListingsTap: () => _goTo(AppRoutes.myListings),
         onMyListingSubmissionsTap: () => _goTo(AppRoutes.myListingSubmissions),
         onListingReviewsTap: () => _goTo(AppRoutes.listingReviews),
+        onListingPaymentsTap: () => _goTo(AppRoutes.listingPayments),
         onListingBookingTap: () => _goTo(AppRoutes.listingBooking),
         onTripReservationsTap: () => _goTo(AppRoutes.tripReservations),
         onSettingsTap: () => _goTo(AppRoutes.settings),
