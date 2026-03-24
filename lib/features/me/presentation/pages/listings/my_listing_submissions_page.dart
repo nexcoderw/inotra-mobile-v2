@@ -8,10 +8,12 @@ import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
 
 import "../../../../../core/config/api.dart";
+import "../../../../../core/config/app_routes.dart";
 import "../../../../../core/constants/api/my_listing_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
+import "my_listing_submission_detail_page.dart";
 
 class MyListingSubmissionsPage extends StatefulWidget {
   const MyListingSubmissionsPage({super.key});
@@ -380,6 +382,14 @@ class _MyListingSubmissionsPageState extends State<MyListingSubmissionsPage>
                                     submission: submission,
                                     isTablet: isTablet,
                                     lang: lang,
+                                    onOpen: () => Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.myListingSubmissionDetail,
+                                      arguments: MyListingSubmissionDetailArgs(
+                                        submissionId: submission.id,
+                                        title: submission.name,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               );
@@ -791,11 +801,13 @@ class _ListingSubmissionCard extends StatelessWidget {
   final _ListingSubmission submission;
   final bool isTablet;
   final String lang;
+  final VoidCallback onOpen;
 
   const _ListingSubmissionCard({
     required this.submission,
     required this.isTablet,
     required this.lang,
+    required this.onOpen,
   });
 
   @override
@@ -810,154 +822,162 @@ class _ListingSubmissionCard extends StatelessWidget {
     final location = _compactLocation(submission.city, submission.country);
     final category = submission.categoryName.trim();
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: _CardImage(url: submission.firstImageUrl, scheme: scheme),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.35, 1.0],
-                    colors: [
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.72),
-                    ],
+    return GestureDetector(
+      onTap: onOpen,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: SizedBox(
+          height: height,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: _CardImage(
+                  url: submission.firstImageUrl,
+                  scheme: scheme,
+                ),
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.35, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.72),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.20),
-                      Colors.transparent,
-                    ],
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.20),
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            Positioned.fill(
-              child: IgnorePointer(child: _SpecularHighlight(radius: radius)),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.14),
-                  ),
-                ),
+              Positioned.fill(
+                child: IgnorePointer(child: _SpecularHighlight(radius: radius)),
               ),
-            ),
-            if (category.isNotEmpty)
-              Positioned(
-                top: 14,
-                left: 14,
-                child: _GlassBadge(label: category),
-              ),
-            Positioned(
-              top: 12,
-              right: 12,
-              child: _SubmissionStatusBadge(
-                status: submission.status,
-                lang: lang,
-              ),
-            ),
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 14,
-              child: _GlassFooter(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: isTablet ? 16.5 : 15,
-                        color: Colors.white,
-                        letterSpacing: -0.3,
-                        height: 1.1,
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: Colors.white.withValues(
+                        alpha: isDark ? 0.10 : 0.14,
                       ),
                     ),
-                    if (location.isNotEmpty) ...[
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_rounded,
-                            size: 13,
-                            color: Colors.white.withValues(alpha: 0.72),
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              location,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.72),
+                  ),
+                ),
+              ),
+              if (category.isNotEmpty)
+                Positioned(
+                  top: 14,
+                  left: 14,
+                  child: _GlassBadge(label: category),
+                ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: _SubmissionStatusBadge(
+                  status: submission.status,
+                  lang: lang,
+                ),
+              ),
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: 14,
+                child: _GlassFooter(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: isTablet ? 16.5 : 15,
+                          color: Colors.white,
+                          letterSpacing: -0.3,
+                          height: 1.1,
+                        ),
+                      ),
+                      if (location.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 13,
+                              color: Colors.white.withValues(alpha: 0.72),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                location,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.72),
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _InfoPill(
+                            icon: Icons.photo_library_outlined,
+                            label:
+                                "${submission.imagesCount} ${t(lang, "my_listing_submissions.images_short")}",
                           ),
+                          _InfoPill(
+                            icon: Icons.room_service_outlined,
+                            label:
+                                "${submission.servicesCount} ${t(lang, "my_listing_submissions.services_short")}",
+                          ),
+                          _InfoPill(
+                            icon: Icons.schedule_rounded,
+                            label: _formatDate(
+                              submission.updatedAt ?? submission.createdAt,
+                            ),
+                          ),
+                          if (submission.hasReviewerNotes)
+                            _InfoPill(
+                              icon: Icons.sticky_note_2_outlined,
+                              label: t(
+                                lang,
+                                "my_listing_submissions.note_available",
+                              ),
+                            ),
                         ],
                       ),
                     ],
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _InfoPill(
-                          icon: Icons.photo_library_outlined,
-                          label:
-                              "${submission.imagesCount} ${t(lang, "my_listing_submissions.images_short")}",
-                        ),
-                        _InfoPill(
-                          icon: Icons.room_service_outlined,
-                          label:
-                              "${submission.servicesCount} ${t(lang, "my_listing_submissions.services_short")}",
-                        ),
-                        _InfoPill(
-                          icon: Icons.schedule_rounded,
-                          label: _formatDate(
-                            submission.updatedAt ?? submission.createdAt,
-                          ),
-                        ),
-                        if (submission.hasReviewerNotes)
-                          _InfoPill(
-                            icon: Icons.sticky_note_2_outlined,
-                            label: t(
-                              lang,
-                              "my_listing_submissions.note_available",
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
