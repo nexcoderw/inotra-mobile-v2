@@ -251,7 +251,7 @@ class _DetailContent extends StatelessWidget {
           length: tabs.length,
           child: Builder(
             builder: (context) {
-              final controller = DefaultTabController.of(context)!;
+              final controller = DefaultTabController.of(context);
               final scheme = Theme.of(context).colorScheme;
 
               return Column(
