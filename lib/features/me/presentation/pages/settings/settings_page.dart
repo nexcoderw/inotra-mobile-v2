@@ -13,7 +13,8 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   String _lang() {
-    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    final preferred =
+        AuthSession.instance.value.user?['preferred_language'] as String?;
     if (preferred == null || preferred.isEmpty) return 'en';
     final lower = preferred.toLowerCase();
     if (lower.startsWith('rw')) return 'rw';
@@ -84,14 +85,6 @@ class SettingsPage extends StatelessWidget {
             title: t(lang, "settings.support"),
             children: [
               _GlassTile(
-                icon: HugeIcons.strokeRoundedMessageQuestion,
-                title: t(lang, "settings.help"),
-                subtitle: t(lang, "common.coming_soon"),
-                onTap: () {
-                  _toast(context, t(lang, "common.coming_soon"));
-                },
-              ),
-              _GlassTile(
                 icon: HugeIcons.strokeRoundedCallRinging03,
                 title: t(lang, "settings.support"),
                 subtitle: "info@naviig8.com",
@@ -106,10 +99,11 @@ class SettingsPage extends StatelessWidget {
           // App version glass card
           _GlassCard(
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              leading: _IconBadge(
-                icon: HugeIcons.strokeRoundedDiscoverCircle,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 6,
               ),
+              leading: _IconBadge(icon: HugeIcons.strokeRoundedDiscoverCircle),
               title: const Text(
                 "App version",
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
@@ -118,23 +112,12 @@ class SettingsPage extends StatelessWidget {
                 "1.0.0",
                 style: TextStyle(
                   fontSize: 12,
-                  color: scheme.onSurface.withOpacity(0.68),
+                  color: scheme.onSurface.withValues(alpha: 0.68),
                 ),
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _toast(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -144,10 +127,7 @@ class _GlassSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
 
-  const _GlassSection({
-    required this.title,
-    required this.children,
-  });
+  const _GlassSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +145,7 @@ class _GlassSection extends StatelessWidget {
                 width: 10,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: scheme.primary.withOpacity(0.85),
+                  color: scheme.primary.withValues(alpha: 0.85),
                 ),
               ),
               const SizedBox(width: 8),
@@ -175,7 +155,7 @@ class _GlassSection extends StatelessWidget {
                   fontWeight: FontWeight.w900,
                   fontSize: 13,
                   letterSpacing: 0.2,
-                  color: scheme.onSurface.withOpacity(0.9),
+                  color: scheme.onSurface.withValues(alpha: 0.9),
                 ),
               ),
             ],
@@ -200,7 +180,7 @@ class _GlassSection extends StatelessWidget {
             child: Divider(
               height: 14,
               thickness: 1,
-              color: scheme.onSurface.withOpacity(0.06),
+              color: scheme.onSurface.withValues(alpha: 0.06),
             ),
           ),
         );
@@ -255,7 +235,7 @@ class _GlassTileState extends State<_GlassTile> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: isActive
-                ? scheme.onSurface.withOpacity(0.06)
+                ? scheme.onSurface.withValues(alpha: 0.06)
                 : Colors.transparent,
           ),
           child: AnimatedScale(
@@ -286,7 +266,7 @@ class _GlassTileState extends State<_GlassTile> {
                           style: TextStyle(
                             fontSize: 12,
                             height: 1.2,
-                            color: scheme.onSurface.withOpacity(0.68),
+                            color: scheme.onSurface.withValues(alpha: 0.68),
                           ),
                         ),
                       ],
@@ -300,7 +280,7 @@ class _GlassTileState extends State<_GlassTile> {
                     child: Icon(
                       Icons.chevron_right_rounded,
                       size: 18,
-                      color: scheme.onSurface.withOpacity(0.55),
+                      color: scheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
                 ],
@@ -316,9 +296,7 @@ class _GlassTileState extends State<_GlassTile> {
 class _IconBadge extends StatelessWidget {
   final dynamic icon;
 
-  const _IconBadge({
-    this.icon = HugeIcons.strokeRoundedDiscoverCircle,
-  });
+  const _IconBadge({this.icon = HugeIcons.strokeRoundedDiscoverCircle});
 
   @override
   Widget build(BuildContext context) {
@@ -333,19 +311,19 @@ class _IconBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            scheme.primary.withOpacity(0.22),
-            scheme.primary.withOpacity(0.10),
+            scheme.primary.withValues(alpha: 0.22),
+            scheme.primary.withValues(alpha: 0.10),
           ],
         ),
         border: Border.all(
-          color: scheme.onSurface.withOpacity(0.10),
+          color: scheme.onSurface.withValues(alpha: 0.10),
           width: 1,
         ),
       ),
       child: Center(
         child: HugeIcon(
           icon: icon,
-          color: scheme.primary.withOpacity(0.95),
+          color: scheme.primary.withValues(alpha: 0.95),
           size: 14, // ✅ all icons 14
           strokeWidth: 2,
         ),
@@ -375,14 +353,14 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            color: scheme.surface.withOpacity(0.55),
+            color: scheme.surface.withValues(alpha: 0.55),
             border: Border.all(
-              color: scheme.onSurface.withOpacity(0.10),
+              color: scheme.onSurface.withValues(alpha: 0.10),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
