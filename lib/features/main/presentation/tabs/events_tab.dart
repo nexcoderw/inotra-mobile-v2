@@ -428,7 +428,7 @@ class _EventsHeaderDelegate extends SliverPersistentHeaderDelegate {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: scheme.surface.withOpacity(isDark ? 0.85 : 0.92),
+            color: scheme.surface.withValues(alpha: isDark ? 0.85 : 0.92),
             padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,7 +516,7 @@ class _FilterRailDelegate extends SliverPersistentHeaderDelegate {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: scheme.surface.withOpacity(isDark ? 0.82 : 0.90),
+            color: scheme.surface.withValues(alpha: isDark ? 0.82 : 0.90),
             padding: EdgeInsets.only(left: hPad, right: hPad, bottom: 8),
             child: ScrollConfiguration(
               behavior: _NoGlowBehavior(),
@@ -631,21 +631,21 @@ class _FilterPillState extends State<_FilterPill>
             color: widget.selected
                 ? _activeColor
                 : (widget.isDark
-                      ? Colors.white.withOpacity(0.07)
-                      : Colors.black.withOpacity(0.055)),
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : Colors.black.withValues(alpha: 0.055)),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: widget.selected
                   ? _activeColor
                   : (widget.isDark
-                        ? Colors.white.withOpacity(0.10)
-                        : Colors.black.withOpacity(0.08)),
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : Colors.black.withValues(alpha: 0.08)),
               width: 1.2,
             ),
             boxShadow: widget.selected
                 ? [
                     BoxShadow(
-                      color: _activeColor.withOpacity(0.30),
+                      color: _activeColor.withValues(alpha: 0.30),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -661,8 +661,8 @@ class _FilterPillState extends State<_FilterPill>
               color: widget.selected
                   ? Colors.white
                   : (widget.isDark
-                        ? Colors.white.withOpacity(0.70)
-                        : Colors.black.withOpacity(0.60)),
+                        ? Colors.white.withValues(alpha: 0.70)
+                        : Colors.black.withValues(alpha: 0.60)),
             ),
           ),
         ),
@@ -790,7 +790,7 @@ class _EventPosterCardState extends State<_EventPosterCard> {
                       colors: [
                         Colors.transparent,
                         Colors.transparent,
-                        Colors.black.withOpacity(0.78),
+                        Colors.black.withValues(alpha: 0.78),
                       ],
                     ),
                   ),
@@ -805,7 +805,7 @@ class _EventPosterCardState extends State<_EventPosterCard> {
                       begin: Alignment.topLeft,
                       end: Alignment.center,
                       colors: [
-                        Colors.black.withOpacity(0.20),
+                        Colors.black.withValues(alpha: 0.20),
                         Colors.transparent,
                       ],
                     ),
@@ -832,8 +832,8 @@ class _EventPosterCardState extends State<_EventPosterCard> {
                                 borderRadius: BorderRadius.circular(80),
                                 gradient: LinearGradient(
                                   colors: [
-                                    Colors.white.withOpacity(0.10),
-                                    Colors.white.withOpacity(0.0),
+                                    Colors.white.withValues(alpha: 0.10),
+                                    Colors.white.withValues(alpha: 0.0),
                                   ],
                                 ),
                               ),
@@ -852,7 +852,9 @@ class _EventPosterCardState extends State<_EventPosterCard> {
                   decoration: BoxDecoration(
                     borderRadius: radius,
                     border: Border.all(
-                      color: Colors.white.withOpacity(isDark ? 0.10 : 0.14),
+                      color: Colors.white.withValues(
+                        alpha: isDark ? 0.10 : 0.14,
+                      ),
                       width: 1,
                     ),
                   ),
@@ -935,8 +937,8 @@ class _ImagePlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            scheme.surfaceVariant.withOpacity(0.80),
-            scheme.surfaceVariant.withOpacity(0.50),
+            scheme.surfaceContainerHighest.withValues(alpha: 0.80),
+            scheme.surfaceContainerHighest.withValues(alpha: 0.50),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -946,7 +948,7 @@ class _ImagePlaceholder extends StatelessWidget {
         child: Icon(
           Icons.event_outlined,
           size: 44,
-          color: scheme.onSurfaceVariant.withOpacity(0.22),
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.22),
         ),
       ),
     );
@@ -971,7 +973,7 @@ class _StatusBadge extends StatelessWidget {
         border: Border.all(color: info.borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1018,17 +1020,17 @@ class _EventGlassFooter extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
-            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+            Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
+            Colors.white.withValues(alpha: isDark ? 0.07 : 0.11),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+          color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.17),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.10),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -1094,11 +1096,11 @@ class _MetaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = highlight
-        ? Colors.green.withOpacity(0.28)
-        : Colors.black.withOpacity(0.26);
+        ? Colors.green.withValues(alpha: 0.28)
+        : Colors.black.withValues(alpha: 0.26);
     final border = highlight
-        ? Colors.green.withOpacity(0.40)
-        : Colors.white.withOpacity(0.15);
+        ? Colors.green.withValues(alpha: 0.40)
+        : Colors.white.withValues(alpha: 0.15);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1110,7 +1112,7 @@ class _MetaPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: Colors.white.withOpacity(0.90)),
+          Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.90)),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
@@ -1181,9 +1183,9 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                     begin: Alignment(-1.5 + _shimmer.value * 3, 0),
                     end: Alignment(-0.5 + _shimmer.value * 3, 0),
                     colors: [
-                      scheme.surfaceVariant.withOpacity(0.55),
-                      scheme.surfaceVariant.withOpacity(0.75),
-                      scheme.surfaceVariant.withOpacity(0.55),
+                      scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                      scheme.surfaceContainerHighest.withValues(alpha: 0.75),
+                      scheme.surfaceContainerHighest.withValues(alpha: 0.55),
                     ],
                   ),
                 ),
@@ -1197,8 +1199,8 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(0.04),
-                        Colors.black.withOpacity(0.20),
+                        Colors.black.withValues(alpha: 0.04),
+                        Colors.black.withValues(alpha: 0.20),
                       ],
                     ),
                   ),
@@ -1211,7 +1213,7 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                   decoration: BoxDecoration(
                     borderRadius: radius,
                     border: Border.all(
-                      color: scheme.onSurface.withOpacity(0.07),
+                      color: scheme.onSurface.withValues(alpha: 0.07),
                     ),
                   ),
                 ),
@@ -1225,9 +1227,11 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                   width: 96,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.10),
+                    color: Colors.white.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withOpacity(0.09)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.09),
+                    ),
                   ),
                 ),
               ),
@@ -1244,12 +1248,14 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        Colors.white.withOpacity(0.12),
-                        Colors.white.withOpacity(0.07),
+                        Colors.white.withValues(alpha: 0.12),
+                        Colors.white.withValues(alpha: 0.07),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.11)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.11),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1260,7 +1266,7 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                         width: double.infinity,
                         margin: const EdgeInsets.only(right: 48),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.13),
+                          color: Colors.white.withValues(alpha: 0.13),
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
@@ -1271,10 +1277,10 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                             child: Container(
                               height: 26,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.10),
+                                color: Colors.white.withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(999),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.09),
+                                  color: Colors.white.withValues(alpha: 0.09),
                                 ),
                               ),
                             ),
@@ -1284,10 +1290,10 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                             width: 80,
                             height: 26,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.10),
+                              color: Colors.white.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.09),
+                                color: Colors.white.withValues(alpha: 0.09),
                               ),
                             ),
                           ),
@@ -1332,13 +1338,13 @@ class _PremiumSearchBar extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.07)
-            : Colors.black.withOpacity(0.055),
+            ? Colors.white.withValues(alpha: 0.07)
+            : Colors.black.withValues(alpha: 0.055),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.10)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1.2,
         ),
       ),
@@ -1348,7 +1354,7 @@ class _PremiumSearchBar extends StatelessWidget {
           Icon(
             Icons.search_rounded,
             size: 17,
-            color: scheme.onSurface.withOpacity(0.45),
+            color: scheme.onSurface.withValues(alpha: 0.45),
           ),
           const SizedBox(width: 9),
           Expanded(
@@ -1365,7 +1371,7 @@ class _PremiumSearchBar extends StatelessWidget {
                 hintStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: scheme.onSurface.withOpacity(0.38),
+                  color: scheme.onSurface.withValues(alpha: 0.38),
                 ),
                 border: InputBorder.none,
                 isDense: true,
@@ -1388,12 +1394,12 @@ class _PremiumSearchBar extends StatelessWidget {
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: scheme.onSurface.withOpacity(0.15),
+                      color: scheme.onSurface.withValues(alpha: 0.15),
                     ),
                     child: Icon(
                       Icons.close_rounded,
                       size: 12,
-                      color: scheme.onSurface.withOpacity(0.7),
+                      color: scheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -1429,8 +1435,8 @@ class _ErrorPanel extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: scheme.errorContainer.withOpacity(0.3),
-        border: Border.all(color: scheme.error.withOpacity(0.2)),
+        color: scheme.errorContainer.withValues(alpha: 0.3),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -1449,7 +1455,7 @@ class _ErrorPanel extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
-              backgroundColor: scheme.error.withOpacity(0.12),
+              backgroundColor: scheme.error.withValues(alpha: 0.12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
@@ -1491,14 +1497,14 @@ class _EmptyState extends StatelessWidget {
                 ? Icons.filter_list_off_rounded
                 : Icons.event_busy_outlined,
             size: 48,
-            color: scheme.onSurface.withOpacity(0.20),
+            color: scheme.onSurface.withValues(alpha: 0.20),
           ),
           const SizedBox(height: 14),
           Text(
             t(lang, "events.filter_empty"),
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: scheme.onSurface.withOpacity(0.40),
+              color: scheme.onSurface.withValues(alpha: 0.40),
               fontWeight: FontWeight.w700,
               fontSize: 14,
             ),
@@ -1527,7 +1533,7 @@ class _BackToTopButton extends StatelessWidget {
           color: scheme.primary,
           boxShadow: [
             BoxShadow(
-              color: scheme.primary.withOpacity(0.38),
+              color: scheme.primary.withValues(alpha: 0.38),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -1657,9 +1663,9 @@ _StatusInfo _resolveStatus(_EventItem e, String lang, ColorScheme scheme) {
   if (e.endAt != null && e.endAt!.isBefore(now)) {
     return _StatusInfo(
       label: t(lang, "events.status_ended"),
-      bgColor: Colors.red.withOpacity(0.52),
+      bgColor: Colors.red.withValues(alpha: 0.52),
       textColor: Colors.white,
-      borderColor: Colors.red.withOpacity(0.38),
+      borderColor: Colors.red.withValues(alpha: 0.38),
       isEnded: true,
     );
   }
@@ -1675,18 +1681,18 @@ _StatusInfo _resolveStatus(_EventItem e, String lang, ColorScheme scheme) {
     if (startDay == today) {
       return _StatusInfo(
         label: t(lang, "events.status_happening"),
-        bgColor: Colors.green.withOpacity(0.52),
+        bgColor: Colors.green.withValues(alpha: 0.52),
         textColor: Colors.white,
-        borderColor: Colors.green.withOpacity(0.38),
+        borderColor: Colors.green.withValues(alpha: 0.38),
       );
     }
 
     if (startDay == tomorrow) {
       return _StatusInfo(
         label: t(lang, "events.status_tomorrow"),
-        bgColor: Colors.white.withOpacity(0.18),
+        bgColor: Colors.white.withValues(alpha: 0.18),
         textColor: Colors.white,
-        borderColor: Colors.white.withOpacity(0.30),
+        borderColor: Colors.white.withValues(alpha: 0.30),
       );
     }
 
@@ -1697,17 +1703,17 @@ _StatusInfo _resolveStatus(_EventItem e, String lang, ColorScheme scheme) {
 
     return _StatusInfo(
       label: label,
-      bgColor: Colors.black.withOpacity(0.36),
+      bgColor: Colors.black.withValues(alpha: 0.36),
       textColor: Colors.white,
-      borderColor: Colors.white.withOpacity(0.20),
+      borderColor: Colors.white.withValues(alpha: 0.20),
     );
   }
 
   return _StatusInfo(
     label: t(lang, "events.status_ended"),
-    bgColor: Colors.red.withOpacity(0.52),
+    bgColor: Colors.red.withValues(alpha: 0.52),
     textColor: Colors.white,
-    borderColor: Colors.red.withOpacity(0.38),
+    borderColor: Colors.red.withValues(alpha: 0.38),
     isEnded: true,
   );
 }
