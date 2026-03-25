@@ -15,6 +15,7 @@ class ConvHeader extends StatelessWidget {
   final String? avatarUrl;
   final String? statusLabel; // e.g. "Online" or null
   final VoidCallback onBack;
+  final bool showBackButton;
 
   const ConvHeader({
     super.key,
@@ -22,6 +23,7 @@ class ConvHeader extends StatelessWidget {
     required this.onBack,
     this.avatarUrl,
     this.statusLabel,
+    this.showBackButton = true,
   });
 
   @override
@@ -48,9 +50,11 @@ class ConvHeader extends StatelessWidget {
           child: Row(
             children: [
               // Back button
-              _BackButton(onTap: onBack),
-
-              const SizedBox(width: 4),
+              if (showBackButton) ...[
+                _BackButton(onTap: onBack),
+                const SizedBox(width: 4),
+              ] else
+                const SizedBox(width: 12),
 
               // Avatar
               ChatAvatar(name: name, avatarUrl: avatarUrl, size: 38),
