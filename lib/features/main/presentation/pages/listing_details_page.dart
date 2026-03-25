@@ -5,11 +5,13 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:toastification/toastification.dart";
+import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
+import "package:toastification/toastification.dart";
 
+import "../../../../core/config/api.dart";
 import "../../../../core/observers/audit_route_observer.dart";
-import "../../../../core/repositories/public_discovery_repository.dart";
+import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -119,6 +121,9 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
   }
 
   Future<void> _fetch({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      // Kept for compatibility with retry handlers.
+    }
     final id =
         widget.placeId ?? ModalRoute.of(context)?.settings.arguments as String?;
     if (id == null || id.isEmpty) {
@@ -135,12 +140,10 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
     });
 
     try {
-      final resp = await PublicDiscoveryRepository.instance.fetchListingDetail(
-        id,
-        forceRefresh: forceRefresh,
-      );
-      if (resp.isSuccess) {
-        final decoded = resp.decodeJson();
+      final uri = Api.url(PlaceEndpoints.detail(id));
+      final resp = await http.get(uri);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
         if (decoded is Map) {
           _place = PlaceDetails.fromJson(Map<String, dynamic>.from(decoded));
           if (_place != null) {
@@ -291,13 +294,13 @@ class _DetailsSheet extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: scheme.surface.withOpacity(0.92),
+                  color: scheme.surface.withValues(alpha: 0.92),
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(28),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 26,
                       offset: const Offset(0, -10),
                     ),
@@ -310,7 +313,7 @@ class _DetailsSheet extends StatelessWidget {
                       width: 44,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: scheme.onSurface.withOpacity(0.14),
+                        color: scheme.onSurface.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -369,7 +372,7 @@ class _DetailsSheet extends StatelessWidget {
                           HugeIcon(
                             icon: HugeIcons.strokeRoundedMapsLocation02,
                             size: 18,
-                            color: scheme.onSurface.withOpacity(0.65),
+                            color: scheme.onSurface.withValues(alpha: 0.65),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -381,7 +384,7 @@ class _DetailsSheet extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: scheme.onSurface.withOpacity(0.62),
+                                color: scheme.onSurface.withValues(alpha: 0.62),
                               ),
                             ),
                           ),
@@ -508,7 +511,10 @@ class _HeroPagerState extends State<_HeroPager>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.18)],
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.18),
+                  ],
                 ),
               ),
             ),
@@ -532,8 +538,8 @@ class _HeroPagerState extends State<_HeroPager>
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   decoration: BoxDecoration(
                     color: _index == i
-                        ? Colors.white.withOpacity(0.95)
-                        : Colors.white.withOpacity(0.35),
+                        ? Colors.white.withValues(alpha: 0.95)
+                        : Colors.white.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -627,7 +633,7 @@ class _HeroPagerState extends State<_HeroPager>
   void _openPreview(BuildContext context, List<String> imgs) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.85),
+      barrierColor: Colors.black.withValues(alpha: 0.85),
       builder: (_) => ListingImagePreview(images: imgs, initialIndex: _index),
     );
   }
@@ -649,11 +655,11 @@ class _HeroPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: scheme.surfaceVariant.withOpacity(0.7),
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
       child: Center(
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedImageNotFound01,
-          color: scheme.onSurface.withOpacity(0.35),
+          color: scheme.onSurface.withValues(alpha: 0.35),
           size: 34,
         ),
       ),
@@ -674,7 +680,7 @@ class _PillTabBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant.withOpacity(0.35),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(999),
       ),
       child: TabBar(
@@ -685,14 +691,14 @@ class _PillTabBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
           ],
         ),
         labelColor: scheme.onSurface,
-        unselectedLabelColor: scheme.onSurface.withOpacity(0.55),
+        unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.55),
         labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
         unselectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.w700,
@@ -737,7 +743,7 @@ class _ThumbRow extends StatelessWidget {
               child: Container(
                 width: 54,
                 height: 54,
-                color: scheme.surfaceVariant.withOpacity(0.35),
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
                 child: AppCachedImage(
                   imageUrl: url,
                   fit: BoxFit.cover,
@@ -759,7 +765,7 @@ class _ThumbRow extends StatelessWidget {
               width: 54,
               height: 54,
               decoration: BoxDecoration(
-                color: scheme.surfaceVariant.withOpacity(0.35),
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
               ),
               child: Stack(
                 fit: StackFit.expand,
@@ -773,7 +779,7 @@ class _ThumbRow extends StatelessWidget {
                       maxWidthDiskCache: 320,
                       maxHeightDiskCache: 320,
                       colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.35),
+                        Colors.black.withValues(alpha: 0.35),
                         BlendMode.darken,
                       ),
                       errorBuilder: (_) => _thumbFallback(scheme),
@@ -804,7 +810,7 @@ class _ThumbRow extends StatelessWidget {
       child: HugeIcon(
         icon: HugeIcons.strokeRoundedImageNotFound01,
         size: 18,
-        color: scheme.onSurface.withOpacity(0.35),
+        color: scheme.onSurface.withValues(alpha: 0.35),
       ),
     );
   }
@@ -830,7 +836,7 @@ class _RatingCompact extends StatelessWidget {
           rating.toStringAsFixed(1),
           style: TextStyle(
             fontWeight: FontWeight.w900,
-            color: scheme.onSurface.withOpacity(0.82),
+            color: scheme.onSurface.withValues(alpha: 0.82),
           ),
         ),
         const SizedBox(width: 6),
@@ -838,7 +844,7 @@ class _RatingCompact extends StatelessWidget {
           "($reviews)",
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            color: scheme.onSurface.withOpacity(0.55),
+            color: scheme.onSurface.withValues(alpha: 0.55),
           ),
         ),
       ],
@@ -859,7 +865,7 @@ class _RoundIconButton extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Material(
-      color: scheme.surface.withOpacity(0.86),
+      color: scheme.surface.withValues(alpha: 0.86),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -871,7 +877,7 @@ class _RoundIconButton extends StatelessWidget {
           child: HugeIcon(
             icon: icon,
             size: 22,
-            color: scheme.onSurface.withOpacity(0.85),
+            color: scheme.onSurface.withValues(alpha: 0.85),
           ),
         ),
       ),
@@ -921,11 +927,11 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
+              colors: [scheme.primary, scheme.primary.withValues(alpha: 0.88)],
             ),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withOpacity(0.22),
+                color: scheme.primary.withValues(alpha: 0.22),
                 blurRadius: 22,
                 offset: const Offset(0, 12),
               ),
@@ -1005,13 +1011,13 @@ class _FavoriteCircleButtonState extends State<_FavoriteCircleButton> {
 
     final bg = widget.active
         ? Colors.red
-        : Colors.white.withOpacity(isDark ? 0.10 : 0.16);
+        : Colors.white.withValues(alpha: isDark ? 0.10 : 0.16);
     final border = widget.active
-        ? Colors.red.withOpacity(0.9)
-        : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
+        ? Colors.red.withValues(alpha: 0.9)
+        : Colors.white.withValues(alpha: isDark ? 0.14 : 0.18);
     final iconColor = widget.active
         ? Colors.white
-        : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
+        : scheme.onSurface.withValues(alpha: isDark ? 0.92 : 0.86);
 
     return GestureDetector(
       onTapDown: (_) => _set(true),
@@ -1161,7 +1167,7 @@ class _PageSkeleton extends StatelessWidget {
                 height: 24,
                 width: 220,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceVariant.withOpacity(0.6),
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
@@ -1169,7 +1175,7 @@ class _PageSkeleton extends StatelessWidget {
               Container(
                 height: 240,
                 decoration: BoxDecoration(
-                  color: scheme.surfaceVariant.withOpacity(0.6),
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
@@ -1177,7 +1183,9 @@ class _PageSkeleton extends StatelessWidget {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: scheme.surfaceVariant.withOpacity(0.4),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.4,
+                    ),
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
