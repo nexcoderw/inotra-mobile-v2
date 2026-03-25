@@ -31,20 +31,23 @@ class _MainShellState extends State<MainShell> {
 
   late int _index;
   AuthSession? _authSession;
-
-  final _tabs = const [
-    ExploreTab(),
-    ListingsTab(),
-    AiChatTab(),
-    EventsTab(),
-    HighlightsTab(),
-  ];
+  late final List<Widget Function()> _tabBuilders;
+  late final List<Widget?> _tabCache;
 
   @override
   void initState() {
     super.initState();
     _ensureAuthSession();
-    _index = widget.initialIndex.clamp(0, _tabs.length - 1);
+    _tabBuilders = [
+      () => const ExploreTab(),
+      () => const ListingsTab(),
+      () => const AiChatTab(),
+      () => const EventsTab(),
+      () => const HighlightsTab(),
+    ];
+    _tabCache = List<Widget?>.filled(_tabBuilders.length, null, growable: false);
+    _index = widget.initialIndex.clamp(0, _tabBuilders.length - 1);
+    _ensureTabLoaded(_index);
   }
 
   String get _lang => currentLangSync();
@@ -69,6 +72,11 @@ class _MainShellState extends State<MainShell> {
     Navigator.pushNamed(context, AppRoutes.profile);
   }
 
+  void _ensureTabLoaded(int index) {
+    if (_tabCache[index] != null) return;
+    _tabCache[index] = _tabBuilders[index]();
+  }
+
   void _onTabChange(int next) async {
     if (next == _index) return;
 
@@ -76,17 +84,8 @@ class _MainShellState extends State<MainShell> {
       return;
     }
 
+    _ensureTabLoaded(next);
     setState(() => _index = next);
-
-    final route = switch (next) {
-      0 => AppRoutes.home,
-      1 => AppRoutes.listings,
-      2 => AppRoutes.aiChat,
-      3 => AppRoutes.events,
-      _ => AppRoutes.highlights,
-    };
-
-    Navigator.pushReplacementNamed(context, route);
   }
 
   void _handleAuthChange() {
@@ -161,7 +160,14 @@ class _MainShellState extends State<MainShell> {
         onSettingsTap: () => Navigator.pushNamed(context, AppRoutes.settings),
       ),
 
-      body: IndexedStack(index: _index, children: _tabs),
+      body: IndexedStack(
+        index: _index,
+        children: List<Widget>.generate(
+          _tabCache.length,
+          (index) => _tabCache[index] ?? const SizedBox.shrink(),
+          growable: false,
+        ),
+      ),
 
       bottomNavigationBar: InotraBottomNav(
         currentIndex: _index,
