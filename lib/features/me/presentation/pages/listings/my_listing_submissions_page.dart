@@ -12,6 +12,7 @@ import "../../../../../core/config/api.dart";
 import "../../../../../core/config/app_routes.dart";
 import "../../../../../core/constants/api/my_listing_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
 import "my_listing_submission_detail_page.dart";
@@ -1277,14 +1278,15 @@ class _CardImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (url != null && url!.isNotEmpty) {
-      return Image.network(
-        url!,
+      return AppCachedImage(
+        imageUrl: url,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _Placeholder(scheme: scheme);
-        },
+        memCacheWidth: 1200,
+        memCacheHeight: 900,
+        maxWidthDiskCache: 1600,
+        maxHeightDiskCache: 1200,
+        errorBuilder: (_) => _Placeholder(scheme: scheme),
+        placeholderBuilder: (_) => _Placeholder(scheme: scheme),
       );
     }
     return _Placeholder(scheme: scheme);
