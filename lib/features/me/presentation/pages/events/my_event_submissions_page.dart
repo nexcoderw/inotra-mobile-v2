@@ -230,7 +230,6 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
   Future<void> _onRefresh() async => _fetchPage(reset: true);
 
   void _onSearchChanged(String value) {
-    setState(() {});
     _query = value.trim();
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
@@ -240,10 +239,8 @@ class _MyEventSubmissionsPageState extends State<MyEventSubmissionsPage> {
 
   void _clearSearch() {
     if (_searchCtrl.text.isEmpty) return;
-    setState(() {
-      _searchCtrl.clear();
-      _query = "";
-    });
+    _searchCtrl.clear();
+    _query = "";
     _fetchPage(reset: true);
   }
 
@@ -1305,26 +1302,33 @@ class _PremiumSearchBar extends StatelessWidget {
               ),
             ),
           ),
-          if (controller.text.isNotEmpty)
-            GestureDetector(
-              onTap: onClear,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: scheme.onSurface.withValues(alpha: 0.15),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 13,
-                    color: scheme.onSurface.withValues(alpha: 0.65),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return GestureDetector(
+                onTap: onClear,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: scheme.onSurface.withValues(alpha: 0.15),
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 13,
+                      color: scheme.onSurface.withValues(alpha: 0.65),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
           const SizedBox(width: 4),
         ],
       ),
