@@ -960,26 +960,27 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: info.bgColor,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: info.borderColor, width: 1),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: info.bgColor,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: info.borderColor, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Text(
-            info.label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: info.textColor,
-              letterSpacing: 0.1,
-            ),
-          ),
+        ],
+      ),
+      child: Text(
+        info.label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: info.textColor,
+          letterSpacing: 0.1,
         ),
       ),
     );
@@ -1007,62 +1008,70 @@ class _EventGlassFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(isDark ? 0.09 : 0.13),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
+            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Title
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              letterSpacing: -0.3,
+              height: 1.1,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          const SizedBox(height: 9),
+
+          // Location + price row
+          Row(
             children: [
-              // Title
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: -0.3,
-                  height: 1.1,
+              // Location pill
+              Expanded(
+                child: _MetaPill(
+                  icon: Icons.location_on_rounded,
+                  label: locationLabel,
                 ),
               ),
-              const SizedBox(height: 9),
-
-              // Location + price row
-              Row(
-                children: [
-                  // Location pill
-                  Expanded(
-                    child: _MetaPill(
-                      icon: Icons.location_on_rounded,
-                      label: locationLabel,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Price pill
-                  _MetaPill(
-                    icon: isFree
-                        ? Icons.celebration_rounded
-                        : Icons.confirmation_number_outlined,
-                    label: priceLabel,
-                    highlight: isFree,
-                  ),
-                ],
+              const SizedBox(width: 8),
+              // Price pill
+              _MetaPill(
+                icon: isFree
+                    ? Icons.celebration_rounded
+                    : Icons.confirmation_number_outlined,
+                label: priceLabel,
+                highlight: isFree,
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -1225,64 +1234,63 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                 left: 14,
                 right: 14,
                 bottom: 14,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(13),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.09),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.11),
+                child: Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withOpacity(0.12),
+                        Colors.white.withOpacity(0.07),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.11)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 14,
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(right: 48),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.13),
+                          borderRadius: BorderRadius.circular(999),
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: 10),
+                      Row(
                         children: [
-                          Container(
-                            height: 14,
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(right: 48),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.13),
-                              borderRadius: BorderRadius.circular(999),
+                          Expanded(
+                            child: Container(
+                              height: 26,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.10),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.09),
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.10),
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.09),
-                                    ),
-                                  ),
-                                ),
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 80,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.09),
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 80,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.09),
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
