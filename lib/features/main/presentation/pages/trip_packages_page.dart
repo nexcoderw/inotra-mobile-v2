@@ -229,7 +229,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: scheme.onSurface.withOpacity(0.40),
+                                color: scheme.onSurface.withValues(alpha: 0.40),
                                 letterSpacing: 0.2,
                               ),
                             ),
@@ -338,8 +338,8 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                           child: Container(
-                            color: scheme.surface.withOpacity(
-                              isDark ? 0.88 : 0.93,
+                            color: scheme.surface.withValues(
+                              alpha: isDark ? 0.88 : 0.93,
                             ),
                             padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
                             child: _PremiumSearchBar(
@@ -540,7 +540,7 @@ class _PackageCardState extends State<_PackageCard>
                         colors: [
                           Colors.transparent,
                           Colors.transparent,
-                          Colors.black.withOpacity(0.74),
+                          Colors.black.withValues(alpha: 0.74),
                         ],
                       ),
                     ),
@@ -555,7 +555,7 @@ class _PackageCardState extends State<_PackageCard>
                         begin: Alignment.topLeft,
                         end: Alignment.center,
                         colors: [
-                          Colors.black.withOpacity(0.20),
+                          Colors.black.withValues(alpha: 0.20),
                           Colors.transparent,
                         ],
                       ),
@@ -582,8 +582,8 @@ class _PackageCardState extends State<_PackageCard>
                                   borderRadius: BorderRadius.circular(80),
                                   gradient: LinearGradient(
                                     colors: [
-                                      Colors.white.withOpacity(0.10),
-                                      Colors.white.withOpacity(0.0),
+                                      Colors.white.withValues(alpha: 0.10),
+                                      Colors.white.withValues(alpha: 0.0),
                                     ],
                                   ),
                                 ),
@@ -602,8 +602,8 @@ class _PackageCardState extends State<_PackageCard>
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                        color: Colors.white.withOpacity(
-                          widget.isDark ? 0.10 : 0.14,
+                        color: Colors.white.withValues(
+                          alpha: widget.isDark ? 0.10 : 0.14,
                         ),
                         width: 1,
                       ),
@@ -658,7 +658,7 @@ class _PackageCardState extends State<_PackageCard>
                                   style: TextStyle(
                                     fontSize: widget.isTablet ? 12 : 11.5,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white.withOpacity(0.72),
+                                    color: Colors.white.withValues(alpha: 0.72),
                                     height: 1.3,
                                   ),
                                 ),
@@ -675,11 +675,11 @@ class _PackageCardState extends State<_PackageCard>
                           height: 42,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(
-                              _pressed ? 0.22 : 0.14,
+                            color: Colors.white.withValues(
+                              alpha: _pressed ? 0.22 : 0.14,
                             ),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.20),
+                              color: Colors.white.withValues(alpha: 0.20),
                             ),
                           ),
                           child: const Center(
@@ -737,8 +737,8 @@ class _Placeholder extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            scheme.surfaceVariant.withOpacity(0.80),
-            scheme.surfaceVariant.withOpacity(0.50),
+            scheme.surfaceContainerHighest.withValues(alpha: 0.80),
+            scheme.surfaceContainerHighest.withValues(alpha: 0.50),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -748,7 +748,7 @@ class _Placeholder extends StatelessWidget {
         child: Icon(
           Icons.landscape_outlined,
           size: 44,
-          color: scheme.onSurfaceVariant.withOpacity(0.22),
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.22),
         ),
       ),
     );
@@ -773,15 +773,15 @@ class _DurationBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.black.withOpacity(0.40),
-            Colors.black.withOpacity(0.26),
+            Colors.black.withValues(alpha: 0.40),
+            Colors.black.withValues(alpha: 0.26),
           ],
         ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.14),
+            color: Colors.black.withValues(alpha: 0.14),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -793,7 +793,7 @@ class _DurationBadge extends StatelessWidget {
           Icon(
             Icons.schedule_rounded,
             size: 12,
-            color: Colors.white.withOpacity(0.85),
+            color: Colors.white.withValues(alpha: 0.85),
           ),
           const SizedBox(width: 5),
           Text(
@@ -801,7 +801,7 @@ class _DurationBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
               letterSpacing: 0.1,
             ),
           ),
@@ -829,17 +829,17 @@ class _GlassFooter extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
-            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+            Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
+            Colors.white.withValues(alpha: isDark ? 0.07 : 0.11),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+          color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.17),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.10),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -906,9 +906,15 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                         begin: Alignment(-1.5 + _shimmer.value * 3, 0),
                         end: Alignment(-0.5 + _shimmer.value * 3, 0),
                         colors: [
-                          scheme.surfaceVariant.withOpacity(0.55),
-                          scheme.surfaceVariant.withOpacity(0.75),
-                          scheme.surfaceVariant.withOpacity(0.55),
+                          scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.55,
+                          ),
+                          scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.75,
+                          ),
+                          scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.55,
+                          ),
                         ],
                       ),
                     ),
@@ -923,8 +929,8 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.03),
-                          Colors.black.withOpacity(0.18),
+                          Colors.black.withValues(alpha: 0.03),
+                          Colors.black.withValues(alpha: 0.18),
                         ],
                       ),
                     ),
@@ -937,7 +943,7 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                        color: scheme.onSurface.withOpacity(0.07),
+                        color: scheme.onSurface.withValues(alpha: 0.07),
                       ),
                     ),
                   ),
@@ -951,9 +957,11 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                     width: 80,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.10),
+                      color: Colors.white.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withOpacity(0.09)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.09),
+                      ),
                     ),
                   ),
                 ),
@@ -970,12 +978,14 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withOpacity(0.12),
-                          Colors.white.withOpacity(0.07),
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.07),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.11)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.11),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -990,7 +1000,7 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                                 width: double.infinity,
                                 margin: const EdgeInsets.only(right: 60),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.13),
+                                  color: Colors.white.withValues(alpha: 0.13),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),
@@ -1000,7 +1010,7 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                                 width: double.infinity,
                                 margin: const EdgeInsets.only(right: 100),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.09),
+                                  color: Colors.white.withValues(alpha: 0.09),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),
@@ -1013,9 +1023,9 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                           height: 42,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.10),
+                            color: Colors.white.withValues(alpha: 0.10),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.09),
+                              color: Colors.white.withValues(alpha: 0.09),
                             ),
                           ),
                         ),
@@ -1059,13 +1069,13 @@ class _PremiumSearchBar extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.07)
-            : Colors.black.withOpacity(0.055),
+            ? Colors.white.withValues(alpha: 0.07)
+            : Colors.black.withValues(alpha: 0.055),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.10)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1.2,
         ),
       ),
@@ -1075,7 +1085,7 @@ class _PremiumSearchBar extends StatelessWidget {
           Icon(
             Icons.search_rounded,
             size: 17,
-            color: scheme.onSurface.withOpacity(0.45),
+            color: scheme.onSurface.withValues(alpha: 0.45),
           ),
           const SizedBox(width: 9),
           Expanded(
@@ -1092,7 +1102,7 @@ class _PremiumSearchBar extends StatelessWidget {
                 hintStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: scheme.onSurface.withOpacity(0.38),
+                  color: scheme.onSurface.withValues(alpha: 0.38),
                 ),
                 border: InputBorder.none,
                 isDense: true,
@@ -1115,12 +1125,12 @@ class _PremiumSearchBar extends StatelessWidget {
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: scheme.onSurface.withOpacity(0.15),
+                      color: scheme.onSurface.withValues(alpha: 0.15),
                     ),
                     child: Icon(
                       Icons.close_rounded,
                       size: 12,
-                      color: scheme.onSurface.withOpacity(0.7),
+                      color: scheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -1156,8 +1166,8 @@ class _ErrorPanel extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: scheme.errorContainer.withOpacity(0.3),
-        border: Border.all(color: scheme.error.withOpacity(0.2)),
+        color: scheme.errorContainer.withValues(alpha: 0.3),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -1176,7 +1186,7 @@ class _ErrorPanel extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
-              backgroundColor: scheme.error.withOpacity(0.12),
+              backgroundColor: scheme.error.withValues(alpha: 0.12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
@@ -1210,13 +1220,13 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.luggage_outlined,
             size: 48,
-            color: scheme.onSurface.withOpacity(0.20),
+            color: scheme.onSurface.withValues(alpha: 0.20),
           ),
           const SizedBox(height: 14),
           Text(
             t(lang, "packages.empty"),
             style: TextStyle(
-              color: scheme.onSurface.withOpacity(0.40),
+              color: scheme.onSurface.withValues(alpha: 0.40),
               fontWeight: FontWeight.w700,
               fontSize: 14,
             ),
@@ -1244,7 +1254,7 @@ class _BackToTopButton extends StatelessWidget {
           color: scheme.primary,
           boxShadow: [
             BoxShadow(
-              color: scheme.primary.withOpacity(0.38),
+              color: scheme.primary.withValues(alpha: 0.38),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
