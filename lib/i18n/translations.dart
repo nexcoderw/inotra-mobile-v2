@@ -92,6 +92,20 @@ const translations = {
     "auth.sign_in_biometric": "Continue with Face ID / Biometrics",
     "auth.google_soon": "Google login coming soon",
     "ai.placeholder": "Chat UI will be implemented next (static page for now).",
+    "ai.assistant_name": "INOTRA AI",
+    "ai.assistant_status": "Smart trip planning assistant",
+    "ai.chat_greeting":
+        "Hello and welcome to INOTRA AI. I am here to make planning your Rwanda journey feel simple, personal, and inspiring. Ask me about stays, events, routes, activities, or how to shape the right trip for you.",
+    "ai.chat_intro_title": "Your assistant conversation lives here",
+    "ai.chat_intro_subtitle":
+        "This screen now opens like a real chat so your ideas, trip questions, and planning context stay in one focused conversation.",
+    "ai.refresh_conversation": "Refresh conversation",
+    "ai.preparing_title": "Preparing your assistant",
+    "ai.preparing_subtitle":
+        "We are syncing your INOTRA AI conversation so you can continue planning without interruption.",
+    "ai.composer_locked_title": "Messaging will appear here",
+    "ai.composer_locked_subtitle":
+        "Once your AI thread is available, you will be able to chat, refine plans, and continue your trip planning from this screen.",
     "ai.open_conversations": "Open Conversations",
     "profile.title": "Profile",
     "profile.user_profile": "User Profile",
