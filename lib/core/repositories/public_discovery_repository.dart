@@ -23,6 +23,10 @@ class PublicDiscoveryRepository {
   static const Duration _feedTtl = Duration(seconds: 45);
   static const Duration _detailTtl = Duration(minutes: 4);
   static const Duration _previewTtl = Duration(minutes: 2);
+  static const Duration _requestTimeout = Duration(seconds: 20);
+  static const Map<String, String> _defaultHeaders = {
+    "Accept": "application/json",
+  };
 
   final Map<String, _MemoryCacheEntry> _cache = {};
   final Map<String, Future<CachedJsonResponse>> _inFlight = {};
@@ -141,7 +145,8 @@ class PublicDiscoveryRepository {
     bool forceRefresh = false,
     Map<String, String>? headers,
   }) {
-    final key = _cacheKey(uri, headers);
+    final effectiveHeaders = _mergeHeaders(headers);
+    final key = _cacheKey(uri, effectiveHeaders);
     final now = DateTime.now();
 
     final cached = _cache[key];
@@ -158,7 +163,7 @@ class PublicDiscoveryRepository {
       key,
       uri,
       ttl: ttl,
-      headers: headers,
+      headers: effectiveHeaders,
     ).whenComplete(() => _inFlight.remove(key));
 
     _inFlight[key] = future;
@@ -171,21 +176,33 @@ class PublicDiscoveryRepository {
     required Duration ttl,
     Map<String, String>? headers,
   }) async {
-    final resp = await http.get(uri, headers: headers);
-    final response = CachedJsonResponse(
-      statusCode: resp.statusCode,
-      body: resp.body,
-    );
-
-    if (response.isSuccess) {
-      _cache[key] = _MemoryCacheEntry(
-        statusCode: response.statusCode,
-        body: response.body,
-        expiresAt: DateTime.now().add(ttl),
+    final client = http.Client();
+    try {
+      final resp = await client
+          .get(uri, headers: headers)
+          .timeout(
+            _requestTimeout,
+            onTimeout: () => throw TimeoutException(
+              "Request timed out after ${_requestTimeout.inSeconds} seconds",
+            ),
+          );
+      final response = CachedJsonResponse(
+        statusCode: resp.statusCode,
+        body: resp.body,
       );
-    }
 
-    return response;
+      if (response.isSuccess) {
+        _cache[key] = _MemoryCacheEntry(
+          statusCode: response.statusCode,
+          body: response.body,
+          expiresAt: DateTime.now().add(ttl),
+        );
+      }
+
+      return response;
+    } finally {
+      client.close();
+    }
   }
 
   String _cacheKey(Uri uri, Map<String, String>? headers) {
@@ -196,6 +213,11 @@ class PublicDiscoveryRepository {
         .map((entry) => "${entry.key}:${entry.value}")
         .join("|");
     return "${uri}::$headerKey";
+  }
+
+  Map<String, String> _mergeHeaders(Map<String, String>? headers) {
+    if (headers == null || headers.isEmpty) return _defaultHeaders;
+    return {..._defaultHeaders, ...headers};
   }
 }
 
