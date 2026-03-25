@@ -1,20 +1,14 @@
-import "dart:convert";
+import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:http/http.dart" as http;
 
-import "../../../../core/config/api.dart";
-import "../../../../core/constants/api/chat_endpoints.dart";
-import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../../../auth/presentation/widgets/quick_login_dialog.dart";
-import "../pages/ai_chat_thread_page.dart";
-import "../widgets/chat/conversation/bubble.dart";
+import "../widgets/chat/conversation/composer.dart";
 import "../widgets/chat/conversation/header.dart";
+import "../widgets/chat/conversation/message_list.dart";
 import "../widgets/chat/conversation/models.dart";
-import "../widgets/chat/conversation/skeleton.dart";
 
 class AiChatTab extends StatefulWidget {
   const AiChatTab({super.key});
@@ -24,114 +18,100 @@ class AiChatTab extends StatefulWidget {
 }
 
 class _AiChatTabState extends State<AiChatTab> {
-  bool _loading = true;
-  bool _authPrompted = false;
-  String? _error;
-  _ChatThread? _activeThread;
+  static const Duration _thinkingDelay = Duration(seconds: 3);
+
+  final TextEditingController _inputCtrl = TextEditingController();
+  final ScrollController _scrollCtrl = ScrollController();
+  final FocusNode _focusNode = FocusNode();
+
+  Timer? _introTimer;
+  bool _thinking = true;
+  final List<ConvMessage> _messages = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+    _startIntroSequence();
   }
 
-  Future<void> _init() async {
-    if (!AuthSession.instance.value.isAuthenticated) {
-      if (!_authPrompted) {
-        _authPrompted = true;
-        await QuickLoginDialog.show(context);
-      }
-      if (!AuthSession.instance.value.isAuthenticated) {
-        if (mounted) {
-          setState(() => _loading = false);
-        }
-        return;
-      }
-    }
-
-    await _fetchPrimaryThread();
+  @override
+  void dispose() {
+    _introTimer?.cancel();
+    _inputCtrl.dispose();
+    _scrollCtrl.dispose();
+    _focusNode.dispose();
+    super.dispose();
   }
 
-  Future<void> _fetchPrimaryThread() async {
-    final token = AuthSession.instance.value.accessToken;
-    if (token == null || token.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = "auth";
-        });
-      }
-      return;
-    }
+  void _startIntroSequence() {
+    _introTimer?.cancel();
+    _introTimer = Timer(_thinkingDelay, _revealGreeting);
+  }
 
-    if (mounted) {
-      setState(() {
-        _loading = true;
-        _error = null;
-      });
-    }
+  void _revealGreeting() {
+    if (!mounted) return;
 
-    try {
-      final resp = await http.get(
-        Api.url(
-          ChatEndpoints.threads,
-        ).replace(queryParameters: const {"page": "1", "page_size": "50"}),
-        headers: {
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
-        },
+    final lang = currentLangSync();
+    final assistantName = t(lang, "ai.assistant_name");
+    final greeting = t(lang, "ai.chat_greeting");
+
+    setState(() {
+      _thinking = false;
+      _messages
+        ..clear()
+        ..add(
+          ConvMessage(
+            id: "__ai_intro__",
+            text: greeting,
+            createdAt: DateTime.now(),
+            isMine: false,
+            authorName: assistantName,
+          ),
+        );
+    });
+
+    _scrollToBottom();
+  }
+
+  void _sendLocalMessage() {
+    final text = _inputCtrl.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add(
+        ConvMessage(
+          id: "__local_${DateTime.now().microsecondsSinceEpoch}",
+          text: text,
+          createdAt: DateTime.now(),
+          isMine: true,
+        ),
       );
+      _inputCtrl.clear();
+    });
 
-      if (!mounted) return;
-
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body);
-        List raw = const [];
-
-        if (decoded is Map) {
-          raw =
-              (decoded["results"] ?? decoded["data"] ?? const []) as List? ??
-              const [];
-        } else if (decoded is List) {
-          raw = decoded;
-        }
-
-        final threads = raw
-            .whereType<Map>()
-            .map(
-              (item) => _ChatThread.fromJson(Map<String, dynamic>.from(item)),
-            )
-            .toList();
-
-        setState(() {
-          _activeThread = _selectAiThread(threads);
-          _loading = false;
-        });
-      } else if (resp.statusCode == 401) {
-        await AuthSession.instance.expireSession();
-        await QuickLoginDialog.show(context);
-        await _init();
-      } else {
-        setState(() {
-          _loading = false;
-          _error = "Status ${resp.statusCode}";
-        });
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = error.toString();
-        });
-      }
-    }
+    _scrollToBottom();
   }
 
-  _ChatThread? _selectAiThread(List<_ChatThread> threads) {
-    for (final thread in threads) {
-      if (thread.isAiThread) return thread;
-    }
-    return null;
+  void _showStaticNotice(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollCtrl.hasClients) return;
+      _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   @override
@@ -139,337 +119,167 @@ class _AiChatTabState extends State<AiChatTab> {
     final lang = currentLangSync();
     final assistantName = t(lang, "ai.assistant_name");
     final statusLabel = t(lang, "ai.assistant_status");
-    final greeting = t(lang, "ai.chat_greeting");
 
     return SafeArea(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOutCubic,
-        switchOutCurve: Curves.easeOutCubic,
-        child: _loading
-            ? _AiConversationLoading(
-                key: const ValueKey("loading"),
-                title: assistantName,
-                statusLabel: statusLabel,
-              )
-            : _error != null
-            ? _AiConversationError(
-                key: const ValueKey("error"),
-                lang: lang,
-                title: assistantName,
-                statusLabel: statusLabel,
-                message: _error!,
-                onRetry: _fetchPrimaryThread,
-              )
-            : _activeThread != null
-            ? AiChatThreadPage(
-                key: ValueKey(_activeThread!.id),
-                threadId: _activeThread!.id,
-                title: _activeThread!.displayTitle,
-                embedded: true,
-                showBackButton: false,
-                statusLabel: statusLabel,
-                introMessage: greeting,
-              )
-            : _AiConversationPlaceholder(
-                key: const ValueKey("placeholder"),
-                lang: lang,
-                title: assistantName,
-                statusLabel: statusLabel,
-                greeting: greeting,
-                onRefresh: _fetchPrimaryThread,
-              ),
+      child: Column(
+        children: [
+          ConvHeader(
+            name: assistantName,
+            statusLabel: statusLabel,
+            showBackButton: false,
+            onBack: () {},
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 280),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeOutCubic,
+              child: _thinking
+                  ? _AiThinkingStage(
+                      key: const ValueKey("thinking"),
+                      lang: lang,
+                    )
+                  : ConvMessageList(
+                      key: const ValueKey("conversation"),
+                      messages: _messages,
+                      scrollCtrl: _scrollCtrl,
+                      lang: lang,
+                    ),
+            ),
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeOutCubic,
+            child: _thinking
+                ? _ThinkingFooter(
+                    key: const ValueKey("thinking-footer"),
+                    lang: lang,
+                  )
+                : ConvComposer(
+                    key: const ValueKey("composer"),
+                    controller: _inputCtrl,
+                    focusNode: _focusNode,
+                    onSend: _sendLocalMessage,
+                    onAttach: () =>
+                        _showStaticNotice(t(lang, "common.coming_soon")),
+                    onClearAttach: () {},
+                    pendingShared: null,
+                    busy: false,
+                    lang: lang,
+                  ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _AiConversationLoading extends StatelessWidget {
-  final String title;
-  final String statusLabel;
-
-  const _AiConversationLoading({
-    super.key,
-    required this.title,
-    required this.statusLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ConvHeader(
-          name: title,
-          statusLabel: statusLabel,
-          showBackButton: false,
-          onBack: () {},
-        ),
-        const Expanded(child: ConvSkeleton()),
-        const _ComposerStatusCard(
-          icon: HugeIcons.strokeRoundedSparkles,
-          titleKey: "ai.preparing_title",
-          subtitleKey: "ai.preparing_subtitle",
-        ),
-      ],
-    );
-  }
-}
-
-class _AiConversationError extends StatelessWidget {
+class _AiThinkingStage extends StatelessWidget {
   final String lang;
-  final String title;
-  final String statusLabel;
-  final String message;
-  final VoidCallback onRetry;
 
-  const _AiConversationError({
-    super.key,
-    required this.lang,
-    required this.title,
-    required this.statusLabel,
-    required this.message,
-    required this.onRetry,
-  });
+  const _AiThinkingStage({super.key, required this.lang});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
 
-    return Column(
-      children: [
-        ConvHeader(
-          name: title,
-          statusLabel: statusLabel,
-          showBackButton: false,
-          onBack: () {},
-        ),
-        Expanded(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                decoration: BoxDecoration(
-                  color: scheme.errorContainer.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: scheme.error.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      height: 54,
-                      width: 54,
-                      decoration: BoxDecoration(
-                        color: scheme.error.withValues(alpha: 0.10),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.wifi_off_rounded,
-                        color: scheme.error,
-                        size: 26,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      t(lang, "chat.load_error"),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: scheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        height: 1.45,
-                        color: scheme.onSurface.withValues(alpha: 0.68),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: onRetry,
-                      icon: const Icon(Icons.refresh_rounded, size: 18),
-                      label: Text(t(lang, "common.try_again")),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: LinearGradient(
+              colors: [
+                scheme.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                scheme.primary.withValues(alpha: isDark ? 0.08 : 0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ),
-        ),
-        const _ComposerStatusCard(
-          icon: HugeIcons.strokeRoundedSparkles,
-          titleKey: "ai.preparing_title",
-          subtitleKey: "ai.preparing_subtitle",
-        ),
-      ],
-    );
-  }
-}
-
-class _AiConversationPlaceholder extends StatelessWidget {
-  final String lang;
-  final String title;
-  final String statusLabel;
-  final String greeting;
-  final Future<void> Function() onRefresh;
-
-  const _AiConversationPlaceholder({
-    super.key,
-    required this.lang,
-    required this.title,
-    required this.statusLabel,
-    required this.greeting,
-    required this.onRefresh,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final introMessage = ConvMessage(
-      id: "__ai_intro_placeholder__",
-      text: greeting,
-      createdAt: DateTime.now(),
-      isMine: false,
-      authorName: title,
-    );
-
-    return Column(
-      children: [
-        ConvHeader(
-          name: title,
-          statusLabel: statusLabel,
-          showBackButton: false,
-          onBack: () {},
-        ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(top: 12, bottom: 18),
-            children: [
-              ConvBubble(
-                message: introMessage,
-                isFirstInGroup: true,
-                isLastInGroup: true,
+            border: Border.all(
+              color: scheme.primary.withValues(alpha: isDark ? 0.24 : 0.16),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: isDark ? 0.14 : 0.10),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      colors: [
-                        scheme.primary.withValues(alpha: 0.10),
-                        scheme.primary.withValues(alpha: 0.04),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(
-                      color: scheme.primary.withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            height: 36,
-                            width: 36,
-                            decoration: BoxDecoration(
-                              color: scheme.primary.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedSparkles,
-                              size: 18,
-                              color: scheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              t(lang, "ai.chat_intro_title"),
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: scheme.onSurface,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        t(lang, "ai.chat_intro_subtitle"),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 1.55,
-                          color: scheme.onSurface.withValues(alpha: 0.70),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      FilledButton.icon(
-                        onPressed: () => onRefresh(),
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: Text(t(lang, "ai.refresh_conversation")),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ],
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 68,
+                width: 68,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                  border: Border.all(
+                    color: scheme.primary.withValues(alpha: 0.18),
                   ),
                 ),
+                child: Center(
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedSparkles,
+                    size: 30,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                t(lang, "ai.thinking"),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                  color: scheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                t(lang, "ai.thinking_subtitle"),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.55,
+                  fontWeight: FontWeight.w500,
+                  color: scheme.onSurface.withValues(alpha: 0.68),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  _ThinkingDot(delay: 0),
+                  SizedBox(width: 8),
+                  _ThinkingDot(delay: 180),
+                  SizedBox(width: 8),
+                  _ThinkingDot(delay: 360),
+                ],
               ),
             ],
           ),
         ),
-        const _ComposerStatusCard(
-          icon: HugeIcons.strokeRoundedMessage02,
-          titleKey: "ai.composer_locked_title",
-          subtitleKey: "ai.composer_locked_subtitle",
-        ),
-      ],
+      ),
     );
   }
 }
 
-class _ComposerStatusCard extends StatelessWidget {
-  final dynamic icon;
-  final String titleKey;
-  final String subtitleKey;
+class _ThinkingFooter extends StatelessWidget {
+  final String lang;
 
-  const _ComposerStatusCard({
-    required this.icon,
-    required this.titleKey,
-    required this.subtitleKey,
-  });
+  const _ThinkingFooter({super.key, required this.lang});
 
   @override
   Widget build(BuildContext context) {
-    final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
 
@@ -482,6 +292,7 @@ class _ComposerStatusCard extends StatelessWidget {
             color: isDark
                 ? Colors.white.withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.06),
+            width: 0.5,
           ),
         ),
       ),
@@ -491,11 +302,15 @@ class _ComposerStatusCard extends StatelessWidget {
             height: 42,
             width: 42,
             decoration: BoxDecoration(
-              color: scheme.primary.withValues(alpha: 0.10),
               shape: BoxShape.circle,
+              color: scheme.primary.withValues(alpha: 0.10),
             ),
             child: Center(
-              child: HugeIcon(icon: icon, size: 20, color: scheme.primary),
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedMessage02,
+                size: 20,
+                color: scheme.primary,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -505,7 +320,7 @@ class _ComposerStatusCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  t(lang, titleKey),
+                  t(lang, "ai.thinking"),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -514,7 +329,7 @@ class _ComposerStatusCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  t(lang, subtitleKey),
+                  t(lang, "ai.thinking_subtitle"),
                   style: TextStyle(
                     fontSize: 11.5,
                     height: 1.4,
@@ -530,47 +345,61 @@ class _ComposerStatusCard extends StatelessWidget {
   }
 }
 
-class _ChatThread {
-  final String id;
-  final String title;
-  final String? otherUserName;
-  final String? currentHandler;
+class _ThinkingDot extends StatefulWidget {
+  final int delay;
 
-  const _ChatThread({
-    required this.id,
-    required this.title,
-    required this.otherUserName,
-    required this.currentHandler,
-  });
+  const _ThinkingDot({required this.delay});
 
-  factory _ChatThread.fromJson(Map<String, dynamic> json) {
-    return _ChatThread(
-      id: (json["id"] ?? "").toString(),
-      title: (json["topic"] ?? json["name"] ?? "Chat").toString(),
-      otherUserName: (json["other_user"]?["name"] ?? "").toString().trim(),
-      currentHandler: json["current_handler"]?.toString(),
+  @override
+  State<_ThinkingDot> createState() => _ThinkingDotState();
+}
+
+class _ThinkingDotState extends State<_ThinkingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  Timer? _delayTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
     );
+    _scale = Tween<double>(
+      begin: 0.82,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _delayTimer = Timer(Duration(milliseconds: widget.delay), () {
+      if (mounted) {
+        _controller.repeat(reverse: true);
+      }
+    });
   }
 
-  bool get isAiThread {
-    final normalizedTitle = title.trim().toLowerCase();
-    final normalizedHandler = (currentHandler ?? "").trim().toUpperCase();
-    final hasOtherUser = (otherUserName ?? "").trim().isNotEmpty;
-
-    return normalizedHandler == "AI" ||
-        normalizedTitle.contains("ai") ||
-        (!hasOtherUser &&
-            (normalizedTitle.isEmpty || normalizedTitle == "chat"));
+  @override
+  void dispose() {
+    _delayTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
   }
 
-  String get displayTitle {
-    final cleaned = title.trim();
-    if (cleaned.isNotEmpty && cleaned.toLowerCase() != "chat") {
-      return cleaned;
-    }
-    if ((otherUserName ?? "").trim().isNotEmpty) {
-      return otherUserName!.trim();
-    }
-    return "INOTRA AI";
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ScaleTransition(
+      scale: _scale,
+      child: Container(
+        height: 10,
+        width: 10,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: scheme.primary.withValues(alpha: 0.82),
+        ),
+      ),
+    );
   }
 }
