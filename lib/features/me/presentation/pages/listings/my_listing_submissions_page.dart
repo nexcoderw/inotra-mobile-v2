@@ -258,7 +258,6 @@ class _MyListingSubmissionsPageState extends State<MyListingSubmissionsPage>
   Future<void> _onRefresh() async => _fetchPage(reset: true);
 
   void _onSearchChanged(String value) {
-    setState(() {});
     _query = value.trim();
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
@@ -1886,26 +1885,33 @@ class _PremiumSearchBar extends StatelessWidget {
               ),
             ),
           ),
-          if (controller.text.isNotEmpty)
-            GestureDetector(
-              onTap: onClear,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: scheme.onSurface.withValues(alpha: 0.14),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 12,
-                    color: scheme.onSurface.withValues(alpha: 0.70),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return GestureDetector(
+                onTap: onClear,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: scheme.onSurface.withValues(alpha: 0.14),
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: scheme.onSurface.withValues(alpha: 0.70),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
     );
