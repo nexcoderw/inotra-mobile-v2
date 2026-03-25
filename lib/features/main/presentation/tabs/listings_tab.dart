@@ -494,7 +494,7 @@ class _ListingsHeaderDelegate extends SliverPersistentHeaderDelegate {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: scheme.surface.withOpacity(isDark ? 0.85 : 0.92),
+            color: scheme.surface.withValues(alpha: isDark ? 0.85 : 0.92),
             padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,7 +582,7 @@ class _CategoryRailDelegate extends SliverPersistentHeaderDelegate {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: scheme.surface.withOpacity(isDark ? 0.82 : 0.90),
+            color: scheme.surface.withValues(alpha: isDark ? 0.82 : 0.90),
             padding: EdgeInsets.only(left: hPad, right: hPad, bottom: 8),
             child: ScrollConfiguration(
               behavior: _NoGlowBehavior(),
@@ -731,21 +731,21 @@ class _CategoryPillState extends State<_CategoryPill>
             color: widget.selected
                 ? widget.scheme.primary
                 : (widget.isDark
-                      ? Colors.white.withOpacity(0.07)
-                      : Colors.black.withOpacity(0.055)),
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : Colors.black.withValues(alpha: 0.055)),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: widget.selected
                   ? widget.scheme.primary
                   : (widget.isDark
-                        ? Colors.white.withOpacity(0.10)
-                        : Colors.black.withOpacity(0.08)),
+                        ? Colors.white.withValues(alpha: 0.10)
+                        : Colors.black.withValues(alpha: 0.08)),
               width: 1.2,
             ),
             boxShadow: widget.selected
                 ? [
                     BoxShadow(
-                      color: widget.scheme.primary.withOpacity(0.28),
+                      color: widget.scheme.primary.withValues(alpha: 0.28),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -761,8 +761,8 @@ class _CategoryPillState extends State<_CategoryPill>
               color: widget.selected
                   ? Colors.white
                   : (widget.isDark
-                        ? Colors.white.withOpacity(0.70)
-                        : Colors.black.withOpacity(0.60)),
+                        ? Colors.white.withValues(alpha: 0.70)
+                        : Colors.black.withValues(alpha: 0.60)),
             ),
           ),
         ),
@@ -852,7 +852,7 @@ class _ListingCardState extends State<_ListingCard> {
                         colors: [
                           Colors.transparent,
                           Colors.transparent,
-                          Colors.black.withOpacity(0.72),
+                          Colors.black.withValues(alpha: 0.72),
                         ],
                       ),
                     ),
@@ -867,7 +867,7 @@ class _ListingCardState extends State<_ListingCard> {
                         begin: Alignment.topLeft,
                         end: Alignment.centerRight,
                         colors: [
-                          Colors.black.withOpacity(0.20),
+                          Colors.black.withValues(alpha: 0.20),
                           Colors.transparent,
                         ],
                       ),
@@ -888,7 +888,9 @@ class _ListingCardState extends State<_ListingCard> {
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                        color: Colors.white.withOpacity(isDark ? 0.10 : 0.14),
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.10 : 0.14,
+                        ),
                       ),
                     ),
                   ),
@@ -945,7 +947,9 @@ class _ListingCardState extends State<_ListingCard> {
                                     Icon(
                                       Icons.location_on_rounded,
                                       size: 13,
-                                      color: Colors.white.withOpacity(0.72),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.72,
+                                      ),
                                     ),
                                     const SizedBox(width: 4),
                                     Expanded(
@@ -956,7 +960,9 @@ class _ListingCardState extends State<_ListingCard> {
                                         style: TextStyle(
                                           fontSize: 11.5,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.white.withOpacity(0.72),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.72,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1019,8 +1025,8 @@ class _Placeholder extends StatelessWidget {
     decoration: BoxDecoration(
       gradient: LinearGradient(
         colors: [
-          scheme.surfaceVariant.withOpacity(0.8),
-          scheme.surfaceVariant.withOpacity(0.5),
+          scheme.surfaceContainerHighest.withValues(alpha: 0.8),
+          scheme.surfaceContainerHighest.withValues(alpha: 0.5),
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -1030,7 +1036,7 @@ class _Placeholder extends StatelessWidget {
       child: Icon(
         Icons.image_outlined,
         size: 42,
-        color: scheme.onSurfaceVariant.withOpacity(0.22),
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.22),
       ),
     ),
   );
@@ -1049,15 +1055,15 @@ class _GlassBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.black.withOpacity(0.38),
-            Colors.black.withOpacity(0.24),
+            Colors.black.withValues(alpha: 0.38),
+            Colors.black.withValues(alpha: 0.24),
           ],
         ),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.16)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.14),
+            color: Colors.black.withValues(alpha: 0.14),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1068,7 +1074,7 @@ class _GlassBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w800,
-          color: Colors.white.withOpacity(0.95),
+          color: Colors.white.withValues(alpha: 0.95),
           letterSpacing: 0.2,
         ),
       ),
@@ -1088,8 +1094,8 @@ class _ArrowButton extends StatelessWidget {
     height: 42,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: Colors.white.withOpacity(pressed ? 0.22 : 0.13),
-      border: Border.all(color: Colors.white.withOpacity(0.20)),
+      color: Colors.white.withValues(alpha: pressed ? 0.22 : 0.13),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
     ),
     child: const Center(
       child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
@@ -1111,17 +1117,17 @@ class _GlassFooter extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
-            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+            Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
+            Colors.white.withValues(alpha: isDark ? 0.07 : 0.11),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+          color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.17),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.10),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -1144,9 +1150,9 @@ class _RatingPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.26),
+        color: Colors.black.withValues(alpha: 0.26),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1167,7 +1173,7 @@ class _RatingPill extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.70),
+              color: Colors.white.withValues(alpha: 0.70),
             ),
           ),
         ],
@@ -1240,20 +1246,20 @@ class _FavoriteButtonState extends State<_FavoriteButton>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(isDark ? 0.16 : 0.22),
-                      Colors.white.withOpacity(isDark ? 0.08 : 0.14),
+                      Colors.white.withValues(alpha: isDark ? 0.16 : 0.22),
+                      Colors.white.withValues(alpha: isDark ? 0.08 : 0.14),
                     ],
                   ),
             border: Border.all(
               color: widget.active
-                  ? Colors.red.shade300.withOpacity(0.7)
-                  : Colors.white.withOpacity(0.16),
+                  ? Colors.red.shade300.withValues(alpha: 0.7)
+                  : Colors.white.withValues(alpha: 0.16),
             ),
             boxShadow: [
               BoxShadow(
                 color: widget.active
-                    ? Colors.red.withOpacity(0.28)
-                    : Colors.black.withOpacity(isDark ? 0.18 : 0.10),
+                    ? Colors.red.withValues(alpha: 0.28)
+                    : Colors.black.withValues(alpha: isDark ? 0.18 : 0.10),
                 blurRadius: widget.active ? 12 : 10,
                 offset: const Offset(0, 4),
               ),
@@ -1291,7 +1297,7 @@ class _BackToTopButton extends StatelessWidget {
           color: scheme.primary,
           boxShadow: [
             BoxShadow(
-              color: scheme.primary.withOpacity(0.38),
+              color: scheme.primary.withValues(alpha: 0.38),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -1365,9 +1371,15 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                         begin: Alignment(-1.5 + v * 3, 0),
                         end: Alignment(-0.5 + v * 3, 0),
                         colors: [
-                          scheme.surfaceVariant.withOpacity(0.55),
-                          scheme.surfaceVariant.withOpacity(0.78),
-                          scheme.surfaceVariant.withOpacity(0.55),
+                          scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.55,
+                          ),
+                          scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.78,
+                          ),
+                          scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.55,
+                          ),
                         ],
                       ),
                     ),
@@ -1380,8 +1392,8 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.04),
-                          Colors.black.withOpacity(0.16),
+                          Colors.black.withValues(alpha: 0.04),
+                          Colors.black.withValues(alpha: 0.16),
                         ],
                       ),
                     ),
@@ -1392,7 +1404,7 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                        color: scheme.onSurface.withOpacity(0.07),
+                        color: scheme.onSurface.withValues(alpha: 0.07),
                       ),
                     ),
                   ),
@@ -1418,12 +1430,14 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withOpacity(0.12),
-                          Colors.white.withOpacity(0.07),
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.07),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.10)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.10),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1479,8 +1493,8 @@ class _SpecularHighlight extends StatelessWidget {
                   borderRadius: BorderRadius.circular(80),
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withOpacity(0.12),
-                      Colors.white.withOpacity(0.0),
+                      Colors.white.withValues(alpha: 0.12),
+                      Colors.white.withValues(alpha: 0.0),
                     ],
                   ),
                 ),
@@ -1516,13 +1530,13 @@ class _PremiumSearchBar extends StatelessWidget {
       height: 44,
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.07)
-            : Colors.black.withOpacity(0.055),
+            ? Colors.white.withValues(alpha: 0.07)
+            : Colors.black.withValues(alpha: 0.055),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.10)
-              : Colors.black.withOpacity(0.08),
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.08),
           width: 1.2,
         ),
       ),
@@ -1532,7 +1546,7 @@ class _PremiumSearchBar extends StatelessWidget {
           Icon(
             Icons.search_rounded,
             size: 17,
-            color: scheme.onSurface.withOpacity(0.42),
+            color: scheme.onSurface.withValues(alpha: 0.42),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -1549,7 +1563,7 @@ class _PremiumSearchBar extends StatelessWidget {
                 hintStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: scheme.onSurface.withOpacity(0.36),
+                  color: scheme.onSurface.withValues(alpha: 0.36),
                 ),
                 border: InputBorder.none,
                 isDense: true,
@@ -1572,12 +1586,12 @@ class _PremiumSearchBar extends StatelessWidget {
                     height: 20,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: scheme.onSurface.withOpacity(0.14),
+                      color: scheme.onSurface.withValues(alpha: 0.14),
                     ),
                     child: Icon(
                       Icons.close_rounded,
                       size: 12,
-                      color: scheme.onSurface.withOpacity(0.7),
+                      color: scheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
@@ -1608,8 +1622,8 @@ class _ErrorPanel extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: scheme.errorContainer.withOpacity(0.3),
-        border: Border.all(color: scheme.error.withOpacity(0.2)),
+        color: scheme.errorContainer.withValues(alpha: 0.3),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
@@ -1628,7 +1642,7 @@ class _ErrorPanel extends StatelessWidget {
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
-              backgroundColor: scheme.error.withOpacity(0.12),
+              backgroundColor: scheme.error.withValues(alpha: 0.12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(999),
               ),
@@ -1662,13 +1676,13 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.search_off_rounded,
             size: 48,
-            color: scheme.onSurface.withOpacity(0.2),
+            color: scheme.onSurface.withValues(alpha: 0.2),
           ),
           const SizedBox(height: 14),
           Text(
             t(lang, "packages.empty"),
             style: TextStyle(
-              color: scheme.onSurface.withOpacity(0.4),
+              color: scheme.onSurface.withValues(alpha: 0.4),
               fontWeight: FontWeight.w700,
               fontSize: 14,
             ),
@@ -1689,7 +1703,7 @@ class _SkeletonLine extends StatelessWidget {
     width: width,
     height: height,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.13),
+      color: Colors.white.withValues(alpha: 0.13),
       borderRadius: BorderRadius.circular(999),
     ),
   );
@@ -1705,9 +1719,9 @@ class _SkeletonPill extends StatelessWidget {
     width: width,
     height: height,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.10),
+      color: Colors.white.withValues(alpha: 0.10),
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: Colors.white.withOpacity(0.09)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
     ),
   );
 }
@@ -1722,8 +1736,8 @@ class _SkeletonCircle extends StatelessWidget {
     height: size,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
-      color: Colors.white.withOpacity(0.10),
-      border: Border.all(color: Colors.white.withOpacity(0.09)),
+      color: Colors.white.withValues(alpha: 0.10),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
     ),
   );
 }
