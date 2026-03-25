@@ -1327,26 +1327,34 @@ class _GlassBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.28),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black.withValues(alpha: 0.40),
+            Colors.black.withValues(alpha: 0.26),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Colors.white.withValues(alpha: 0.95),
-              letterSpacing: 0.2,
-            ),
-          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Colors.white.withValues(alpha: 0.95),
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -1362,26 +1370,27 @@ class _SubmissionStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = _statusStyle(status);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: style.background,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: style.border),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: style.background,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: style.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Text(
-            _statusLabel(lang, status),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: style.foreground,
-              letterSpacing: 0.2,
-            ),
-          ),
+        ],
+      ),
+      child: Text(
+        _statusLabel(lang, status),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: style.foreground,
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -1399,45 +1408,46 @@ class _SubmissionDeleteButton extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: busy ? null : onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(999),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: scheme.error.withValues(alpha: 0.88),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-              boxShadow: [
-                BoxShadow(
-                  color: scheme.error.withValues(alpha: 0.28),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: busy
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white.withValues(alpha: 0.96),
-                        ),
-                      ),
-                    )
-                  : const Icon(
-                      Icons.delete_outline_rounded,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-            ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              scheme.error.withValues(alpha: 0.94),
+              scheme.error.withValues(alpha: 0.80),
+            ],
           ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+          boxShadow: [
+            BoxShadow(
+              color: scheme.error.withValues(alpha: 0.28),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: busy
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.white.withValues(alpha: 0.96),
+                    ),
+                  ),
+                )
+              : const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
         ),
       ),
     );
@@ -1452,22 +1462,30 @@ class _GlassFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: isDark ? 0.09 : 0.13),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.17),
-            ),
-          ),
-          child: child,
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
+            Colors.white.withValues(alpha: isDark ? 0.07 : 0.11),
+          ],
         ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: isDark ? 0.12 : 0.17),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 }
@@ -1719,39 +1737,40 @@ class _ListingSubmissionCardSkeletonState
                   left: 14,
                   right: 14,
                   bottom: 14,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(13),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.09),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.10),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            _SkeletonLine(width: 210, height: 14),
-                            SizedBox(height: 8),
-                            _SkeletonLine(width: 150, height: 11),
-                            SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _SkeletonPill(width: 88, height: 26),
-                                _SkeletonPill(width: 96, height: 26),
-                                _SkeletonPill(width: 110, height: 26),
-                              ],
-                            ),
+                  child: Container(
+                    padding: const EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.07),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.10),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        _SkeletonLine(width: 210, height: 14),
+                        SizedBox(height: 8),
+                        _SkeletonLine(width: 150, height: 11),
+                        SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _SkeletonPill(width: 88, height: 26),
+                            _SkeletonPill(width: 96, height: 26),
+                            _SkeletonPill(width: 110, height: 26),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
