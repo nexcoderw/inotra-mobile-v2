@@ -147,7 +147,6 @@ class _TripPackagesPageState extends State<TripPackagesPage>
   }
 
   void _onSearchChanged(String v) {
-    setState(() {});
     _query = v.trim();
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 350), () {
@@ -1101,26 +1100,33 @@ class _PremiumSearchBar extends StatelessWidget {
               ),
             ),
           ),
-          if (controller.text.isNotEmpty)
-            GestureDetector(
-              onTap: onClear,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: scheme.onSurface.withOpacity(0.15),
-                  ),
-                  child: Icon(
-                    Icons.close_rounded,
-                    size: 12,
-                    color: scheme.onSurface.withOpacity(0.7),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return GestureDetector(
+                onTap: onClear,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: scheme.onSurface.withOpacity(0.15),
+                    ),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: scheme.onSurface.withOpacity(0.7),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
     );
