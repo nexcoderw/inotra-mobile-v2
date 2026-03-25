@@ -9,6 +9,7 @@ import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/services/audit_service.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/main_scaffold.dart";
@@ -38,7 +39,8 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
 
   Future<void> _fetch() async {
     final id =
-        widget.packageId ?? ModalRoute.of(context)?.settings.arguments as String?;
+        widget.packageId ??
+        ModalRoute.of(context)?.settings.arguments as String?;
     if (id == null || id.isEmpty) {
       final langNow = currentLangSync();
       setState(() {
@@ -88,17 +90,17 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
         child: _loading
             ? const _PackageDetailsSkeleton()
             : (_error != null || pkg == null)
-                ? _ErrorState(
-                    message: _error ?? t(lang, "common.coming_soon"),
-                    onRetry: _fetch,
-                  )
-                : _PackageBody(
-                    pkg: pkg,
-                    lang: lang,
-                    scheme: scheme,
-                    onBack: () => Navigator.maybePop(context),
-                    onRefresh: _fetch,
-                  ),
+            ? _ErrorState(
+                message: _error ?? t(lang, "common.coming_soon"),
+                onRetry: _fetch,
+              )
+            : _PackageBody(
+                pkg: pkg,
+                lang: lang,
+                scheme: scheme,
+                onBack: () => Navigator.maybePop(context),
+                onRefresh: _fetch,
+              ),
       ),
     );
   }
@@ -159,10 +161,15 @@ class _PackageBodyState extends State<_PackageBody>
           Positioned.fill(
             child: ImageFiltered(
               imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-              child: Image.network(
-                pkg.allImages.first,
+              child: AppCachedImage(
+                imageUrl: pkg.allImages.first,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                memCacheWidth: 1800,
+                memCacheHeight: 1400,
+                maxWidthDiskCache: 2400,
+                maxHeightDiskCache: 1800,
+                errorBuilder: (_) => const SizedBox.shrink(),
+                placeholderBuilder: (_) => const SizedBox.shrink(),
               ),
             ),
           ),
@@ -260,25 +267,36 @@ class _HeroSection extends StatelessWidget {
                         fit: StackFit.expand,
                         children: [
                           ImageFiltered(
-                            imageFilter:
-                                ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                            child: Image.network(
-                              images[i],
+                            imageFilter: ImageFilter.blur(
+                              sigmaX: 20,
+                              sigmaY: 20,
+                            ),
+                            child: AppCachedImage(
+                              imageUrl: images[i],
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
+                              memCacheWidth: 1800,
+                              memCacheHeight: 1400,
+                              maxWidthDiskCache: 2400,
+                              maxHeightDiskCache: 1800,
+                              errorBuilder: (_) =>
+                                  _ImageFallback(scheme: scheme),
+                              placeholderBuilder: (_) =>
                                   _ImageFallback(scheme: scheme),
                             ),
                           ),
                           ColoredBox(
-                              color: Colors.black.withValues(alpha: 0.28)),
-                          Image.network(
-                            images[i],
+                            color: Colors.black.withValues(alpha: 0.28),
+                          ),
+                          AppCachedImage(
+                            imageUrl: images[i],
                             fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) =>
+                            memCacheWidth: 1800,
+                            memCacheHeight: 1400,
+                            maxWidthDiskCache: 2400,
+                            maxHeightDiskCache: 1800,
+                            errorBuilder: (_) => _ImageFallback(scheme: scheme),
+                            placeholderBuilder: (_) =>
                                 _ImageFallback(scheme: scheme),
-                            loadingBuilder: (_, child, evt) => evt == null
-                                ? child
-                                : _ImageFallback(scheme: scheme),
                           ),
                         ],
                       );
@@ -432,7 +450,10 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
@@ -546,8 +567,7 @@ class _PageDots extends StatelessWidget {
           width: active ? 16 : 6,
           height: 6,
           decoration: BoxDecoration(
-            color:
-                active ? Colors.white : Colors.white.withValues(alpha: 0.38),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.38),
             borderRadius: BorderRadius.circular(999),
           ),
         );
@@ -602,8 +622,7 @@ class _ErrorState extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
                 color: scheme.surface.withValues(alpha: 0.10),
-                border:
-                    Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -689,8 +708,7 @@ class _PackageDetailsSkeletonState extends State<_PackageDetailsSkeleton>
             Container(
               height: 56,
               color: scheme.surface.withValues(alpha: 0.82),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -709,12 +727,12 @@ class _PackageDetailsSkeletonState extends State<_PackageDetailsSkeleton>
                     Row(
                       children: [
                         Expanded(
-                            child:
-                                _SkelBox(color: c, height: 60, radius: 14)),
+                          child: _SkelBox(color: c, height: 60, radius: 14),
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
-                            child:
-                                _SkelBox(color: c, height: 60, radius: 14)),
+                          child: _SkelBox(color: c, height: 60, radius: 14),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
