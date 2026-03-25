@@ -94,6 +94,9 @@ const translations = {
     "ai.placeholder": "Chat UI will be implemented next (static page for now).",
     "ai.assistant_name": "INOTRA AI",
     "ai.assistant_status": "Smart trip planning assistant",
+    "ai.thinking": "Thinking...",
+    "ai.thinking_subtitle":
+        "INOTRA AI is preparing a polished welcome so your trip planning can start smoothly.",
     "ai.chat_greeting":
         "Hello and welcome to INOTRA AI. I am here to make planning your Rwanda journey feel simple, personal, and inspiring. Ask me about stays, events, routes, activities, or how to shape the right trip for you.",
     "ai.chat_intro_title": "Your assistant conversation lives here",
