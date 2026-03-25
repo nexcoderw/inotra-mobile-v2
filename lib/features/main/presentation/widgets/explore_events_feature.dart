@@ -8,6 +8,7 @@ import "package:http/http.dart" as http;
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -529,13 +530,16 @@ class _EventPosterThumb extends StatelessWidget {
         height: size,
         color: placeholder,
         child: (imageUrl != null && imageUrl!.trim().isNotEmpty)
-            ? Image.network(
-                imageUrl!,
+            ? AppCachedImage(
+                imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
+                memCacheWidth: 512,
+                memCacheHeight: 512,
+                maxWidthDiskCache: 768,
+                maxHeightDiskCache: 768,
+                errorBuilder: (_) =>
                     _PlaceholderIcon(color: placeholder, scheme: scheme),
-                loadingBuilder: (_, child, evt) =>
-                    evt == null ? child : Container(color: placeholder),
+                placeholderBuilder: (_) => Container(color: placeholder),
               )
             : _PlaceholderIcon(color: placeholder, scheme: scheme),
       ),
