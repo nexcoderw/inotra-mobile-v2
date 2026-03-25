@@ -1,10 +1,13 @@
+import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:http/http.dart" as http;
 
+import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/repositories/public_discovery_repository.dart";
+import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -27,22 +30,22 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
   }
 
   Future<void> _load({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      // Kept for compatibility with existing retry handlers.
+    }
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final resp = await PublicDiscoveryRepository.instance.fetchExploreEvents(
-        page: 1,
-        pageSize: 3,
-        limit: 3,
-        ordering: "start_at",
-        forceRefresh: forceRefresh,
+      final uri = Api.url(
+        "${EventEndpoints.list}?page=1&page_size=3&limit=3&ordering=start_at",
       );
+      final resp = await http.get(uri);
 
-      if (resp.isSuccess) {
-        final decoded = resp.decodeJson();
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
 
         List<dynamic> results = const [];
         if (decoded is Map) {
