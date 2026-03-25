@@ -1038,26 +1038,34 @@ class _GlassBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.28),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: Colors.white.withOpacity(0.16)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black.withOpacity(0.38),
+            Colors.black.withOpacity(0.24),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.14),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Colors.white.withOpacity(0.95),
-              letterSpacing: 0.2,
-            ),
-          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Colors.white.withOpacity(0.95),
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -1092,22 +1100,30 @@ class _GlassFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(isDark ? 0.09 : 0.13),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
-            ),
-          ),
-          child: child,
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
+            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+          ],
         ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 }
@@ -1204,42 +1220,48 @@ class _FavoriteButtonState extends State<_FavoriteButton>
       onTap: widget.onTap,
       child: ScaleTransition(
         scale: _scale,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: widget.active
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.red.shade400, Colors.red.shade600],
+                  )
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(isDark ? 0.16 : 0.22),
+                      Colors.white.withOpacity(isDark ? 0.08 : 0.14),
+                    ],
+                  ),
+            border: Border.all(
+              color: widget.active
+                  ? Colors.red.shade300.withOpacity(0.7)
+                  : Colors.white.withOpacity(0.16),
+            ),
+            boxShadow: [
+              BoxShadow(
                 color: widget.active
-                    ? Colors.red.shade500
-                    : Colors.white.withOpacity(isDark ? 0.10 : 0.16),
-                border: Border.all(
-                  color: widget.active
-                      ? Colors.red.shade300.withOpacity(0.7)
-                      : Colors.white.withOpacity(0.16),
-                ),
-                boxShadow: widget.active
-                    ? [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.32),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : [],
+                    ? Colors.red.withOpacity(0.28)
+                    : Colors.black.withOpacity(isDark ? 0.18 : 0.10),
+                blurRadius: widget.active ? 12 : 10,
+                offset: const Offset(0, 4),
               ),
-              child: Center(
-                child: Icon(
-                  widget.active
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_outline_rounded,
-                  size: 15,
-                  color: Colors.white,
-                ),
-              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              widget.active
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_outline_rounded,
+              size: 15,
+              color: Colors.white,
             ),
           ),
         ),
@@ -1385,37 +1407,36 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                   left: 14,
                   right: 14,
                   bottom: 14,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(13),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.09),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.10),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
+                  child: Container(
+                    padding: const EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withOpacity(0.12),
+                          Colors.white.withOpacity(0.07),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.10)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _SkeletonLine(width: 200, height: 14),
+                        const SizedBox(height: 8),
+                        _SkeletonLine(width: 140, height: 11),
+                        const SizedBox(height: 12),
+                        const Row(
                           children: [
-                            _SkeletonLine(width: 200, height: 14),
-                            const SizedBox(height: 8),
-                            _SkeletonLine(width: 140, height: 11),
-                            const SizedBox(height: 12),
-                            const Row(
-                              children: [
-                                _SkeletonPill(width: 88, height: 26),
-                                Spacer(),
-                                _SkeletonCircle(size: 42),
-                              ],
-                            ),
+                            _SkeletonPill(width: 88, height: 26),
+                            Spacer(),
+                            _SkeletonCircle(size: 42),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
