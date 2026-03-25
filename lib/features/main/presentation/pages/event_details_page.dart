@@ -1,5 +1,4 @@
 import "dart:async";
-import "dart:convert";
 
 import "dart:math" as math;
 import "dart:ui";
@@ -7,14 +6,12 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:google_maps_flutter/google_maps_flutter.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
 import "package:map_launcher/map_launcher.dart" as launcher;
 import "package:toastification/toastification.dart";
 
-import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/repositories/public_discovery_repository.dart";
 import "../../../../core/services/audit_service.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/widgets/app_cached_image.dart";
@@ -43,7 +40,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
   }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({bool forceRefresh = false}) async {
     final id =
         widget.eventId ?? ModalRoute.of(context)?.settings.arguments as String?;
     if (id == null || id.isEmpty) {
@@ -61,10 +58,12 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     });
 
     try {
-      final uri = Api.url(EventEndpoints.detail(id));
-      final resp = await http.get(uri, headers: {"Accept": "application/json"});
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
+      final resp = await PublicDiscoveryRepository.instance.fetchEventDetail(
+        id,
+        forceRefresh: forceRefresh,
+      );
+      if (resp.isSuccess) {
+        final decoded = resp.decodeJson() as Map<String, dynamic>;
         _event = _EventDetail.fromJson(decoded);
         AuditService.instance.enrichEntityContext(
           routeName: AppRoutes.eventDetails,
@@ -97,7 +96,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
             : (_error != null || e == null)
             ? _PremiumErrorState(
                 message: _error ?? t(lang, "common.coming_soon"),
-                onRetry: _fetch,
+                onRetry: () => _fetch(forceRefresh: true),
               )
             : _EventDetailsBody(
                 event: e,
@@ -109,7 +108,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   await QuickLoginDialog.show(context);
                   setState(() => _authBusy = false);
                   if (AuthSession.instance.value.isAuthenticated) {
-                    if (mounted) await _fetch();
+                    if (mounted) await _fetch(forceRefresh: true);
                   }
                 },
                 onBuy: () {
@@ -121,7 +120,7 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   );
                 },
                 onBack: () => Navigator.maybePop(context),
-                onRefresh: _fetch,
+                onRefresh: () => _fetch(forceRefresh: true),
               ),
       ),
     );
