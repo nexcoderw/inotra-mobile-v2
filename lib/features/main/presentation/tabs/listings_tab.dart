@@ -4,11 +4,13 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
 import "package:toastification/toastification.dart";
 
+import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/repositories/public_discovery_repository.dart";
+import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -120,6 +122,9 @@ class _ListingsTabState extends State<ListingsTab>
     required bool reset,
     bool forceRefresh = false,
   }) async {
+    if (forceRefresh) {
+      // Kept for compatibility with existing refresh/retry handlers.
+    }
     setState(() {
       _loading = true;
       if (reset) {
@@ -131,14 +136,14 @@ class _ListingsTabState extends State<ListingsTab>
     });
 
     try {
-      final resp = await PublicDiscoveryRepository.instance.fetchListingsPage(
-        page: _page,
-        pageSize: _pageSize,
-        search: _query,
-        forceRefresh: forceRefresh,
+      final uri = Api.url(
+        "${PlaceEndpoints.list}"
+        "?page=$_page&page_size=$_pageSize"
+        "${_query.isNotEmpty ? "&search=$_query" : ""}",
       );
-      if (resp.isSuccess) {
-        final decoded = resp.decodeJson();
+      final resp = await http.get(uri);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
 
         List<dynamic> results = const [];
         int? count;
