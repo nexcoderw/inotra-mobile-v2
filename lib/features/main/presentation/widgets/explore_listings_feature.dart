@@ -8,6 +8,7 @@ import "package:toastification/toastification.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -281,18 +282,19 @@ class _ListingCardState extends State<_ListingCard> {
                 // Background image
                 Positioned.fill(
                   child: widget.listing.imageUrl != null
-                      ? Image.network(
-                          widget.listing.imageUrl!,
+                      ? AppCachedImage(
+                          imageUrl: widget.listing.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          memCacheWidth: 900,
+                          memCacheHeight: 900,
+                          maxWidthDiskCache: 1200,
+                          maxHeightDiskCache: 1200,
+                          errorBuilder: (_) => Container(
                             color: scheme.surfaceVariant.withOpacity(0.7),
                           ),
-                          loadingBuilder: (context, child, evt) {
-                            if (evt == null) return child;
-                            return Container(
-                              color: scheme.surfaceVariant.withOpacity(0.7),
-                            );
-                          },
+                          placeholderBuilder: (_) => Container(
+                            color: scheme.surfaceVariant.withOpacity(0.7),
+                          ),
                         )
                       : Container(
                           color: scheme.surfaceVariant.withOpacity(0.7),
