@@ -1,10 +1,13 @@
 import "dart:async";
+import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:http/http.dart" as http;
 
+import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/repositories/public_discovery_repository.dart";
+import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -99,6 +102,9 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     required bool reset,
     bool forceRefresh = false,
   }) async {
+    if (forceRefresh) {
+      // Kept for compatibility with existing refresh/retry handlers.
+    }
     setState(() {
       _loading = true;
       if (reset) {
@@ -110,14 +116,13 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     });
 
     try {
-      final resp = await PublicDiscoveryRepository.instance.fetchPackagesPage(
-        page: _page,
-        pageSize: 10,
-        search: _query,
-        forceRefresh: forceRefresh,
+      final uri = Api.url(
+        "${PackageEndpoints.list}?page=$_page&page_size=10"
+        "${_query.isNotEmpty ? "&search=$_query" : ""}",
       );
-      if (resp.isSuccess) {
-        final decoded = resp.decodeJson();
+      final resp = await http.get(uri);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
         final results =
             (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
         final items = results
