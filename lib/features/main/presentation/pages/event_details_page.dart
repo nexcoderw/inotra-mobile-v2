@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:convert";
 
 import "dart:math" as math;
 import "dart:ui";
@@ -6,12 +7,14 @@ import "dart:ui";
 import "package:flutter/material.dart";
 import "package:google_maps_flutter/google_maps_flutter.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:http/http.dart" as http;
 import "package:intl/intl.dart";
 import "package:map_launcher/map_launcher.dart" as launcher;
 import "package:toastification/toastification.dart";
 
+import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/repositories/public_discovery_repository.dart";
+import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/services/audit_service.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/widgets/app_cached_image.dart";
@@ -41,6 +44,9 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
   }
 
   Future<void> _fetch({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      // Kept for compatibility with retry handlers and login refresh.
+    }
     final id =
         widget.eventId ?? ModalRoute.of(context)?.settings.arguments as String?;
     if (id == null || id.isEmpty) {
@@ -58,12 +64,10 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
     });
 
     try {
-      final resp = await PublicDiscoveryRepository.instance.fetchEventDetail(
-        id,
-        forceRefresh: forceRefresh,
-      );
-      if (resp.isSuccess) {
-        final decoded = resp.decodeJson() as Map<String, dynamic>;
+      final uri = Api.url(EventEndpoints.detail(id));
+      final resp = await http.get(uri, headers: {"Accept": "application/json"});
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
         _event = _EventDetail.fromJson(decoded);
         AuditService.instance.enrichEntityContext(
           routeName: AppRoutes.eventDetails,
