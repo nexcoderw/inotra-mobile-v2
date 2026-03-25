@@ -267,9 +267,9 @@ class _EventListTileState extends State<_EventListTile> {
     final isDark = scheme.brightness == Brightness.dark;
     final cardColor = isDark ? scheme.surface : const Color(0xFFFFFFFF);
     final borderColor = isDark
-        ? scheme.onSurface.withOpacity(0.08)
+        ? scheme.onSurface.withValues(alpha: 0.08)
         : const Color(0xFFEAEAEA);
-    final shadowColor = Colors.black.withOpacity(isDark ? 0.22 : 0.07);
+    final shadowColor = Colors.black.withValues(alpha: isDark ? 0.22 : 0.07);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -297,8 +297,8 @@ class _EventListTileState extends State<_EventListTile> {
               color: cardColor,
               child: InkWell(
                 onTap: widget.onTap,
-                splashColor: scheme.primary.withOpacity(0.05),
-                highlightColor: scheme.primary.withOpacity(0.02),
+                splashColor: scheme.primary.withValues(alpha: 0.05),
+                highlightColor: scheme.primary.withValues(alpha: 0.02),
                 child: Container(
                   height: cardHeight,
                   padding: EdgeInsets.all(innerPad),
@@ -361,7 +361,7 @@ class _EventListTileState extends State<_EventListTile> {
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: isDark
-                                    ? scheme.onSurface.withOpacity(0.55)
+                                    ? scheme.onSurface.withValues(alpha: 0.55)
                                     : const Color(0xFF9A9A9A),
                               ),
                             ),
@@ -392,7 +392,9 @@ class _EventListTileState extends State<_EventListTile> {
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
                                       color: isDark
-                                          ? scheme.onSurface.withOpacity(0.45)
+                                          ? scheme.onSurface.withValues(
+                                              alpha: 0.45,
+                                            )
                                           : const Color(0xFFAAAAAA),
                                     ),
                                   ),
@@ -452,34 +454,34 @@ class _StatusPill extends StatelessWidget {
     switch (style) {
       case _PillStyle.ended:
         bg = isDark
-            ? const Color(0xFF3B1010).withOpacity(0.7)
+            ? const Color(0xFF3B1010).withValues(alpha: 0.7)
             : const Color(0xFFFFEDED);
         textColor = const Color(0xFFB91C1C);
-        borderColor = const Color(0xFFB91C1C).withOpacity(0.25);
+        borderColor = const Color(0xFFB91C1C).withValues(alpha: 0.25);
         break;
       case _PillStyle.happening:
         bg = isDark
-            ? const Color(0xFF0B3B2A).withOpacity(0.6)
+            ? const Color(0xFF0B3B2A).withValues(alpha: 0.6)
             : const Color(0xFFDCF5EA);
         textColor = const Color(0xFF0B7B45);
-        borderColor = const Color(0xFF0B7B45).withOpacity(0.25);
+        borderColor = const Color(0xFF0B7B45).withValues(alpha: 0.25);
         break;
       case _PillStyle.tomorrow:
         bg = isDark
-            ? const Color(0xFF1A2B4A).withOpacity(0.6)
+            ? const Color(0xFF1A2B4A).withValues(alpha: 0.6)
             : const Color(0xFFE0E9FF);
         textColor = const Color(0xFF2D57FF);
-        borderColor = const Color(0xFF2D57FF).withOpacity(0.25);
+        borderColor = const Color(0xFF2D57FF).withValues(alpha: 0.25);
         break;
       case _PillStyle.date:
         bg = isDark
-            ? scheme.surfaceVariant.withOpacity(0.5)
+            ? scheme.surfaceContainerHighest.withValues(alpha: 0.5)
             : const Color(0xFFF4F4F4);
         textColor = isDark
-            ? scheme.onSurface.withOpacity(0.75)
+            ? scheme.onSurface.withValues(alpha: 0.75)
             : const Color(0xFF555555);
         borderColor = isDark
-            ? scheme.onSurface.withOpacity(0.10)
+            ? scheme.onSurface.withValues(alpha: 0.10)
             : const Color(0xFFDDDDDD);
         break;
     }
@@ -520,7 +522,7 @@ class _EventPosterThumb extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
     final placeholder = isDark
-        ? scheme.surfaceVariant.withOpacity(0.45)
+        ? scheme.surfaceContainerHighest.withValues(alpha: 0.45)
         : const Color(0xFFF0F0F0);
 
     return ClipRRect(
@@ -559,7 +561,7 @@ class _PlaceholderIcon extends StatelessWidget {
       child: Center(
         child: HugeIcon(
           icon: HugeIcons.strokeRoundedCalendar03,
-          color: scheme.onSurface.withOpacity(0.35),
+          color: scheme.onSurface.withValues(alpha: 0.35),
           size: 22,
         ),
       ),
@@ -654,10 +656,12 @@ class _EventListSkeleton extends StatelessWidget {
 
     final cardColor = isDark ? scheme.surface : const Color(0xFFFFFFFF);
     final borderColor = isDark
-        ? scheme.onSurface.withOpacity(0.08)
+        ? scheme.onSurface.withValues(alpha: 0.08)
         : const Color(0xFFEAEAEA);
-    final shimmer = scheme.surfaceVariant.withOpacity(isDark ? 0.45 : 0.55);
-    final shadowColor = Colors.black.withOpacity(isDark ? 0.18 : 0.06);
+    final shimmer = scheme.surfaceContainerHighest.withValues(
+      alpha: isDark ? 0.45 : 0.55,
+    );
+    final shadowColor = Colors.black.withValues(alpha: isDark ? 0.18 : 0.06);
 
     return Container(
       decoration: BoxDecoration(
@@ -711,7 +715,7 @@ class _EventListSkeleton extends StatelessWidget {
                           width: 70,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: shimmer.withOpacity(0.4),
+                            color: shimmer.withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -722,7 +726,7 @@ class _EventListSkeleton extends StatelessWidget {
                       height: 12,
                       width: 160,
                       decoration: BoxDecoration(
-                        color: shimmer.withOpacity(0.4),
+                        color: shimmer.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(999),
                       ),
                     ),
@@ -742,7 +746,7 @@ class _EventListSkeleton extends StatelessWidget {
                           height: 11,
                           width: 90,
                           decoration: BoxDecoration(
-                            color: shimmer.withOpacity(0.35),
+                            color: shimmer.withValues(alpha: 0.35),
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -782,9 +786,11 @@ class _GlassButton extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: scheme.surface.withOpacity(0.50),
+                color: scheme.surface.withValues(alpha: 0.50),
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.10),
+                ),
               ),
               child: Text(
                 label,
@@ -816,8 +822,8 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        color: scheme.surfaceVariant.withOpacity(0.5),
-        border: Border.all(color: scheme.error.withOpacity(0.15)),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -866,16 +872,16 @@ class _EmptyState extends StatelessWidget {
       width: double.infinity,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant.withOpacity(0.4),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.onSurface.withOpacity(0.06)),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.06)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Column(
         children: [
           HugeIcon(
             icon: HugeIcons.strokeRoundedCalendarRemove02,
-            color: scheme.onSurface.withOpacity(0.35),
+            color: scheme.onSurface.withValues(alpha: 0.35),
             size: 28,
           ),
           const SizedBox(height: 8),
@@ -884,7 +890,7 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withOpacity(0.55),
+              color: scheme.onSurface.withValues(alpha: 0.55),
             ),
             textAlign: TextAlign.center,
           ),
