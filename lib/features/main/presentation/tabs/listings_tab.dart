@@ -21,9 +21,11 @@ class ListingsTab extends StatefulWidget {
   State<ListingsTab> createState() => _ListingsTabState();
 }
 
-class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin {
+class _ListingsTabState extends State<ListingsTab>
+    with TickerProviderStateMixin {
   final _scrollCtrl = ScrollController();
   final _searchCtrl = TextEditingController();
+  final ValueNotifier<bool> _showBackToTop = ValueNotifier(false);
   final List<_Listing> _items = [];
   final Set<String> _favorites = {};
   String? _selectedCategory;
@@ -33,7 +35,6 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
   int _page = 1;
   String _query = "";
   String? _error;
-  bool _showBackToTop = false;
   Timer? _debounce;
   List<_CategoryFilter> _categoryFilters = [];
 
@@ -50,18 +51,24 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
     super.initState();
 
     _entranceCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
-    _entranceFade =
-        CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _entranceFade = CurvedAnimation(
+      parent: _entranceCtrl,
+      curve: Curves.easeOut,
+    );
     _entranceSlide =
         Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(
-            CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic));
+          CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic),
+        );
 
     _init();
     _scrollCtrl.addListener(_onScroll);
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _entranceCtrl.forward());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _entranceCtrl.forward(),
+    );
   }
 
   Future<void> _init() async {
@@ -107,8 +114,7 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
     }
 
     final show = px > 320;
-    if (show != _showBackToTop) setState(() => _showBackToTop = show);
-
+    if (show != _showBackToTop.value) _showBackToTop.value = show;
   }
 
   Future<void> _fetchPage({required bool reset}) async {
@@ -139,10 +145,13 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
 
         if (decoded is Map) {
           count = (decoded["count"] as num?)?.toInt();
-          final dynamic candidate = decoded["results"] ??
+          final dynamic candidate =
+              decoded["results"] ??
               decoded["data"] ??
-              decoded.values
-                  .firstWhere((v) => v is List, orElse: () => const []);
+              decoded.values.firstWhere(
+                (v) => v is List,
+                orElse: () => const [],
+              );
           results = candidate is List ? candidate : const [];
         } else if (decoded is List) {
           results = decoded;
@@ -159,13 +168,14 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
         }
         _categoryFilters = [
           _CategoryFilter(
-              label: t(currentLangSync(), "common.all"), value: null),
+            label: t(currentLangSync(), "common.all"),
+            value: null,
+          ),
           ...catSet.map((c) => _CategoryFilter(label: c, value: c)),
         ];
 
         final existing = _items.map((e) => e.id).toSet();
-        final unique =
-            incoming.where((e) => !existing.contains(e.id)).toList();
+        final unique = incoming.where((e) => !existing.contains(e.id)).toList();
 
         setState(() {
           _items.addAll(unique);
@@ -225,8 +235,7 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
       context: context,
       type: added ? ToastificationType.success : ToastificationType.info,
       style: ToastificationStyle.fillColored,
-      title:
-          Text(added ? "Saved to favourites" : "Removed from favourites"),
+      title: Text(added ? "Saved to favourites" : "Removed from favourites"),
       alignment: Alignment.topCenter,
       autoCloseDuration: const Duration(seconds: 2),
     );
@@ -237,6 +246,7 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
     _debounce?.cancel();
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
+    _showBackToTop.dispose();
     _entranceCtrl.dispose();
     super.dispose();
   }
@@ -307,13 +317,11 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                     // Skeletons
                     if (_loading && _items.isEmpty)
                       SliverPadding(
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (_, i) => Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 16),
                               child: _ListingCardSkeleton(index: i),
                             ),
                             childCount: 4,
@@ -323,20 +331,18 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
 
                     // Cards
                     SliverPadding(
-                      padding:
-                          EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                      padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                            final showLoader =
-                                _loading && _items.isNotEmpty;
+                            final showLoader = _loading && _items.isNotEmpty;
                             if (index >= visibleItems.length) {
                               return showLoader
                                   ? Padding(
                                       padding: const EdgeInsets.only(
-                                          bottom: 16),
-                                      child: _ListingCardSkeleton(
-                                          index: index),
+                                        bottom: 16,
+                                      ),
+                                      child: _ListingCardSkeleton(index: index),
                                     )
                                   : const SizedBox.shrink();
                             }
@@ -344,17 +350,14 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                             return _AnimatedListItem(
                               index: index,
                               child: Padding(
-                                padding: const EdgeInsets.only(
-                                    bottom: 16),
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: _ListingCard(
                                   listing: listing,
                                   isTablet: isTablet,
-                                  isFavorite: _favorites
-                                      .contains(listing.id),
+                                  isFavorite: _favorites.contains(listing.id),
                                   onToggleFavorite: () =>
                                       _toggleFavorite(listing),
-                                  onOpen: () =>
-                                      Navigator.pushNamed(
+                                  onOpen: () => Navigator.pushNamed(
                                     context,
                                     AppRoutes.listingDetails,
                                     arguments: listing.id,
@@ -363,7 +366,8 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                               ),
                             );
                           },
-                          childCount: visibleItems.length +
+                          childCount:
+                              visibleItems.length +
                               ((_loading && _items.isNotEmpty) ? 1 : 0),
                         ),
                       ),
@@ -383,9 +387,7 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                       ),
 
                     // Empty
-                    if (!_loading &&
-                        visibleItems.isEmpty &&
-                        _error == null)
+                    if (!_loading && visibleItems.isEmpty && _error == null)
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.only(top: 80),
@@ -393,24 +395,27 @@ class _ListingsTabState extends State<ListingsTab> with TickerProviderStateMixin
                         ),
                       ),
 
-                    const SliverToBoxAdapter(
-                        child: SizedBox(height: 90)),
+                    const SliverToBoxAdapter(child: SizedBox(height: 90)),
                   ],
                 ),
               ),
 
               // ─── Back to top ──────────────────────────────────────────
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                right: 18,
-                bottom: _showBackToTop ? 24 : -72,
+              ValueListenableBuilder<bool>(
+                valueListenable: _showBackToTop,
                 child: _BackToTopButton(
                   onTap: () => _scrollCtrl.animateTo(
                     0,
                     duration: const Duration(milliseconds: 420),
                     curve: Curves.easeOutCubic,
                   ),
+                ),
+                builder: (context, show, child) => AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  right: 18,
+                  bottom: show ? 24 : -72,
+                  child: child!,
                 ),
               ),
             ],
@@ -470,7 +475,10 @@ class _ListingsHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final range = maxExtent - minExtent;
     final shrinkT = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
     final hPad = isTablet ? 24.0 : 16.0;
@@ -557,7 +565,10 @@ class _CategoryRailDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final hPad = isTablet ? 24.0 : 16.0;
 
     return SizedBox.expand(
@@ -577,7 +588,8 @@ class _CategoryRailDelegate extends SliverPersistentHeaderDelegate {
                     final selected = selectedCategory == cat.value;
                     return Padding(
                       padding: EdgeInsets.only(
-                          right: i < categories.length - 1 ? 8 : 0),
+                        right: i < categories.length - 1 ? 8 : 0,
+                      ),
                       child: _CategoryPill(
                         label: cat.label,
                         selected: selected,
@@ -620,15 +632,15 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 450));
-    _fade =
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide =
-        Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
-            .animate(CurvedAnimation(
-                parent: _ctrl, curve: Curves.easeOutCubic));
-    final delay =
-        Duration(milliseconds: (widget.index * 60).clamp(0, 280));
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    final delay = Duration(milliseconds: (widget.index * 60).clamp(0, 280));
     Future.delayed(delay, () {
       if (mounted) _ctrl.forward();
     });
@@ -642,10 +654,9 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: _fade,
-        child:
-            SlideTransition(position: _slide, child: widget.child),
-      );
+    opacity: _fade,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -680,9 +691,13 @@ class _CategoryPillState extends State<_CategoryPill>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 140));
-    _scale = Tween<double>(begin: 1.0, end: 0.93).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 140),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.93,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -705,28 +720,26 @@ class _CategoryPillState extends State<_CategoryPill>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: widget.selected
                 ? widget.scheme.primary
                 : (widget.isDark
-                    ? Colors.white.withOpacity(0.07)
-                    : Colors.black.withOpacity(0.055)),
+                      ? Colors.white.withOpacity(0.07)
+                      : Colors.black.withOpacity(0.055)),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: widget.selected
                   ? widget.scheme.primary
                   : (widget.isDark
-                      ? Colors.white.withOpacity(0.10)
-                      : Colors.black.withOpacity(0.08)),
+                        ? Colors.white.withOpacity(0.10)
+                        : Colors.black.withOpacity(0.08)),
               width: 1.2,
             ),
             boxShadow: widget.selected
                 ? [
                     BoxShadow(
-                      color:
-                          widget.scheme.primary.withOpacity(0.28),
+                      color: widget.scheme.primary.withOpacity(0.28),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -742,8 +755,8 @@ class _CategoryPillState extends State<_CategoryPill>
               color: widget.selected
                   ? Colors.white
                   : (widget.isDark
-                      ? Colors.white.withOpacity(0.70)
-                      : Colors.black.withOpacity(0.60)),
+                        ? Colors.white.withOpacity(0.70)
+                        : Colors.black.withOpacity(0.60)),
             ),
           ),
         ),
@@ -785,9 +798,13 @@ class _ListingCardState extends State<_ListingCard>
   void initState() {
     super.initState();
     _pressCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 120));
-    _pressScale = Tween<double>(begin: 1.0, end: 0.974).animate(
-        CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+    );
+    _pressScale = Tween<double>(
+      begin: 1.0,
+      end: 0.974,
+    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -805,8 +822,10 @@ class _ListingCardState extends State<_ListingCard>
     final title = widget.listing.name.trim().isEmpty
         ? "Listing"
         : widget.listing.name.trim();
-    final location =
-        _compactLocation(widget.listing.city, widget.listing.country);
+    final location = _compactLocation(
+      widget.listing.city,
+      widget.listing.country,
+    );
     final category = widget.listing.categoryName.trim();
 
     return ScaleTransition(
@@ -834,7 +853,9 @@ class _ListingCardState extends State<_ListingCard>
                 // Image
                 Positioned.fill(
                   child: _CardImage(
-                      url: widget.listing.imageUrl, scheme: scheme),
+                    url: widget.listing.imageUrl,
+                    scheme: scheme,
+                  ),
                 ),
 
                 // Cinematic gradient
@@ -874,7 +895,8 @@ class _ListingCardState extends State<_ListingCard>
                 // Specular
                 Positioned.fill(
                   child: IgnorePointer(
-                      child: _SpecularHighlight(radius: radius)),
+                    child: _SpecularHighlight(radius: radius),
+                  ),
                 ),
 
                 // Border
@@ -883,8 +905,7 @@ class _ListingCardState extends State<_ListingCard>
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                        color: Colors.white
-                            .withOpacity(isDark ? 0.10 : 0.14),
+                        color: Colors.white.withOpacity(isDark ? 0.10 : 0.14),
                       ),
                     ),
                   ),
@@ -920,8 +941,7 @@ class _ListingCardState extends State<_ListingCard>
                         Expanded(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 title,
@@ -929,8 +949,7 @@ class _ListingCardState extends State<_ListingCard>
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
-                                  fontSize:
-                                      widget.isTablet ? 16.5 : 15,
+                                  fontSize: widget.isTablet ? 16.5 : 15,
                                   color: Colors.white,
                                   letterSpacing: -0.3,
                                   height: 1.1,
@@ -943,22 +962,18 @@ class _ListingCardState extends State<_ListingCard>
                                     Icon(
                                       Icons.location_on_rounded,
                                       size: 13,
-                                      color: Colors.white
-                                          .withOpacity(0.72),
+                                      color: Colors.white.withOpacity(0.72),
                                     ),
                                     const SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         location,
                                         maxLines: 1,
-                                        overflow:
-                                            TextOverflow.ellipsis,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontSize: 11.5,
-                                          fontWeight:
-                                              FontWeight.w600,
-                                          color: Colors.white
-                                              .withOpacity(0.72),
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white.withOpacity(0.72),
                                         ),
                                       ),
                                     ),
@@ -1020,24 +1035,24 @@ class _Placeholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              scheme.surfaceVariant.withOpacity(0.8),
-              scheme.surfaceVariant.withOpacity(0.5),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Icon(
-            Icons.image_outlined,
-            size: 42,
-            color: scheme.onSurfaceVariant.withOpacity(0.22),
-          ),
-        ),
-      );
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          scheme.surfaceVariant.withOpacity(0.8),
+          scheme.surfaceVariant.withOpacity(0.5),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    child: Center(
+      child: Icon(
+        Icons.image_outlined,
+        size: 42,
+        color: scheme.onSurfaceVariant.withOpacity(0.22),
+      ),
+    ),
+  );
 }
 
 class _GlassBadge extends StatelessWidget {
@@ -1051,13 +1066,11 @@ class _GlassBadge extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: Colors.black.withOpacity(0.28),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-                color: Colors.white.withOpacity(0.16)),
+            border: Border.all(color: Colors.white.withOpacity(0.16)),
           ),
           child: Text(
             label,
@@ -1080,21 +1093,19 @@ class _ArrowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOutCubic,
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withOpacity(pressed ? 0.22 : 0.13),
-          border: Border.all(
-              color: Colors.white.withOpacity(0.20)),
-        ),
-        child: const Center(
-          child: Icon(Icons.arrow_forward_rounded,
-              color: Colors.white, size: 18),
-        ),
-      );
+    duration: const Duration(milliseconds: 160),
+    curve: Curves.easeOutCubic,
+    width: 42,
+    height: 42,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(pressed ? 0.22 : 0.13),
+      border: Border.all(color: Colors.white.withOpacity(0.20)),
+    ),
+    child: const Center(
+      child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+    ),
+  );
 }
 
 class _GlassFooter extends StatelessWidget {
@@ -1103,8 +1114,7 @@ class _GlassFooter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -1112,12 +1122,11 @@ class _GlassFooter extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
-            color: Colors.white
-                .withOpacity(isDark ? 0.09 : 0.13),
+            color: Colors.white.withOpacity(isDark ? 0.09 : 0.13),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: Colors.white
-                    .withOpacity(isDark ? 0.12 : 0.17)),
+              color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+            ),
           ),
           child: child,
         ),
@@ -1136,31 +1145,34 @@ class _RatingPill extends StatelessWidget {
     final r = rating <= 0 ? "0.0" : rating.toStringAsFixed(1);
     final rc = reviews < 0 ? 0 : reviews;
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.26),
         borderRadius: BorderRadius.circular(999),
-        border:
-            Border.all(color: Colors.white.withOpacity(0.15)),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star_rounded,
-              size: 13, color: Colors.amber.shade300),
+          Icon(Icons.star_rounded, size: 13, color: Colors.amber.shade300),
           const SizedBox(width: 5),
-          Text(r,
-              style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white)),
+          Text(
+            r,
+            style: const TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(width: 5),
-          Text("($rc)",
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withOpacity(0.70))),
+          Text(
+            "($rc)",
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withOpacity(0.70),
+            ),
+          ),
         ],
       ),
     );
@@ -1185,14 +1197,13 @@ class _FavoriteButtonState extends State<_FavoriteButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 180));
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
     _scale = TweenSequence<double>([
-      TweenSequenceItem(
-          tween: Tween(begin: 1.0, end: 1.28), weight: 50),
-      TweenSequenceItem(
-          tween: Tween(begin: 1.28, end: 1.0), weight: 50),
-    ]).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.28), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.28, end: 1.0), weight: 50),
+    ]).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -1211,8 +1222,7 @@ class _FavoriteButtonState extends State<_FavoriteButton>
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).colorScheme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).colorScheme.brightness == Brightness.dark;
     return GestureDetector(
       onTap: widget.onTap,
       child: ScaleTransition(
@@ -1228,8 +1238,7 @@ class _FavoriteButtonState extends State<_FavoriteButton>
                 shape: BoxShape.circle,
                 color: widget.active
                     ? Colors.red.shade500
-                    : Colors.white
-                        .withOpacity(isDark ? 0.10 : 0.16),
+                    : Colors.white.withOpacity(isDark ? 0.10 : 0.16),
                 border: Border.all(
                   color: widget.active
                       ? Colors.red.shade300.withOpacity(0.7)
@@ -1238,9 +1247,10 @@ class _FavoriteButtonState extends State<_FavoriteButton>
                 boxShadow: widget.active
                     ? [
                         BoxShadow(
-                            color: Colors.red.withOpacity(0.32),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4))
+                          color: Colors.red.withOpacity(0.32),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
                       ]
                     : [],
               ),
@@ -1278,14 +1288,18 @@ class _BackToTopButton extends StatelessWidget {
           color: scheme.primary,
           boxShadow: [
             BoxShadow(
-                color: scheme.primary.withOpacity(0.38),
-                blurRadius: 18,
-                offset: const Offset(0, 6)),
+              color: scheme.primary.withOpacity(0.38),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         child: const Center(
-          child: Icon(Icons.keyboard_arrow_up_rounded,
-              color: Colors.white, size: 22),
+          child: Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
       ),
     );
@@ -1301,8 +1315,7 @@ class _ListingCardSkeleton extends StatefulWidget {
   const _ListingCardSkeleton({required this.index});
 
   @override
-  State<_ListingCardSkeleton> createState() =>
-      _ListingCardSkeletonState();
+  State<_ListingCardSkeleton> createState() => _ListingCardSkeletonState();
 }
 
 class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
@@ -1376,19 +1389,21 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                          color:
-                              scheme.onSurface.withOpacity(0.07)),
+                        color: scheme.onSurface.withOpacity(0.07),
+                      ),
                     ),
                   ),
                 ),
                 Positioned(
-                    top: 14,
-                    left: 14,
-                    child: _SkeletonPill(width: 90, height: 30)),
+                  top: 14,
+                  left: 14,
+                  child: _SkeletonPill(width: 90, height: 30),
+                ),
                 Positioned(
-                    top: 12,
-                    right: 12,
-                    child: _SkeletonCircle(size: 38)),
+                  top: 12,
+                  right: 12,
+                  child: _SkeletonCircle(size: 38),
+                ),
                 Positioned(
                   left: 14,
                   right: 14,
@@ -1396,19 +1411,18 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(
-                          sigmaX: 16, sigmaY: 16),
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                       child: Container(
                         padding: const EdgeInsets.all(13),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.09),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.10)),
+                            color: Colors.white.withOpacity(0.10),
+                          ),
                         ),
                         child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             _SkeletonLine(width: 200, height: 14),
@@ -1417,8 +1431,7 @@ class _ListingCardSkeletonState extends State<_ListingCardSkeleton>
                             const SizedBox(height: 12),
                             const Row(
                               children: [
-                                _SkeletonPill(
-                                    width: 88, height: 26),
+                                _SkeletonPill(width: 88, height: 26),
                                 Spacer(),
                                 _SkeletonCircle(size: 42),
                               ],
@@ -1514,9 +1527,11 @@ class _PremiumSearchBar extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(width: 12),
-          Icon(Icons.search_rounded,
-              size: 17,
-              color: scheme.onSurface.withOpacity(0.42)),
+          Icon(
+            Icons.search_rounded,
+            size: 17,
+            color: scheme.onSurface.withOpacity(0.42),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
@@ -1552,9 +1567,11 @@ class _PremiumSearchBar extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: scheme.onSurface.withOpacity(0.14),
                   ),
-                  child: Icon(Icons.close_rounded,
-                      size: 12,
-                      color: scheme.onSurface.withOpacity(0.7)),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 12,
+                    color: scheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
               ),
             ),
@@ -1569,10 +1586,11 @@ class _ErrorPanel extends StatelessWidget {
   final VoidCallback onRetry;
   final String retryText;
 
-  const _ErrorPanel(
-      {required this.message,
-      required this.onRetry,
-      required this.retryText});
+  const _ErrorPanel({
+    required this.message,
+    required this.onRetry,
+    required this.retryText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1586,29 +1604,34 @@ class _ErrorPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.cloud_off_rounded,
-              color: scheme.error, size: 32),
+          Icon(Icons.cloud_off_rounded, color: scheme.error, size: 32),
           const SizedBox(height: 10),
-          Text(message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: scheme.error,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: scheme.error,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
           const SizedBox(height: 14),
           TextButton(
             onPressed: onRetry,
             style: TextButton.styleFrom(
               backgroundColor: scheme.error.withOpacity(0.12),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999)),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            child: Text(retryText,
-                style: TextStyle(
-                    color: scheme.error,
-                    fontWeight: FontWeight.w700)),
+            child: Text(
+              retryText,
+              style: TextStyle(
+                color: scheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -1627,9 +1650,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_rounded,
-              size: 48,
-              color: scheme.onSurface.withOpacity(0.2)),
+          Icon(
+            Icons.search_off_rounded,
+            size: 48,
+            color: scheme.onSurface.withOpacity(0.2),
+          ),
           const SizedBox(height: 14),
           Text(
             t(lang, "packages.empty"),
@@ -1652,12 +1677,13 @@ class _SkeletonLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.13),
-            borderRadius: BorderRadius.circular(999)),
-      );
+    width: width,
+    height: height,
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.13),
+      borderRadius: BorderRadius.circular(999),
+    ),
+  );
 }
 
 class _SkeletonPill extends StatelessWidget {
@@ -1667,15 +1693,14 @@ class _SkeletonPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.10),
-          borderRadius: BorderRadius.circular(999),
-          border:
-              Border.all(color: Colors.white.withOpacity(0.09)),
-        ),
-      );
+    width: width,
+    height: height,
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.10),
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: Colors.white.withOpacity(0.09)),
+    ),
+  );
 }
 
 class _SkeletonCircle extends StatelessWidget {
@@ -1684,22 +1709,23 @@ class _SkeletonCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.10),
-          border:
-              Border.all(color: Colors.white.withOpacity(0.09)),
-        ),
-      );
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(0.10),
+      border: Border.all(color: Colors.white.withOpacity(0.09)),
+    ),
+  );
 }
 
 class _NoGlowBehavior extends ScrollBehavior {
   @override
-  Widget buildOverscrollIndicator(BuildContext context,
-          Widget child, ScrollableDetails details) =>
-      child;
+  Widget buildOverscrollIndicator(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1757,9 +1783,9 @@ class _Listing {
       longitude: _toDoubleOrNull(json["longitude"]),
       avgRating: avg,
       reviewsCount: reviews,
-      imageUrl: (json["first_image_url"] ??
-          json["image"] ??
-          json["cover_image"]) as String?,
+      imageUrl:
+          (json["first_image_url"] ?? json["image"] ?? json["cover_image"])
+              as String?,
       createdAt: createdAt,
     );
   }
