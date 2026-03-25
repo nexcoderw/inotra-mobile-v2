@@ -3,12 +3,12 @@ import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:flutter/services.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
-import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/page_header.dart";
@@ -45,18 +45,24 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     super.initState();
 
     _entranceCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 550));
-    _entranceFade =
-        CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _entranceFade = CurvedAnimation(
+      parent: _entranceCtrl,
+      curve: Curves.easeOut,
+    );
     _entranceSlide =
         Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(
-            CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic));
+          CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic),
+        );
 
     _fetchPage(reset: true);
     _scrollCtrl.addListener(_onScroll);
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _entranceCtrl.forward());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _entranceCtrl.forward(),
+    );
   }
 
   @override
@@ -108,8 +114,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
             .toList();
         setState(() {
           final existing = _packages.map((e) => e.id).toSet();
-          final unique =
-              items.where((e) => !existing.contains(e.id)).toList();
+          final unique = items.where((e) => !existing.contains(e.id)).toList();
           _packages.addAll(unique);
           _hasMore = items.length >= 10;
           if (_hasMore) _page += 1;
@@ -177,17 +182,14 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: EdgeInsets.fromLTRB(hPad - 4, 12, hPad, 0),
-                          child: PageHeader(
-                            title: t(lang, "packages.title"),
-                          ),
+                          child: PageHeader(title: t(lang, "packages.title")),
                         ),
                       ),
 
                       // ── Search bar ──────────────────────────────────
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding:
-                              EdgeInsets.fromLTRB(hPad, 12, hPad, 14),
+                          padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 14),
                           child: _PremiumSearchBar(
                             controller: _searchCtrl,
                             hintText: t(lang, "packages.search_hint"),
@@ -206,8 +208,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                       if (!_loading && _packages.isNotEmpty)
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                                hPad, 0, hPad, 10),
+                            padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 10),
                             child: Text(
                               "${_packages.length}${_hasMore ? "+" : ""} ${t(lang, "packages.title").toLowerCase()}",
                               style: TextStyle(
@@ -223,13 +224,11 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                       // ── Skeletons ───────────────────────────────────
                       if (_loading && _packages.isEmpty)
                         SliverPadding(
-                          padding:
-                              EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                          padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
                           sliver: SliverList(
                             delegate: SliverChildBuilderDelegate(
                               (_, i) => Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: _PackageSkeleton(index: i),
                               ),
                               childCount: 3,
@@ -239,8 +238,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
 
                       // ── Package cards ───────────────────────────────
                       SliverPadding(
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -250,9 +248,9 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                                 return showLoader
                                     ? Padding(
                                         padding: const EdgeInsets.only(
-                                            bottom: 16),
-                                        child: _PackageSkeleton(
-                                            index: index),
+                                          bottom: 16,
+                                        ),
+                                        child: _PackageSkeleton(index: index),
                                       )
                                     : const SizedBox.shrink();
                               }
@@ -260,8 +258,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                               return _AnimatedListItem(
                                 index: index,
                                 child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: 16),
+                                  padding: const EdgeInsets.only(bottom: 16),
                                   child: _PackageCard(
                                     pkg: p,
                                     lang: lang,
@@ -277,10 +274,9 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                                 ),
                               );
                             },
-                            childCount: _packages.length +
-                                ((_loading && _packages.isNotEmpty)
-                                    ? 1
-                                    : 0),
+                            childCount:
+                                _packages.length +
+                                ((_loading && _packages.isNotEmpty) ? 1 : 0),
                           ),
                         ),
                       ),
@@ -293,25 +289,20 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                             child: _ErrorPanel(
                               message: _error!,
                               onRetry: () => _fetchPage(reset: true),
-                              retryText:
-                                  t(lang, "common.try_again"),
+                              retryText: t(lang, "common.try_again"),
                               scheme: scheme,
                             ),
                           ),
                         ),
 
                       // ── Empty ───────────────────────────────────────
-                      if (!_loading &&
-                          _packages.isEmpty &&
-                          _error == null)
+                      if (!_loading && _packages.isEmpty && _error == null)
                         SliverFillRemaining(
                           hasScrollBody: false,
-                          child: _EmptyState(
-                              lang: lang, scheme: scheme),
+                          child: _EmptyState(lang: lang, scheme: scheme),
                         ),
 
-                      const SliverToBoxAdapter(
-                          child: SizedBox(height: 90)),
+                      const SliverToBoxAdapter(child: SizedBox(height: 90)),
                     ],
                   ),
                 ),
@@ -327,17 +318,15 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                     ignoring: titleT < 1.0,
                     child: ClipRect(
                       child: BackdropFilter(
-                        filter:
-                            ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                         child: Container(
-                          color: scheme.surface
-                              .withOpacity(isDark ? 0.88 : 0.93),
-                          padding:
-                              EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
+                          color: scheme.surface.withOpacity(
+                            isDark ? 0.88 : 0.93,
+                          ),
+                          padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
                           child: _PremiumSearchBar(
                             controller: _searchCtrl,
-                            hintText:
-                                t(lang, "packages.search_hint"),
+                            hintText: t(lang, "packages.search_hint"),
                             onChanged: _onSearchChanged,
                             onClear: () {
                               _searchCtrl.clear();
@@ -399,13 +388,15 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 480));
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
-        .animate(
-            CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    final delay =
-        Duration(milliseconds: (widget.index * 65).clamp(0, 300));
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    final delay = Duration(milliseconds: (widget.index * 65).clamp(0, 300));
     Future.delayed(delay, () {
       if (mounted) _ctrl.forward();
     });
@@ -419,9 +410,9 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(position: _slide, child: widget.child),
-      );
+    opacity: _fade,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -459,9 +450,13 @@ class _PackageCardState extends State<_PackageCard>
   void initState() {
     super.initState();
     _pressCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 130));
-    _pressScale = Tween<double>(begin: 1.0, end: 0.975).animate(
-        CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 130),
+    );
+    _pressScale = Tween<double>(
+      begin: 1.0,
+      end: 0.975,
+    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -474,14 +469,12 @@ class _PackageCardState extends State<_PackageCard>
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(widget.isTablet ? 28 : 24);
     final h = widget.isTablet ? 246.0 : 224.0;
-    final title =
-        (widget.pkg.title?.trim().isNotEmpty ?? false)
-            ? widget.pkg.title!.trim()
-            : t(widget.lang, "packages.title");
-    final subtitle =
-        (widget.pkg.subtitle?.trim().isNotEmpty ?? false)
-            ? widget.pkg.subtitle!.trim()
-            : "";
+    final title = (widget.pkg.title?.trim().isNotEmpty ?? false)
+        ? widget.pkg.title!.trim()
+        : t(widget.lang, "packages.title");
+    final subtitle = (widget.pkg.subtitle?.trim().isNotEmpty ?? false)
+        ? widget.pkg.subtitle!.trim()
+        : "";
 
     return ScaleTransition(
       scale: _pressScale,
@@ -563,8 +556,7 @@ class _PackageCardState extends State<_PackageCard>
                                 width: 200,
                                 height: 140,
                                 decoration: BoxDecoration(
-                                  borderRadius:
-                                      BorderRadius.circular(80),
+                                  borderRadius: BorderRadius.circular(80),
                                   gradient: LinearGradient(
                                     colors: [
                                       Colors.white.withOpacity(0.10),
@@ -588,7 +580,8 @@ class _PackageCardState extends State<_PackageCard>
                       borderRadius: radius,
                       border: Border.all(
                         color: Colors.white.withOpacity(
-                            widget.isDark ? 0.10 : 0.14),
+                          widget.isDark ? 0.10 : 0.14,
+                        ),
                         width: 1,
                       ),
                     ),
@@ -618,8 +611,7 @@ class _PackageCardState extends State<_PackageCard>
                       children: [
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
@@ -628,8 +620,7 @@ class _PackageCardState extends State<_PackageCard>
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
-                                  fontSize:
-                                      widget.isTablet ? 16.5 : 15,
+                                  fontSize: widget.isTablet ? 16.5 : 15,
                                   color: Colors.white,
                                   letterSpacing: -0.3,
                                   height: 1.1,
@@ -642,11 +633,9 @@ class _PackageCardState extends State<_PackageCard>
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize:
-                                        widget.isTablet ? 12 : 11.5,
+                                    fontSize: widget.isTablet ? 12 : 11.5,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white
-                                        .withOpacity(0.72),
+                                    color: Colors.white.withOpacity(0.72),
                                     height: 1.3,
                                   ),
                                 ),
@@ -657,18 +646,18 @@ class _PackageCardState extends State<_PackageCard>
                         const SizedBox(width: 10),
                         // Arrow CTA
                         AnimatedContainer(
-                          duration:
-                              const Duration(milliseconds: 160),
+                          duration: const Duration(milliseconds: 160),
                           curve: Curves.easeOutCubic,
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withOpacity(
-                                _pressed ? 0.22 : 0.14),
+                              _pressed ? 0.22 : 0.14,
+                            ),
                             border: Border.all(
-                                color:
-                                    Colors.white.withOpacity(0.20)),
+                              color: Colors.white.withOpacity(0.20),
+                            ),
                           ),
                           child: const Center(
                             child: Icon(
@@ -702,16 +691,16 @@ class _CardImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (url != null && url!.trim().isNotEmpty) {
-      return Image.network(
-        url!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
-        loadingBuilder: (_, child, evt) =>
-            evt == null ? child : _Placeholder(scheme: scheme),
-      );
-    }
-    return _Placeholder(scheme: scheme);
+    return AppCachedImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      memCacheWidth: 1200,
+      memCacheHeight: 900,
+      maxWidthDiskCache: 1600,
+      maxHeightDiskCache: 1200,
+      placeholderBuilder: (_) => _Placeholder(scheme: scheme),
+      errorBuilder: (_) => _Placeholder(scheme: scheme),
+    );
   }
 }
 
@@ -759,20 +748,20 @@ class _DurationBadge extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(
             color: Colors.black.withOpacity(0.30),
             borderRadius: BorderRadius.circular(999),
-            border:
-                Border.all(color: Colors.white.withOpacity(0.18)),
+            border: Border.all(color: Colors.white.withOpacity(0.18)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.schedule_rounded,
-                  size: 12,
-                  color: Colors.white.withOpacity(0.85)),
+              Icon(
+                Icons.schedule_rounded,
+                size: 12,
+                color: Colors.white.withOpacity(0.85),
+              ),
               const SizedBox(width: 5),
               Text(
                 "$days ${t(lang, "packages.days")}",
@@ -812,8 +801,8 @@ class _GlassFooter extends StatelessWidget {
             color: Colors.white.withOpacity(isDark ? 0.09 : 0.13),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color:
-                    Colors.white.withOpacity(isDark ? 0.12 : 0.17)),
+              color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+            ),
           ),
           child: child,
         ),
@@ -842,8 +831,9 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
   void initState() {
     super.initState();
     _shimmer = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1400))
-      ..repeat();
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
   }
 
   @override
@@ -874,10 +864,8 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment(
-                            -1.5 + _shimmer.value * 3, 0),
-                        end: Alignment(
-                            -0.5 + _shimmer.value * 3, 0),
+                        begin: Alignment(-1.5 + _shimmer.value * 3, 0),
+                        end: Alignment(-0.5 + _shimmer.value * 3, 0),
                         colors: [
                           scheme.surfaceVariant.withOpacity(0.55),
                           scheme.surfaceVariant.withOpacity(0.75),
@@ -910,8 +898,8 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                          color:
-                              scheme.onSurface.withOpacity(0.07)),
+                        color: scheme.onSurface.withOpacity(0.07),
+                      ),
                     ),
                   ),
                 ),
@@ -926,8 +914,7 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.10),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.09)),
+                      border: Border.all(color: Colors.white.withOpacity(0.09)),
                     ),
                   ),
                 ),
@@ -940,51 +927,41 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: BackdropFilter(
-                      filter:
-                          ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                       child: Container(
                         padding: const EdgeInsets.all(13),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.09),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.11)),
+                            color: Colors.white.withOpacity(0.11),
+                          ),
                         ),
                         child: Row(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
                                     height: 14,
                                     width: double.infinity,
-                                    margin: const EdgeInsets.only(
-                                        right: 60),
+                                    margin: const EdgeInsets.only(right: 60),
                                     decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withOpacity(0.13),
-                                      borderRadius:
-                                          BorderRadius.circular(
-                                              999),
+                                      color: Colors.white.withOpacity(0.13),
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
                                     height: 11,
                                     width: double.infinity,
-                                    margin: const EdgeInsets.only(
-                                        right: 100),
+                                    margin: const EdgeInsets.only(right: 100),
                                     decoration: BoxDecoration(
-                                      color: Colors.white
-                                          .withOpacity(0.09),
-                                      borderRadius:
-                                          BorderRadius.circular(
-                                              999),
+                                      color: Colors.white.withOpacity(0.09),
+                                      borderRadius: BorderRadius.circular(999),
                                     ),
                                   ),
                                 ],
@@ -998,8 +975,8 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                                 shape: BoxShape.circle,
                                 color: Colors.white.withOpacity(0.10),
                                 border: Border.all(
-                                    color: Colors.white
-                                        .withOpacity(0.09)),
+                                  color: Colors.white.withOpacity(0.09),
+                                ),
                               ),
                             ),
                           ],
@@ -1139,16 +1116,16 @@ class _ErrorPanel extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.cloud_off_rounded,
-              color: scheme.error, size: 32),
+          Icon(Icons.cloud_off_rounded, color: scheme.error, size: 32),
           const SizedBox(height: 10),
           Text(
             message,
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: scheme.error,
-                fontWeight: FontWeight.w700,
-                fontSize: 13),
+              color: scheme.error,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 14),
           TextButton(
@@ -1156,14 +1133,17 @@ class _ErrorPanel extends StatelessWidget {
             style: TextButton.styleFrom(
               backgroundColor: scheme.error.withOpacity(0.12),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999)),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            child: Text(retryText,
-                style: TextStyle(
-                    color: scheme.error,
-                    fontWeight: FontWeight.w700)),
+            child: Text(
+              retryText,
+              style: TextStyle(
+                color: scheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -1205,8 +1185,7 @@ class _EmptyState extends StatelessWidget {
 class _BackToTopButton extends StatelessWidget {
   final ColorScheme scheme;
   final VoidCallback onTap;
-  const _BackToTopButton(
-      {required this.scheme, required this.onTap});
+  const _BackToTopButton({required this.scheme, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1227,8 +1206,11 @@ class _BackToTopButton extends StatelessWidget {
           ],
         ),
         child: const Center(
-          child: Icon(Icons.keyboard_arrow_up_rounded,
-              color: Colors.white, size: 22),
+          child: Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
       ),
     );
@@ -1258,13 +1240,11 @@ class _Package {
     return _Package(
       id: json["id"]?.toString() ?? "",
       title: json["title"] as String? ?? json["name"] as String?,
-      subtitle: json["location"] as String? ??
-          json["description"] as String?,
-      imageUrl: (json["cover_url"] ??
-          json["image"] ??
-          json["cover_image"]) as String?,
-      durationDays:
-          (json["duration_days"] as num?)?.toInt() ?? 0,
+      subtitle: json["location"] as String? ?? json["description"] as String?,
+      imageUrl:
+          (json["cover_url"] ?? json["image"] ?? json["cover_image"])
+              as String?,
+      durationDays: (json["duration_days"] as num?)?.toInt() ?? 0,
     );
   }
 }
