@@ -1,13 +1,10 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:http/http.dart" as http;
 import "package:hugeicons/hugeicons.dart";
 
-import "../../../../core/config/api.dart";
-import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/repositories/public_discovery_repository.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -29,22 +26,29 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
     _load();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final uri = Api.url("${EventEndpoints.list}?page=1&page_size=3&limit=3&ordering=start_at");
-      final resp = await http.get(uri);
+      final resp = await PublicDiscoveryRepository.instance.fetchExploreEvents(
+        page: 1,
+        pageSize: 3,
+        limit: 3,
+        ordering: "start_at",
+        forceRefresh: forceRefresh,
+      );
 
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body);
+      if (resp.isSuccess) {
+        final decoded = resp.decodeJson();
 
         List<dynamic> results = const [];
         if (decoded is Map) {
-          results = (decoded["results"] ?? decoded["data"] ?? const []) as List? ?? const [];
+          results =
+              (decoded["results"] ?? decoded["data"] ?? const []) as List? ??
+              const [];
         } else if (decoded is List) {
           results = decoded;
         }
@@ -73,10 +77,10 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
     final hPad = screenWidth < 360
         ? 12.0
         : screenWidth < 600
-            ? 16.0
-            : screenWidth < 900
-                ? 24.0
-                : 32.0;
+        ? 16.0
+        : screenWidth < 900
+        ? 24.0
+        : 32.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,26 +124,30 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
                   ),
                 )
               : _error != null
-                  ? _ErrorState(message: _error!, onRetry: _load)
-                  : _items.isEmpty
-                      ? _EmptyState(label: t(lang, "common.coming_soon"))
-                      : Column(
-                          children: List.generate(_items.length, (i) {
-                            final evt = _items[i];
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                  bottom: i == _items.length - 1 ? 0 : 12),
-                              child: _EventListTile(
-                                item: evt,
-                                onTap: () => Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.eventDetails,
-                                  arguments: evt.id,
-                                ),
-                              ),
-                            );
-                          }),
+              ? _ErrorState(
+                  message: _error!,
+                  onRetry: () => _load(forceRefresh: true),
+                )
+              : _items.isEmpty
+              ? _EmptyState(label: t(lang, "common.coming_soon"))
+              : Column(
+                  children: List.generate(_items.length, (i) {
+                    final evt = _items[i];
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: i == _items.length - 1 ? 0 : 12,
+                      ),
+                      child: _EventListTile(
+                        item: evt,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.eventDetails,
+                          arguments: evt.id,
                         ),
+                      ),
+                    );
+                  }),
+                ),
         ),
       ],
     );
@@ -152,10 +160,7 @@ class _EventListTile extends StatefulWidget {
   final _EventItem item;
   final VoidCallback onTap;
 
-  const _EventListTile({
-    required this.item,
-    required this.onTap,
-  });
+  const _EventListTile({required this.item, required this.onTap});
 
   @override
   State<_EventListTile> createState() => _EventListTileState();
@@ -201,8 +206,18 @@ class _EventListTileState extends State<_EventListTile> {
 
   String _shortMonth(int m) {
     const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
     return months[(m - 1).clamp(0, 11)];
   }
@@ -232,7 +247,9 @@ class _EventListTileState extends State<_EventListTile> {
     final innerPad = isTablet ? 14.0 : 12.0;
     final gap = isTablet ? 14.0 : 12.0;
 
-    final title = widget.item.title.trim().isNotEmpty ? widget.item.title.trim() : "Event";
+    final title = widget.item.title.trim().isNotEmpty
+        ? widget.item.title.trim()
+        : "Event";
     final subtitle = widget.item.location().trim().isNotEmpty
         ? widget.item.location().trim()
         : "—";
@@ -323,7 +340,9 @@ class _EventListTileState extends State<_EventListTile> {
                                 const SizedBox(width: 8),
                                 if (pillLabel.isNotEmpty)
                                   _StatusPill(
-                                      label: pillLabel, style: pillStyle),
+                                    label: pillLabel,
+                                    style: pillStyle,
+                                  ),
                               ],
                             ),
 
@@ -496,8 +515,9 @@ class _EventPosterThumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
-    final placeholder =
-        isDark ? scheme.surfaceVariant.withOpacity(0.45) : const Color(0xFFF0F0F0);
+    final placeholder = isDark
+        ? scheme.surfaceVariant.withOpacity(0.45)
+        : const Color(0xFFF0F0F0);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
@@ -509,7 +529,8 @@ class _EventPosterThumb extends StatelessWidget {
             ? Image.network(
                 imageUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _PlaceholderIcon(color: placeholder, scheme: scheme),
+                errorBuilder: (_, __, ___) =>
+                    _PlaceholderIcon(color: placeholder, scheme: scheme),
                 loadingBuilder: (_, child, evt) =>
                     evt == null ? child : Container(color: placeholder),
               )
@@ -565,7 +586,11 @@ class _EventItem {
   });
 
   String location() {
-    final parts = [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
+    final parts = [
+      venue,
+      city,
+      country,
+    ].where((e) => e.trim().isNotEmpty).toList();
     return parts.join(" • ");
   }
 
@@ -579,16 +604,22 @@ class _EventItem {
       }
     }
 
-    final start = parseDt(json["start_at"]?.toString() ?? json["start_date"]?.toString());
-    final end = parseDt(json["end_at"]?.toString() ?? json["end_date"]?.toString());
+    final start = parseDt(
+      json["start_at"]?.toString() ?? json["start_date"]?.toString(),
+    );
+    final end = parseDt(
+      json["end_at"]?.toString() ?? json["end_date"]?.toString(),
+    );
 
     return _EventItem(
       id: (json["id"] ?? "").toString(),
       title: (json["title"] ?? json["name"] ?? "Upcoming event").toString(),
-      imageUrl: (json["banner_url"] ??
-          json["cover_url"] ??
-          json["image"] ??
-          json["first_image_url"]) as String?,
+      imageUrl:
+          (json["banner_url"] ??
+                  json["cover_url"] ??
+                  json["image"] ??
+                  json["first_image_url"])
+              as String?,
       startAt: start,
       endAt: end,
       venue: (json["venue_name"] ?? "").toString(),
@@ -615,8 +646,9 @@ class _EventListSkeleton extends StatelessWidget {
     final isDark = scheme.brightness == Brightness.dark;
 
     final cardColor = isDark ? scheme.surface : const Color(0xFFFFFFFF);
-    final borderColor =
-        isDark ? scheme.onSurface.withOpacity(0.08) : const Color(0xFFEAEAEA);
+    final borderColor = isDark
+        ? scheme.onSurface.withOpacity(0.08)
+        : const Color(0xFFEAEAEA);
     final shimmer = scheme.surfaceVariant.withOpacity(isDark ? 0.45 : 0.55);
     final shadowColor = Colors.black.withOpacity(isDark ? 0.18 : 0.06);
 
