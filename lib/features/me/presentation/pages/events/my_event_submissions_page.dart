@@ -11,6 +11,7 @@ import "../../../../../core/config/api.dart";
 import "../../../../../core/config/app_routes.dart";
 import "../../../../../core/constants/api/my_event_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
 import "my_event_submission_detail_page.dart";
@@ -866,12 +867,15 @@ class _BannerImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (url != null && url!.trim().isNotEmpty) {
-      return Image.network(
-        url!,
+      return AppCachedImage(
+        imageUrl: url,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _ImagePlaceholder(scheme: scheme),
-        loadingBuilder: (_, child, evt) =>
-            evt == null ? child : _ImagePlaceholder(scheme: scheme),
+        memCacheWidth: 1200,
+        memCacheHeight: 900,
+        maxWidthDiskCache: 1600,
+        maxHeightDiskCache: 1200,
+        errorBuilder: (_) => _ImagePlaceholder(scheme: scheme),
+        placeholderBuilder: (_) => _ImagePlaceholder(scheme: scheme),
       );
     }
     return _ImagePlaceholder(scheme: scheme);
