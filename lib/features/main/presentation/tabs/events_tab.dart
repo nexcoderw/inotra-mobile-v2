@@ -10,6 +10,7 @@ import "package:intl/intl.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -900,21 +901,19 @@ class _BannerImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (url != null && url!.trim().isNotEmpty) {
-      return ColorFiltered(
-        colorFilter: grayscale
-            ? const ColorFilter.mode(Colors.white, BlendMode.saturation)
-            : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
-        child: Image.network(
-          url!,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _ImagePlaceholder(scheme: scheme),
-          loadingBuilder: (_, child, evt) =>
-              evt == null ? child : _ImagePlaceholder(scheme: scheme),
-        ),
-      );
-    }
-    return _ImagePlaceholder(scheme: scheme);
+    return AppCachedImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      memCacheWidth: 1200,
+      memCacheHeight: 900,
+      maxWidthDiskCache: 1600,
+      maxHeightDiskCache: 1200,
+      colorFilter: grayscale
+          ? const ColorFilter.mode(Colors.white, BlendMode.saturation)
+          : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
+      placeholderBuilder: (_) => _ImagePlaceholder(scheme: scheme),
+      errorBuilder: (_) => _ImagePlaceholder(scheme: scheme),
+    );
   }
 }
 
