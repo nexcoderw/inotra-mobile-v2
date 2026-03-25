@@ -3,13 +3,11 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
 import "package:toastification/toastification.dart";
 
-import "../../../../core/config/api.dart";
-import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/repositories/public_discovery_repository.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -70,25 +68,34 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
   Future<void> _saveFavorites() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now().millisecondsSinceEpoch;
-    final payload =
-        _favoriteIds.map((id) => {"id": id, "ts": now}).toList(growable: false);
+    final payload = _favoriteIds
+        .map((id) => {"id": id, "ts": now})
+        .toList(growable: false);
     await prefs.setString(_favKey, jsonEncode(payload));
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool forceRefresh = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final uri = Api.url("${PlaceEndpoints.list}?page=1&page_size=4");
-      final resp = await http.get(uri);
+      final resp = await PublicDiscoveryRepository.instance
+          .fetchExploreListings(
+            page: 1,
+            pageSize: 4,
+            forceRefresh: forceRefresh,
+          );
 
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body);
-        final results = (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
-        _items = results.whereType<Map>().map((e) => _Listing.fromJson(e)).toList();
+      if (resp.isSuccess) {
+        final decoded = resp.decodeJson();
+        final results =
+            (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
+        _items = results
+            .whereType<Map>()
+            .map((e) => _Listing.fromJson(e))
+            .toList();
       } else {
         _error = "Status ${resp.statusCode}";
       }
@@ -113,7 +120,9 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
     await _saveFavorites();
     if (!mounted) return;
 
-    final msg = added ? "Listing added to favorites" : "Listing removed from favorites";
+    final msg = added
+        ? "Listing added to favorites"
+        : "Listing removed from favorites";
 
     toastification.show(
       context: context,
@@ -172,37 +181,40 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
                   itemCount: 4,
                 )
               : _error != null
-                  ? Padding(
-                      padding: EdgeInsets.symmetric(horizontal: hPad),
-                      child: _ErrorState(message: _error!, onRetry: _load),
-                    )
-                  : _items.isEmpty
-                      ? Padding(
-                          padding: EdgeInsets.symmetric(horizontal: hPad),
-                          child: _EmptyState(label: t(lang, "packages.empty")),
-                        )
-                      : ListView.separated(
-                          // ✅ Keep simple scroll. No slide-to-reveal / dismiss logic anywhere.
-                          physics: const BouncingScrollPhysics(),
-                          scrollDirection: Axis.horizontal,
-                          padding: EdgeInsets.symmetric(horizontal: hPad),
-                          itemCount: _items.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 12),
-                          itemBuilder: (context, i) {
-                            final listing = _items[i];
-                            return _ListingCard(
-                              listing: listing,
-                              isTablet: isTablet,
-                              isFavorite: _favoriteIds.contains(listing.id),
-                              onToggleFavorite: () => _toggleFavorite(listing.id),
-                              onOpen: () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.listingDetails,
-                                arguments: listing.id,
-                              ),
-                            );
-                          },
-                        ),
+              ? Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  child: _ErrorState(
+                    message: _error!,
+                    onRetry: () => _load(forceRefresh: true),
+                  ),
+                )
+              : _items.isEmpty
+              ? Padding(
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  child: _EmptyState(label: t(lang, "packages.empty")),
+                )
+              : ListView.separated(
+                  // ✅ Keep simple scroll. No slide-to-reveal / dismiss logic anywhere.
+                  physics: const BouncingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(horizontal: hPad),
+                  itemCount: _items.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (context, i) {
+                    final listing = _items[i];
+                    return _ListingCard(
+                      listing: listing,
+                      isTablet: isTablet,
+                      isFavorite: _favoriteIds.contains(listing.id),
+                      onToggleFavorite: () => _toggleFavorite(listing.id),
+                      onOpen: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.listingDetails,
+                        arguments: listing.id,
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -243,8 +255,13 @@ class _ListingCardState extends State<_ListingCard> {
     final cardW = widget.isTablet ? 270.0 : 210.0;
     final radius = BorderRadius.circular(widget.isTablet ? 26 : 22);
 
-    final title = widget.listing.name.trim().isEmpty ? "Listing" : widget.listing.name.trim();
-    final subtitle = _compactLocation(widget.listing.city, widget.listing.country);
+    final title = widget.listing.name.trim().isEmpty
+        ? "Listing"
+        : widget.listing.name.trim();
+    final subtitle = _compactLocation(
+      widget.listing.city,
+      widget.listing.country,
+    );
 
     return MouseRegion(
       onEnter: (_) => _setHover(true),
@@ -273,10 +290,14 @@ class _ListingCardState extends State<_ListingCard> {
                           ),
                           loadingBuilder: (context, child, evt) {
                             if (evt == null) return child;
-                            return Container(color: scheme.surfaceVariant.withOpacity(0.7));
+                            return Container(
+                              color: scheme.surfaceVariant.withOpacity(0.7),
+                            );
                           },
                         )
-                      : Container(color: scheme.surfaceVariant.withOpacity(0.7)),
+                      : Container(
+                          color: scheme.surfaceVariant.withOpacity(0.7),
+                        ),
                 ),
 
                 // Vignette for readability
@@ -377,8 +398,12 @@ class _ListingCardState extends State<_ListingCard> {
                           height: 38,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity((_hover || _pressed) ? 0.18 : 0.12),
-                            border: Border.all(color: Colors.white.withOpacity(0.16)),
+                            color: Colors.white.withOpacity(
+                              (_hover || _pressed) ? 0.18 : 0.12,
+                            ),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.16),
+                            ),
                           ),
                           child: const Icon(
                             Icons.arrow_forward_rounded,
@@ -437,8 +462,9 @@ class _FavoriteButtonState extends State<_FavoriteButton> {
     final border = widget.active
         ? Colors.red.withOpacity(0.9)
         : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
-    final iconColor =
-        widget.active ? Colors.white : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
+    final iconColor = widget.active
+        ? Colors.white
+        : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
 
     return GestureDetector(
       onTapDown: (_) => _set(true),
@@ -493,7 +519,9 @@ class _GlassFooter extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(isDark ? 0.10 : 0.14),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withOpacity(isDark ? 0.14 : 0.18)),
+            border: Border.all(
+              color: Colors.white.withOpacity(isDark ? 0.14 : 0.18),
+            ),
           ),
           child: child,
         ),
