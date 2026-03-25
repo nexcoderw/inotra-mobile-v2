@@ -290,14 +290,20 @@ class _ListingCardState extends State<_ListingCard> {
                           maxWidthDiskCache: 1200,
                           maxHeightDiskCache: 1200,
                           errorBuilder: (_) => Container(
-                            color: scheme.surfaceVariant.withOpacity(0.7),
+                            color: scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                           placeholderBuilder: (_) => Container(
-                            color: scheme.surfaceVariant.withOpacity(0.7),
+                            color: scheme.surfaceContainerHighest.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                         )
                       : Container(
-                          color: scheme.surfaceVariant.withOpacity(0.7),
+                          color: scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                 ),
 
@@ -309,8 +315,8 @@ class _ListingCardState extends State<_ListingCard> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.10),
-                          Colors.black.withOpacity(0.55),
+                          Colors.black.withValues(alpha: 0.10),
+                          Colors.black.withValues(alpha: 0.55),
                         ],
                       ),
                     ),
@@ -323,12 +329,16 @@ class _ListingCardState extends State<_ListingCard> {
                     decoration: BoxDecoration(
                       borderRadius: radius,
                       border: Border.all(
-                        color: Colors.white.withOpacity(isDark ? 0.12 : 0.18),
+                        color: Colors.white.withValues(
+                          alpha: isDark ? 0.12 : 0.18,
+                        ),
                         width: 1,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.34 : 0.14),
+                          color: Colors.black.withValues(
+                            alpha: isDark ? 0.34 : 0.14,
+                          ),
                           blurRadius: 28,
                           offset: const Offset(0, 18),
                         ),
@@ -379,7 +389,7 @@ class _ListingCardState extends State<_ListingCard> {
                                   style: TextStyle(
                                     fontSize: widget.isTablet ? 12.2 : 11.8,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white.withOpacity(0.82),
+                                    color: Colors.white.withValues(alpha: 0.82),
                                   ),
                                 ),
                               ],
@@ -399,11 +409,11 @@ class _ListingCardState extends State<_ListingCard> {
                           height: 38,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(
-                              (_hover || _pressed) ? 0.18 : 0.12,
+                            color: Colors.white.withValues(
+                              alpha: (_hover || _pressed) ? 0.18 : 0.12,
                             ),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.16),
+                              color: Colors.white.withValues(alpha: 0.16),
                             ),
                           ),
                           child: const Icon(
@@ -458,11 +468,11 @@ class _FavoriteButtonState extends State<_FavoriteButton> {
     final isDark = scheme.brightness == Brightness.dark;
 
     final border = widget.active
-        ? Colors.red.withOpacity(0.9)
-        : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
+        ? Colors.red.withValues(alpha: 0.9)
+        : Colors.white.withValues(alpha: isDark ? 0.14 : 0.18);
     final iconColor = widget.active
         ? Colors.white
-        : scheme.onSurface.withOpacity(isDark ? 0.92 : 0.86);
+        : scheme.onSurface.withValues(alpha: isDark ? 0.92 : 0.86);
 
     return GestureDetector(
       onTapDown: (_) => _set(true),
@@ -488,16 +498,16 @@ class _FavoriteButtonState extends State<_FavoriteButton> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(isDark ? 0.18 : 0.24),
-                      Colors.white.withOpacity(isDark ? 0.08 : 0.14),
+                      Colors.white.withValues(alpha: isDark ? 0.18 : 0.24),
+                      Colors.white.withValues(alpha: isDark ? 0.08 : 0.14),
                     ],
                   ),
             border: Border.all(color: border),
             boxShadow: [
               BoxShadow(
                 color: widget.active
-                    ? Colors.red.withOpacity(0.28)
-                    : Colors.black.withOpacity(isDark ? 0.16 : 0.10),
+                    ? Colors.red.withValues(alpha: 0.28)
+                    : Colors.black.withValues(alpha: isDark ? 0.16 : 0.10),
                 blurRadius: widget.active ? 12 : 10,
                 offset: const Offset(0, 4),
               ),
@@ -533,17 +543,17 @@ class _GlassFooter extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
-            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+            Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
+            Colors.white.withValues(alpha: isDark ? 0.07 : 0.11),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Colors.white.withOpacity(isDark ? 0.14 : 0.18),
+          color: Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.10),
             blurRadius: 14,
             offset: const Offset(0, 7),
           ),
@@ -568,9 +578,9 @@ class _RatingPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.22),
+        color: Colors.black.withValues(alpha: 0.22),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -587,7 +597,7 @@ class _RatingPill extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
             ),
           ),
           const SizedBox(width: 6),
@@ -596,7 +606,7 @@ class _RatingPill extends StatelessWidget {
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
-              color: Colors.white.withOpacity(0.80),
+              color: Colors.white.withValues(alpha: 0.80),
             ),
           ),
         ],
@@ -676,8 +686,8 @@ class _SpecularHighlight extends StatelessWidget {
                   borderRadius: BorderRadius.circular(80),
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withOpacity(0.14),
-                      Colors.white.withOpacity(0.0),
+                      Colors.white.withValues(alpha: 0.14),
+                      Colors.white.withValues(alpha: 0.0),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -709,9 +719,9 @@ class _ListingSkeleton extends StatelessWidget {
       child: Container(
         width: cardW,
         decoration: BoxDecoration(
-          color: scheme.surfaceVariant.withOpacity(0.55),
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
           borderRadius: radius,
-          border: Border.all(color: scheme.onSurface.withOpacity(0.06)),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.06)),
         ),
         child: Stack(
           children: [
@@ -726,12 +736,14 @@ class _ListingSkeleton extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withOpacity(0.12),
-                      Colors.white.withOpacity(0.07),
+                      Colors.white.withValues(alpha: 0.12),
+                      Colors.white.withValues(alpha: 0.07),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withOpacity(0.10)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10),
+                  ),
                 ),
               ),
             ),
@@ -764,15 +776,15 @@ class _GlassButton extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                scheme.surface.withOpacity(0.78),
-                scheme.surface.withOpacity(0.58),
+                scheme.surface.withValues(alpha: 0.78),
+                scheme.surface.withValues(alpha: 0.58),
               ],
             ),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -806,7 +818,7 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: scheme.surfaceVariant.withOpacity(0.6),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -844,7 +856,7 @@ class _EmptyState extends StatelessWidget {
       width: 240,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: scheme.surfaceVariant.withOpacity(0.6),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(14),
