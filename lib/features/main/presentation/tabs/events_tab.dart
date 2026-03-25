@@ -23,6 +23,7 @@ class EventsTab extends StatefulWidget {
 class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
   final _scrollCtrl = ScrollController();
   final _searchCtrl = TextEditingController();
+  final ValueNotifier<bool> _showBackToTop = ValueNotifier(false);
 
   final List<_EventItem> _events = [];
   bool _loading = false;
@@ -31,9 +32,7 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
   String _query = "";
   String? _statusFilter;
   String? _error;
-  bool _showBackToTop = false;
   Timer? _debounce;
-  double _scrollOffset = 0;
 
   // Entrance animation
   late AnimationController _entranceCtrl;
@@ -45,18 +44,24 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
     super.initState();
 
     _entranceCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
-    _entranceFade =
-        CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _entranceFade = CurvedAnimation(
+      parent: _entranceCtrl,
+      curve: Curves.easeOut,
+    );
     _entranceSlide =
         Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(
-            CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic));
+          CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic),
+        );
 
     _fetchPage(reset: true);
     _scrollCtrl.addListener(_onScroll);
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _entranceCtrl.forward());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _entranceCtrl.forward(),
+    );
   }
 
   @override
@@ -64,6 +69,7 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
     _debounce?.cancel();
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
+    _showBackToTop.dispose();
     _entranceCtrl.dispose();
     super.dispose();
   }
@@ -78,9 +84,7 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
     }
 
     final show = px > 300;
-    if (show != _showBackToTop) setState(() => _showBackToTop = show);
-
-    setState(() => _scrollOffset = px);
+    if (show != _showBackToTop.value) _showBackToTop.value = show;
   }
 
   Future<void> _fetchPage({required bool reset}) async {
@@ -105,7 +109,7 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
         if (decoded is Map) {
           results =
               (decoded["results"] ?? decoded["data"] ?? const []) as List? ??
-                  const [];
+              const [];
         } else if (decoded is List) {
           results = decoded;
         }
@@ -114,8 +118,7 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
             .map((m) => _EventItem.fromJson(Map<String, dynamic>.from(m)))
             .toList();
         final existing = _events.map((e) => e.id).toSet();
-        final unique =
-            incoming.where((e) => !existing.contains(e.id)).toList();
+        final unique = incoming.where((e) => !existing.contains(e.id)).toList();
         setState(() {
           _events.addAll(unique);
           _hasMore = incoming.length >= 10;
@@ -165,8 +168,11 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
     final today = DateTime(now.year, now.month, now.day);
     if (e.endAt != null && e.endAt!.isBefore(now)) return "ended";
     if (e.startAt != null) {
-      final startDay =
-          DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+      final startDay = DateTime(
+        e.startAt!.year,
+        e.startAt!.month,
+        e.startAt!.day,
+      );
       final tomorrow = today.add(const Duration(days: 1));
       if (startDay == today) return "happening";
       if (startDay == tomorrow) return "tomorrow";
@@ -184,9 +190,6 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
     final isTablet = screenWidth >= 700;
     final hPad = isTablet ? 24.0 : 18.0;
     final filtered = _applyFilter(_events);
-
-    // Header shrink factor
-    final shrink = (_scrollOffset / 80.0).clamp(0.0, 1.0);
 
     // Grid: 1-col phone, 2-col tablet, portrait cards
     final crossCount = isTablet ? 2 : 1;
@@ -217,7 +220,6 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
                     SliverPersistentHeader(
                       pinned: true,
                       delegate: _EventsHeaderDelegate(
-                        shrink: shrink,
                         isTablet: isTablet,
                         isDark: isDark,
                         scheme: scheme,
@@ -239,8 +241,9 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
                         selectedFilter: _statusFilter,
                         onSelect: (v) {
                           HapticFeedback.selectionClick();
-                          setState(() =>
-                              _statusFilter = _statusFilter == v ? null : v);
+                          setState(
+                            () => _statusFilter = _statusFilter == v ? null : v,
+                          );
                         },
                         isTablet: isTablet,
                         isDark: isDark,
@@ -251,16 +254,15 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
                     // ── Loading skeletons ─────────────────────────────
                     if (_loading && _events.isEmpty)
                       SliverPadding(
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
+                        padding: EdgeInsets.fromLTRB(hPad, 16, hPad, 0),
                         sliver: SliverGrid(
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossCount,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: cardAspect,
-                          ),
+                                crossAxisCount: crossCount,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: cardAspect,
+                              ),
                           delegate: SliverChildBuilderDelegate(
                             (_, i) => _EventCardSkeleton(index: i),
                             childCount: 4,
@@ -271,20 +273,18 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
                     // ── Event grid ────────────────────────────────────
                     if (filtered.isNotEmpty)
                       SliverPadding(
-                        padding:
-                            EdgeInsets.fromLTRB(hPad, 10, hPad, 0),
+                        padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 0),
                         sliver: SliverGrid(
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossCount,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: cardAspect,
-                          ),
+                                crossAxisCount: crossCount,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: cardAspect,
+                              ),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final showLoader =
-                                  _loading && _events.isNotEmpty;
+                              final showLoader = _loading && _events.isNotEmpty;
                               if (index >= filtered.length) {
                                 return showLoader
                                     ? _EventCardSkeleton(index: index)
@@ -304,7 +304,8 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
                                 ),
                               );
                             },
-                            childCount: filtered.length +
+                            childCount:
+                                filtered.length +
                                 ((_loading && _events.isNotEmpty) ? 2 : 0),
                           ),
                         ),
@@ -341,11 +342,8 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
               ),
 
               // ── Back to top ──────────────────────────────────────────
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                right: 18,
-                bottom: _showBackToTop ? 24 : -72,
+              ValueListenableBuilder<bool>(
+                valueListenable: _showBackToTop,
                 child: _BackToTopButton(
                   scheme: scheme,
                   onTap: () => _scrollCtrl.animateTo(
@@ -353,6 +351,13 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
                     duration: const Duration(milliseconds: 420),
                     curve: Curves.easeOutCubic,
                   ),
+                ),
+                builder: (context, show, child) => AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  right: 18,
+                  bottom: show ? 24 : -72,
+                  child: child!,
                 ),
               ),
             ],
@@ -368,7 +373,6 @@ class _EventsTabState extends State<EventsTab> with TickerProviderStateMixin {
 ───────────────────────────────────────────────────────────────────────────── */
 
 class _EventsHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double shrink;
   final bool isTablet;
   final bool isDark;
   final ColorScheme scheme;
@@ -378,7 +382,6 @@ class _EventsHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onClear;
 
   const _EventsHeaderDelegate({
-    required this.shrink,
     required this.isTablet,
     required this.isDark,
     required this.scheme,
@@ -395,11 +398,18 @@ class _EventsHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_EventsHeaderDelegate old) =>
-      shrink != old.shrink || searchCtrl.text != old.searchCtrl.text;
+      searchCtrl.text != old.searchCtrl.text ||
+      isTablet != old.isTablet ||
+      isDark != old.isDark ||
+      lang != old.lang ||
+      scheme != old.scheme;
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final range = maxExtent - minExtent;
     final t_ = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
     final hPad = isTablet ? 24.0 : 18.0;
@@ -485,7 +495,10 @@ class _FilterRailDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final hPad = isTablet ? 24.0 : 16.0;
     final entries = filters.entries.toList();
 
@@ -495,11 +508,7 @@ class _FilterRailDelegate extends SliverPersistentHeaderDelegate {
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
             color: scheme.surface.withOpacity(isDark ? 0.82 : 0.90),
-            padding: EdgeInsets.only(
-              left: hPad,
-              right: hPad,
-              bottom: 8,
-            ),
+            padding: EdgeInsets.only(left: hPad, right: hPad, bottom: 8),
             child: ScrollConfiguration(
               behavior: _NoGlowBehavior(),
               child: SingleChildScrollView(
@@ -510,7 +519,8 @@ class _FilterRailDelegate extends SliverPersistentHeaderDelegate {
                     final selected = selectedFilter == entry.key;
                     return Padding(
                       padding: EdgeInsets.only(
-                          right: i < entries.length - 1 ? 8 : 0),
+                        right: i < entries.length - 1 ? 8 : 0,
+                      ),
                       child: _FilterPill(
                         label: entry.value,
                         selected: selected,
@@ -574,9 +584,13 @@ class _FilterPillState extends State<_FilterPill>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 150));
-    _scale = Tween<double>(begin: 1.0, end: 0.93)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.93,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -585,8 +599,9 @@ class _FilterPillState extends State<_FilterPill>
     super.dispose();
   }
 
-  Color get _activeColor =>
-      widget.accent == Colors.transparent ? widget.scheme.primary : widget.accent;
+  Color get _activeColor => widget.accent == Colors.transparent
+      ? widget.scheme.primary
+      : widget.accent;
 
   @override
   Widget build(BuildContext context) {
@@ -607,15 +622,15 @@ class _FilterPillState extends State<_FilterPill>
             color: widget.selected
                 ? _activeColor
                 : (widget.isDark
-                    ? Colors.white.withOpacity(0.07)
-                    : Colors.black.withOpacity(0.055)),
+                      ? Colors.white.withOpacity(0.07)
+                      : Colors.black.withOpacity(0.055)),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: widget.selected
                   ? _activeColor
                   : (widget.isDark
-                      ? Colors.white.withOpacity(0.10)
-                      : Colors.black.withOpacity(0.08)),
+                        ? Colors.white.withOpacity(0.10)
+                        : Colors.black.withOpacity(0.08)),
               width: 1.2,
             ),
             boxShadow: widget.selected
@@ -637,8 +652,8 @@ class _FilterPillState extends State<_FilterPill>
               color: widget.selected
                   ? Colors.white
                   : (widget.isDark
-                      ? Colors.white.withOpacity(0.70)
-                      : Colors.black.withOpacity(0.60)),
+                        ? Colors.white.withOpacity(0.70)
+                        : Colors.black.withOpacity(0.60)),
             ),
           ),
         ),
@@ -671,10 +686,14 @@ class _AnimatedGridItemState extends State<_AnimatedGridItem>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 480));
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    );
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
 
     final delay = Duration(milliseconds: (widget.index * 55).clamp(0, 280));
     Future.delayed(delay, () {
@@ -690,9 +709,9 @@ class _AnimatedGridItemState extends State<_AnimatedGridItem>
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(position: _slide, child: widget.child),
-      );
+    opacity: _fade,
+    child: SlideTransition(position: _slide, child: widget.child),
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -723,9 +742,13 @@ class _EventPosterCardState extends State<_EventPosterCard>
   void initState() {
     super.initState();
     _pressCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 130));
-    _pressScale = Tween<double>(begin: 1.0, end: 0.974)
-        .animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 130),
+    );
+    _pressScale = Tween<double>(
+      begin: 1.0,
+      end: 0.974,
+    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -888,10 +911,11 @@ class _BannerImage extends StatelessWidget {
   final bool grayscale;
   final ColorScheme scheme;
 
-  const _BannerImage(
-      {required this.url,
-      required this.grayscale,
-      required this.scheme});
+  const _BannerImage({
+    required this.url,
+    required this.grayscale,
+    required this.scheme,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1008,7 +1032,8 @@ class _EventGlassFooter extends StatelessWidget {
             color: Colors.white.withOpacity(isDark ? 0.09 : 0.13),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: Colors.white.withOpacity(isDark ? 0.12 : 0.17)),
+              color: Colors.white.withOpacity(isDark ? 0.12 : 0.17),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1128,8 +1153,9 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
   void initState() {
     super.initState();
     _shimmer = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1400))
-      ..repeat();
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
   }
 
   @override
@@ -1188,7 +1214,8 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                   decoration: BoxDecoration(
                     borderRadius: radius,
                     border: Border.all(
-                        color: scheme.onSurface.withOpacity(0.07)),
+                      color: scheme.onSurface.withOpacity(0.07),
+                    ),
                   ),
                 ),
               ),
@@ -1223,7 +1250,8 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                         color: Colors.white.withOpacity(0.09),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: Colors.white.withOpacity(0.11)),
+                          color: Colors.white.withOpacity(0.11),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1246,11 +1274,10 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                                   height: 26,
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.10),
-                                    borderRadius:
-                                        BorderRadius.circular(999),
+                                    borderRadius: BorderRadius.circular(999),
                                     border: Border.all(
-                                        color: Colors.white
-                                            .withOpacity(0.09)),
+                                      color: Colors.white.withOpacity(0.09),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1262,8 +1289,8 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
                                   color: Colors.white.withOpacity(0.10),
                                   borderRadius: BorderRadius.circular(999),
                                   border: Border.all(
-                                      color:
-                                          Colors.white.withOpacity(0.09)),
+                                    color: Colors.white.withOpacity(0.09),
+                                  ),
                                 ),
                               ),
                             ],
@@ -1410,7 +1437,10 @@ class _ErrorPanel extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: TextStyle(
-                color: scheme.error, fontWeight: FontWeight.w700, fontSize: 13),
+              color: scheme.error,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 14),
           TextButton(
@@ -1418,13 +1448,17 @@ class _ErrorPanel extends StatelessWidget {
             style: TextButton.styleFrom(
               backgroundColor: scheme.error.withOpacity(0.12),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999)),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            child: Text(retryText,
-                style: TextStyle(
-                    color: scheme.error, fontWeight: FontWeight.w700)),
+            child: Text(
+              retryText,
+              style: TextStyle(
+                color: scheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
       ),
@@ -1437,10 +1471,11 @@ class _EmptyState extends StatelessWidget {
   final ColorScheme scheme;
   final bool hasFilter;
 
-  const _EmptyState(
-      {required this.lang,
-      required this.scheme,
-      required this.hasFilter});
+  const _EmptyState({
+    required this.lang,
+    required this.scheme,
+    required this.hasFilter,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1496,8 +1531,11 @@ class _BackToTopButton extends StatelessWidget {
           ],
         ),
         child: const Center(
-          child: Icon(Icons.keyboard_arrow_up_rounded,
-              color: Colors.white, size: 22),
+          child: Icon(
+            Icons.keyboard_arrow_up_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
         ),
       ),
     );
@@ -1511,8 +1549,10 @@ class _BackToTopButton extends StatelessWidget {
 class _NoGlowBehavior extends ScrollBehavior {
   @override
   Widget buildOverscrollIndicator(
-          BuildContext context, Widget child, ScrollableDetails details) =>
-      child;
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) => child;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1543,8 +1583,11 @@ class _EventItem {
   });
 
   String location() {
-    final parts =
-        [venue, city, country].where((e) => e.trim().isNotEmpty).toList();
+    final parts = [
+      venue,
+      city,
+      country,
+    ].where((e) => e.trim().isNotEmpty).toList();
     return parts.join(" · ");
   }
 
@@ -1559,17 +1602,21 @@ class _EventItem {
     }
 
     final start = parseDt(
-        json["start_at"]?.toString() ?? json["start_date"]?.toString());
+      json["start_at"]?.toString() ?? json["start_date"]?.toString(),
+    );
     final end = parseDt(
-        json["end_at"]?.toString() ?? json["end_date"]?.toString());
+      json["end_at"]?.toString() ?? json["end_date"]?.toString(),
+    );
 
     return _EventItem(
       id: (json["id"] ?? "").toString(),
       title: (json["title"] ?? json["name"] ?? "Event").toString(),
-      bannerUrl: (json["banner_url"] ??
-          json["cover_url"] ??
-          json["image"] ??
-          json["first_image_url"]) as String?,
+      bannerUrl:
+          (json["banner_url"] ??
+                  json["cover_url"] ??
+                  json["image"] ??
+                  json["first_image_url"])
+              as String?,
       startAt: start,
       endAt: end,
       venue: (json["venue_name"] ?? "").toString(),
@@ -1600,8 +1647,7 @@ class _StatusInfo {
   });
 }
 
-_StatusInfo _resolveStatus(
-    _EventItem e, String lang, ColorScheme scheme) {
+_StatusInfo _resolveStatus(_EventItem e, String lang, ColorScheme scheme) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
 
@@ -1616,8 +1662,11 @@ _StatusInfo _resolveStatus(
   }
 
   if (e.startAt != null) {
-    final startDay =
-        DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+    final startDay = DateTime(
+      e.startAt!.year,
+      e.startAt!.month,
+      e.startAt!.day,
+    );
     final tomorrow = today.add(const Duration(days: 1));
 
     if (startDay == today) {
