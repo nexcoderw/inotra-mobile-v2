@@ -21,6 +21,8 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     with TickerProviderStateMixin {
   final _scrollCtrl = ScrollController();
   final _searchCtrl = TextEditingController();
+  final ValueNotifier<bool> _showBackToTop = ValueNotifier(false);
+  final ValueNotifier<bool> _showFloatingSearch = ValueNotifier(false);
 
   final List<_Package> _packages = [];
   bool _loading = false;
@@ -28,9 +30,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
   int _page = 1;
   String _query = "";
   String? _error;
-  bool _showBackToTop = false;
   Timer? _searchDebounce;
-  double _scrollOffset = 0;
 
   // Entrance animation
   late AnimationController _entranceCtrl;
@@ -66,6 +66,8 @@ class _TripPackagesPageState extends State<TripPackagesPage>
   void dispose() {
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
+    _showBackToTop.dispose();
+    _showFloatingSearch.dispose();
     _searchDebounce?.cancel();
     _entranceCtrl.dispose();
     super.dispose();
@@ -81,9 +83,16 @@ class _TripPackagesPageState extends State<TripPackagesPage>
         _hasMore) {
       _fetchPage(reset: false);
     }
-    final show = px > 300;
-    if (show != _showBackToTop) setState(() => _showBackToTop = show);
-    setState(() => _scrollOffset = px);
+
+    final showBackToTop = px > 300;
+    if (showBackToTop != _showBackToTop.value) {
+      _showBackToTop.value = showBackToTop;
+    }
+
+    final showFloatingSearch = px >= 72;
+    if (showFloatingSearch != _showFloatingSearch.value) {
+      _showFloatingSearch.value = showFloatingSearch;
+    }
   }
 
   Future<void> _fetchPage({
@@ -162,7 +171,6 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
     final hPad = isTablet ? 24.0 : 18.0;
-    final titleT = (_scrollOffset / 72.0).clamp(0.0, 1.0);
 
     return Scaffold(
       backgroundColor: scheme.surface,
@@ -312,32 +320,35 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                 ),
 
                 // ── Floating search bar (appears after scroll) ────────
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 260),
-                  curve: Curves.easeOutCubic,
-                  top: titleT >= 1.0 ? 0 : -72,
-                  left: 0,
-                  right: 0,
-                  child: IgnorePointer(
-                    ignoring: titleT < 1.0,
-                    child: ClipRect(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                        child: Container(
-                          color: scheme.surface.withOpacity(
-                            isDark ? 0.88 : 0.93,
-                          ),
-                          padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
-                          child: _PremiumSearchBar(
-                            controller: _searchCtrl,
-                            hintText: t(lang, "packages.search_hint"),
-                            onChanged: _onSearchChanged,
-                            onClear: () {
-                              _searchCtrl.clear();
-                              _onSearchChanged("");
-                            },
-                            isDark: isDark,
-                            scheme: scheme,
+                ValueListenableBuilder<bool>(
+                  valueListenable: _showFloatingSearch,
+                  builder: (context, show, child) => AnimatedPositioned(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    top: show ? 0 : -72,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      ignoring: !show,
+                      child: ClipRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                          child: Container(
+                            color: scheme.surface.withOpacity(
+                              isDark ? 0.88 : 0.93,
+                            ),
+                            padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
+                            child: _PremiumSearchBar(
+                              controller: _searchCtrl,
+                              hintText: t(lang, "packages.search_hint"),
+                              onChanged: _onSearchChanged,
+                              onClear: () {
+                                _searchCtrl.clear();
+                                _onSearchChanged("");
+                              },
+                              isDark: isDark,
+                              scheme: scheme,
+                            ),
                           ),
                         ),
                       ),
@@ -346,11 +357,8 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                 ),
 
                 // ── Back to top ───────────────────────────────────────
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  right: 18,
-                  bottom: _showBackToTop ? 24 : -72,
+                ValueListenableBuilder<bool>(
+                  valueListenable: _showBackToTop,
                   child: _BackToTopButton(
                     scheme: scheme,
                     onTap: () => _scrollCtrl.animateTo(
@@ -358,6 +366,13 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                       duration: const Duration(milliseconds: 420),
                       curve: Curves.easeOutCubic,
                     ),
+                  ),
+                  builder: (context, show, child) => AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    right: 18,
+                    bottom: show ? 24 : -72,
+                    child: child!,
                   ),
                 ),
               ],
