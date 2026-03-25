@@ -1,7 +1,11 @@
 import "dart:async";
 import "dart:ui";
+
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+
+import "../../../../core/observers/audit_route_observer.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 
 class ListingImagePreview extends StatefulWidget {
   final List<String> images;
@@ -17,35 +21,64 @@ class ListingImagePreview extends StatefulWidget {
   State<ListingImagePreview> createState() => _ListingImagePreviewState();
 }
 
-class _ListingImagePreviewState extends State<ListingImagePreview> {
+class _ListingImagePreviewState extends State<ListingImagePreview>
+    with WidgetsBindingObserver, RouteAware {
   late final PageController _controller;
   late int _index;
 
   Timer? _auto;
   Timer? _resumeAutoDebounce;
+  ModalRoute<dynamic>? _route;
+  bool _isAppInForeground = true;
+  bool _isRouteVisible = true;
 
   List<String> get _images =>
       widget.images.where((e) => e.trim().isNotEmpty).toList();
 
   bool get _hasMany => _images.length > 1;
+  bool get _canAutoPlay => _isAppInForeground && _isRouteVisible && _hasMany;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     final safeCount = _images.isNotEmpty ? _images.length : 1;
     _index = widget.initialIndex.clamp(0, safeCount - 1);
     _controller = PageController(initialPage: _index);
 
-    _startAuto();
+    _syncAutoState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route == null || identical(route, _route)) return;
+
+    AuditRouteObserver.instance.unsubscribe(this);
+    _route = route;
+    AuditRouteObserver.instance.subscribe(this, route as dynamic);
+    _isRouteVisible = route.isCurrent;
+    _syncAutoState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppInForeground = state == AppLifecycleState.resumed;
+    _syncAutoState();
   }
 
   void _startAuto() {
     _auto?.cancel();
-    if (!_hasMany) return;
+    _resumeAutoDebounce?.cancel();
+    if (!_canAutoPlay) {
+      _auto = null;
+      return;
+    }
 
     _auto = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
+      if (!mounted || !_canAutoPlay) return;
       final next = (_index + 1) % _images.length;
       _controller.animateToPage(
         next,
@@ -57,14 +90,50 @@ class _ListingImagePreviewState extends State<ListingImagePreview> {
 
   void _stopAuto({bool resumeLater = true}) {
     _auto?.cancel();
+    _auto = null;
     _resumeAutoDebounce?.cancel();
 
-    if (resumeLater && _hasMany) {
+    if (resumeLater && _canAutoPlay) {
       _resumeAutoDebounce = Timer(const Duration(seconds: 5), () {
         if (!mounted) return;
         _startAuto();
       });
     }
+  }
+
+  void _syncAutoState() {
+    if (_canAutoPlay) {
+      _startAuto();
+      return;
+    }
+    _auto?.cancel();
+    _auto = null;
+    _resumeAutoDebounce?.cancel();
+    _resumeAutoDebounce = null;
+  }
+
+  @override
+  void didPush() {
+    _isRouteVisible = true;
+    _syncAutoState();
+  }
+
+  @override
+  void didPopNext() {
+    _isRouteVisible = true;
+    _syncAutoState();
+  }
+
+  @override
+  void didPushNext() {
+    _isRouteVisible = false;
+    _syncAutoState();
+  }
+
+  @override
+  void didPop() {
+    _isRouteVisible = false;
+    _syncAutoState();
   }
 
   void _goTo(int page) {
@@ -82,6 +151,8 @@ class _ListingImagePreviewState extends State<ListingImagePreview> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    AuditRouteObserver.instance.unsubscribe(this);
     _auto?.cancel();
     _resumeAutoDebounce?.cancel();
     _controller.dispose();
@@ -127,14 +198,16 @@ class _ListingImagePreviewState extends State<ListingImagePreview> {
                           maxScale: 4,
                           panEnabled: true,
                           scaleEnabled: true,
-                          child: Image.network(
-                            url,
+                          child: AppCachedImage(
+                            imageUrl: url,
                             fit: BoxFit.contain,
-                            frameBuilder: (_, child, frame, __) =>
-                                frame == null ? _Placeholder(scheme: scheme) : child,
-                            errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
-                            loadingBuilder: (_, child, evt) =>
-                                evt == null ? child : _Placeholder(scheme: scheme),
+                            memCacheWidth: 1800,
+                            memCacheHeight: 1400,
+                            maxWidthDiskCache: 2400,
+                            maxHeightDiskCache: 1800,
+                            errorBuilder: (_) => _Placeholder(scheme: scheme),
+                            placeholderBuilder: (_) =>
+                                _Placeholder(scheme: scheme),
                           ),
                         ),
                       );
@@ -200,7 +273,9 @@ class _ListingImagePreviewState extends State<ListingImagePreview> {
                         const SizedBox(width: 44),
 
                       const SizedBox(width: 8),
-                      Expanded(child: _Dots(count: images.length, index: _index)),
+                      Expanded(
+                        child: _Dots(count: images.length, index: _index),
+                      ),
                       const SizedBox(width: 8),
 
                       if (_hasMany)
@@ -228,10 +303,7 @@ class _GlassSheet extends StatelessWidget {
   final Widget child;
   final double borderRadius;
 
-  const _GlassSheet({
-    required this.child,
-    required this.borderRadius,
-  });
+  const _GlassSheet({required this.child, required this.borderRadius});
 
   @override
   Widget build(BuildContext context) {
@@ -245,10 +317,7 @@ class _GlassSheet extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(borderRadius),
             color: scheme.surface.withOpacity(0.14),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.14),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.14), width: 1),
             boxShadow: [
               BoxShadow(
                 blurRadius: 22,
