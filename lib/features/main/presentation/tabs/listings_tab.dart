@@ -788,30 +788,8 @@ class _ListingCard extends StatefulWidget {
   State<_ListingCard> createState() => _ListingCardState();
 }
 
-class _ListingCardState extends State<_ListingCard>
-    with SingleTickerProviderStateMixin {
+class _ListingCardState extends State<_ListingCard> {
   bool _pressed = false;
-  late AnimationController _pressCtrl;
-  late Animation<double> _pressScale;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-    );
-    _pressScale = Tween<double>(
-      begin: 1.0,
-      end: 0.974,
-    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _pressCtrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -828,19 +806,18 @@ class _ListingCardState extends State<_ListingCard>
     );
     final category = widget.listing.categoryName.trim();
 
-    return ScaleTransition(
-      scale: _pressScale,
+    return AnimatedScale(
+      scale: _pressed ? 0.974 : 1.0,
+      duration: const Duration(milliseconds: 120),
+      curve: Curves.easeInOut,
       child: GestureDetector(
         onTapDown: (_) {
-          _pressCtrl.forward();
           setState(() => _pressed = true);
         },
         onTapUp: (_) {
-          _pressCtrl.reverse();
           setState(() => _pressed = false);
         },
         onTapCancel: () {
-          _pressCtrl.reverse();
           setState(() => _pressed = false);
         },
         onTap: widget.onOpen,
