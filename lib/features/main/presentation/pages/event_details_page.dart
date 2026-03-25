@@ -17,6 +17,7 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/services/audit_service.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../../../auth/presentation/widgets/quick_login_dialog.dart";
@@ -94,34 +95,34 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
         child: _loading
             ? const _EventDetailsSkeleton()
             : (_error != null || e == null)
-                ? _PremiumErrorState(
-                    message: _error ?? t(lang, "common.coming_soon"),
-                    onRetry: _fetch,
-                  )
-                : _EventDetailsBody(
-                    event: e,
-                    lang: lang,
-                    scheme: scheme,
-                    authBusy: _authBusy,
-                    onLogin: () async {
-                      setState(() => _authBusy = true);
-                      await QuickLoginDialog.show(context);
-                      setState(() => _authBusy = false);
-                      if (AuthSession.instance.value.isAuthenticated) {
-                        if (mounted) await _fetch();
-                      }
-                    },
-                    onBuy: () {
-                      toastification.show(
-                        context: context,
-                        type: ToastificationType.info,
-                        title: Text(t(lang, "common.coming_soon")),
-                        autoCloseDuration: const Duration(seconds: 3),
-                      );
-                    },
-                    onBack: () => Navigator.maybePop(context),
-                    onRefresh: _fetch,
-                  ),
+            ? _PremiumErrorState(
+                message: _error ?? t(lang, "common.coming_soon"),
+                onRetry: _fetch,
+              )
+            : _EventDetailsBody(
+                event: e,
+                lang: lang,
+                scheme: scheme,
+                authBusy: _authBusy,
+                onLogin: () async {
+                  setState(() => _authBusy = true);
+                  await QuickLoginDialog.show(context);
+                  setState(() => _authBusy = false);
+                  if (AuthSession.instance.value.isAuthenticated) {
+                    if (mounted) await _fetch();
+                  }
+                },
+                onBuy: () {
+                  toastification.show(
+                    context: context,
+                    type: ToastificationType.info,
+                    title: Text(t(lang, "common.coming_soon")),
+                    autoCloseDuration: const Duration(seconds: 3),
+                  );
+                },
+                onBack: () => Navigator.maybePop(context),
+                onRefresh: _fetch,
+              ),
       ),
     );
   }
@@ -172,90 +173,89 @@ class _EventDetailsBody extends StatelessWidget {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
               sliver: SliverList(
-                delegate: SliverChildListDelegate(
-                  [
+                delegate: SliverChildListDelegate([
+                  _GlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SectionTitle(t(lang, "events.details_title")),
+                        const SizedBox(height: 10),
+                        _MetaLine(
+                          icon: HugeIcons.strokeRoundedCalendar02,
+                          label: event.dateRange.isNotEmpty
+                              ? event.dateRange
+                              : t(lang, "listings.no_data"),
+                        ),
+                        const SizedBox(height: 8),
+                        _MetaLine(
+                          icon: HugeIcons.strokeRoundedMapsLocation02,
+                          label: event.venue.isNotEmpty
+                              ? event.venue
+                              : (event.city.isNotEmpty
+                                    ? event.city
+                                    : t(lang, "listings.no_data")),
+                        ),
+                        if (event.country.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          _MetaLine(
+                            icon: HugeIcons.strokeRoundedGlobalSearch,
+                            label: event.country,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  if (event.description.isNotEmpty) ...[
                     _GlassCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _SectionTitle(t(lang, "events.details_title")),
-                          const SizedBox(height: 10),
-                          _MetaLine(
-                            icon: HugeIcons.strokeRoundedCalendar02,
-                            label: event.dateRange.isNotEmpty
-                                ? event.dateRange
-                                : t(lang, "listings.no_data"),
-                          ),
+                          _SectionTitle(t(lang, "listings.overview_title")),
                           const SizedBox(height: 8),
-                          _MetaLine(
-                            icon: HugeIcons.strokeRoundedMapsLocation02,
-                            label: event.venue.isNotEmpty
-                                ? event.venue
-                                : (event.city.isNotEmpty
-                                    ? event.city
-                                    : t(lang, "listings.no_data")),
-                          ),
-                          if (event.country.isNotEmpty) ...[
-                            const SizedBox(height: 8),
-                            _MetaLine(
-                              icon: HugeIcons.strokeRoundedGlobalSearch,
-                              label: event.country,
+                          Text(
+                            event.description,
+                            style: TextStyle(
+                              height: 1.6,
+                              fontSize: 12,
+                              color: scheme.onSurface.withValues(alpha: 0.82),
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                          ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-                    if (event.description.isNotEmpty) ...[
-                      _GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _SectionTitle(t(lang, "listings.overview_title")),
-                            const SizedBox(height: 8),
-                            Text(
-                              event.description,
-                              style: TextStyle(
-                                height: 1.6,
-                                fontSize: 12,
-                                color: scheme.onSurface.withValues(alpha: 0.82),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-
-                    _EventMapSection(event: event, lang: lang, scheme: scheme),
-
-                    if (event.tickets.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _SectionTitle(t(lang, "events.tickets")),
-                            const SizedBox(height: 10),
-                            ...event.tickets.map(
-                              (tkt) => Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: _TicketTile(
-                                  label: tkt.label,
-                                  price: tkt.priceLabel(lang),
-                                  consumableDescription: tkt.consumableDescription,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+
+                  _EventMapSection(event: event, lang: lang, scheme: scheme),
+
+                  if (event.tickets.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _GlassCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SectionTitle(t(lang, "events.tickets")),
+                          const SizedBox(height: 10),
+                          ...event.tickets.map(
+                            (tkt) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _TicketTile(
+                                label: tkt.label,
+                                price: tkt.priceLabel(lang),
+                                consumableDescription:
+                                    tkt.consumableDescription,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ]),
               ),
             ),
           ],
@@ -316,21 +316,29 @@ class _HeroBanner extends StatelessWidget {
                         // Blurred background fills letterbox areas
                         ImageFiltered(
                           imageFilter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                          child: Image.network(
-                            url!.trim(),
+                          child: AppCachedImage(
+                            imageUrl: url!.trim(),
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                            memCacheWidth: 1800,
+                            memCacheHeight: 1400,
+                            maxWidthDiskCache: 2400,
+                            maxHeightDiskCache: 1800,
+                            errorBuilder: (_) => const SizedBox.shrink(),
+                            placeholderBuilder: (_) => const SizedBox.shrink(),
                           ),
                         ),
                         ColoredBox(color: Colors.black.withValues(alpha: 0.35)),
                         // Full image, no cropping
-                        Image.network(
-                          url!.trim(),
+                        AppCachedImage(
+                          imageUrl: url!.trim(),
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) =>
+                          memCacheWidth: 1800,
+                          memCacheHeight: 1400,
+                          maxWidthDiskCache: 2400,
+                          maxHeightDiskCache: 1800,
+                          errorBuilder: (_) => _BannerFallback(scheme: scheme),
+                          placeholderBuilder: (_) =>
                               _BannerFallback(scheme: scheme),
-                          loadingBuilder: (_, child, evt) =>
-                              evt == null ? child : _BannerFallback(scheme: scheme),
                         ),
                       ],
                     )
@@ -469,9 +477,9 @@ class _EventMapSection extends StatelessWidget {
     final lng = event.lng;
 
     if (lat == null || lng == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(lang, "listings.no_data"))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(lang, "listings.no_data"))));
       return;
     }
 
@@ -529,7 +537,10 @@ class _EventMapSection extends StatelessWidget {
                   ),
                 ),
               ),
-              Divider(height: 0, color: scheme.onSurface.withValues(alpha: 0.08)),
+              Divider(
+                height: 0,
+                color: scheme.onSurface.withValues(alpha: 0.08),
+              ),
 
               if (googleMapApp != null)
                 ListTile(
@@ -605,7 +616,9 @@ class _EventMapSection extends StatelessWidget {
               markerId: const MarkerId("event"),
               position: LatLng(lat, lng),
               infoWindow: InfoWindow(
-                title: event.title.isNotEmpty ? event.title : t(lang, "listings.address"),
+                title: event.title.isNotEmpty
+                    ? event.title
+                    : t(lang, "listings.address"),
                 snippet: event.address,
               ),
             ),
@@ -666,16 +679,21 @@ class _EventMapSection extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     HugeIcon(
-                                      icon: HugeIcons.strokeRoundedMapsLocation02,
+                                      icon:
+                                          HugeIcons.strokeRoundedMapsLocation02,
                                       size: 34,
-                                      color: scheme.onSurface.withValues(alpha: 0.55),
+                                      color: scheme.onSurface.withValues(
+                                        alpha: 0.55,
+                                      ),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       t(lang, "listings.map_placeholder"),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: scheme.onSurface.withValues(alpha: 0.6),
+                                        color: scheme.onSurface.withValues(
+                                          alpha: 0.6,
+                                        ),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -704,11 +722,16 @@ class _EventMapSection extends StatelessWidget {
                           left: 12,
                           bottom: 12,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: scheme.surface.withValues(alpha: 0.90),
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
+                              border: Border.all(
+                                color: scheme.onSurface.withValues(alpha: 0.10),
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   blurRadius: 12,
@@ -723,12 +746,17 @@ class _EventMapSection extends StatelessWidget {
                                 HugeIcon(
                                   icon: HugeIcons.strokeRoundedArrowUpRight01,
                                   size: 18,
-                                  color: scheme.onSurface.withValues(alpha: 0.85),
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.85,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   t(lang, "listings.open_in_maps"),
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ],
                             ),
@@ -870,7 +898,11 @@ class _MetaLine extends StatelessWidget {
 
     return Row(
       children: [
-        HugeIcon(icon: icon, size: 16, color: scheme.onSurface.withValues(alpha: 0.78)),
+        HugeIcon(
+          icon: icon,
+          size: 16,
+          color: scheme.onSurface.withValues(alpha: 0.78),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
@@ -906,7 +938,11 @@ class _InfoRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 18, color: scheme.onSurface.withValues(alpha: 0.78)),
+          HugeIcon(
+            icon: icon,
+            size: 18,
+            color: scheme.onSurface.withValues(alpha: 0.78),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -1119,10 +1155,7 @@ class _PrimaryCtaButtonState extends State<_PrimaryCtaButton> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOut,
         scale: _pressed ? 0.992 : 1,
-        child: SizedBox(
-          width: double.infinity,
-          child: pillBody(),
-        ),
+        child: SizedBox(width: double.infinity, child: pillBody()),
       ),
     );
   }
@@ -1171,14 +1204,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1250,7 +1283,10 @@ class _PremiumErrorState extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              TextButton(onPressed: onRetry, child: Text(t(currentLangSync(), "common.try_again"))),
+              TextButton(
+                onPressed: onRetry,
+                child: Text(t(currentLangSync(), "common.try_again")),
+              ),
             ],
           ),
         ),
@@ -1275,8 +1311,10 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
-      ..repeat(reverse: true);
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -1329,24 +1367,45 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(18),
                                 child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 14,
+                                    sigmaY: 14,
+                                  ),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.08),
-                                      border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.08,
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.10,
+                                        ),
+                                      ),
                                       borderRadius: BorderRadius.circular(18),
                                     ),
                                     child: Row(
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              _SkelLine(color: c, w: double.infinity, h: 14),
+                                              _SkelLine(
+                                                color: c,
+                                                w: double.infinity,
+                                                h: 14,
+                                              ),
                                               const SizedBox(height: 8),
-                                              _SkelLine(color: c, w: 180, h: 12),
+                                              _SkelLine(
+                                                color: c,
+                                                w: 180,
+                                                h: 12,
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -1367,9 +1426,10 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                   sliver: SliverList(
-                    delegate: SliverChildListDelegate(
-                      [
-                        _SkelCard(color: c, child: Column(
+                    delegate: SliverChildListDelegate([
+                      _SkelCard(
+                        color: c,
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SkelLine(color: c, w: 140, h: 12),
@@ -1380,9 +1440,12 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                             const SizedBox(height: 10),
                             _SkelLine(color: c, w: 160, h: 12),
                           ],
-                        )),
-                        const SizedBox(height: 12),
-                        _SkelCard(color: c, child: Column(
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _SkelCard(
+                        color: c,
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SkelLine(color: c, w: 120, h: 12),
@@ -1393,9 +1456,12 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                             const SizedBox(height: 8),
                             _SkelLine(color: c, w: 220, h: 12),
                           ],
-                        )),
-                        const SizedBox(height: 12),
-                        _SkelCard(color: c, child: Column(
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _SkelCard(
+                        color: c,
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SkelLine(color: c, w: 90, h: 12),
@@ -1404,9 +1470,12 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                             const SizedBox(height: 10),
                             _SkelLine(color: c, w: 170, h: 10),
                           ],
-                        )),
-                        const SizedBox(height: 12),
-                        _SkelCard(color: c, child: Column(
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _SkelCard(
+                        color: c,
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _SkelLine(color: c, w: 80, h: 12),
@@ -1415,9 +1484,9 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                             const SizedBox(height: 10),
                             _SkelBox(color: c, h: 52, r: 14),
                           ],
-                        )),
-                      ],
-                    ),
+                        ),
+                      ),
+                    ]),
                   ),
                 ),
               ],
@@ -1435,11 +1504,16 @@ class _EventDetailsSkeletonState extends State<_EventDetailsSkeleton>
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: scheme.surface.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
                         ),
                         child: _SkelBox(color: c, h: 48, r: 14),
                       ),
@@ -1580,8 +1654,11 @@ _StatusMeta _resolveStatus(_EventDetail e, String lang, ColorScheme scheme) {
   }
 
   if (e.startAt != null) {
-    final startDay =
-        DateTime(e.startAt!.year, e.startAt!.month, e.startAt!.day);
+    final startDay = DateTime(
+      e.startAt!.year,
+      e.startAt!.month,
+      e.startAt!.day,
+    );
     if (startDay == today) {
       return _StatusMeta(
         label: t(lang, "events.status_happening"),
@@ -1711,7 +1788,9 @@ class _EventDetail {
     final df = DateFormat("dd MMM yyyy, h:mm a");
     if (end == null) return df.format(start);
     final sameDay =
-        start.year == end.year && start.month == end.month && start.day == end.day;
+        start.year == end.year &&
+        start.month == end.month &&
+        start.day == end.day;
     return sameDay
         ? "${df.format(start)} - ${DateFormat("h:mm a").format(end)}"
         : "${df.format(start)} → ${df.format(end)}";
@@ -1733,7 +1812,8 @@ class _EventDetail {
       return double.tryParse(v.toString());
     }
 
-    final tickets = (json["tickets"] as List?)
+    final tickets =
+        (json["tickets"] as List?)
             ?.whereType<Map<String, dynamic>>()
             .map(_Ticket.fromJson)
             .toList() ??
