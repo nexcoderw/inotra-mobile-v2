@@ -11,6 +11,7 @@ import "package:toastification/toastification.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -991,18 +992,16 @@ class _CardImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (url != null && url!.isNotEmpty) {
-      return Image.network(
-        url!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _Placeholder(scheme: scheme),
-        loadingBuilder: (context, child, evt) {
-          if (evt == null) return child;
-          return _Placeholder(scheme: scheme);
-        },
-      );
-    }
-    return _Placeholder(scheme: scheme);
+    return AppCachedImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      memCacheWidth: 1200,
+      memCacheHeight: 900,
+      maxWidthDiskCache: 1600,
+      maxHeightDiskCache: 1200,
+      placeholderBuilder: (_) => _Placeholder(scheme: scheme),
+      errorBuilder: (_) => _Placeholder(scheme: scheme),
+    );
   }
 }
 
