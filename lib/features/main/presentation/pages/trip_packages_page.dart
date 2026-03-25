@@ -1,13 +1,10 @@
 import "dart:async";
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
-import "package:http/http.dart" as http;
 
-import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/repositories/public_discovery_repository.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -74,7 +71,8 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     super.dispose();
   }
 
-  Future<void> _onRefresh() async => _fetchPage(reset: true);
+  Future<void> _onRefresh() async =>
+      _fetchPage(reset: true, forceRefresh: true);
 
   void _onScroll() {
     final px = _scrollCtrl.position.pixels;
@@ -88,7 +86,10 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     setState(() => _scrollOffset = px);
   }
 
-  Future<void> _fetchPage({required bool reset}) async {
+  Future<void> _fetchPage({
+    required bool reset,
+    bool forceRefresh = false,
+  }) async {
     setState(() {
       _loading = true;
       if (reset) {
@@ -100,12 +101,14 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     });
 
     try {
-      final uri = Api.url(
-        "${PackageEndpoints.list}?page=$_page&page_size=10${_query.isNotEmpty ? "&search=$_query" : ""}",
+      final resp = await PublicDiscoveryRepository.instance.fetchPackagesPage(
+        page: _page,
+        pageSize: 10,
+        search: _query,
+        forceRefresh: forceRefresh,
       );
-      final resp = await http.get(uri);
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body);
+      if (resp.isSuccess) {
+        final decoded = resp.decodeJson();
         final results =
             (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
         final items = results
@@ -288,7 +291,8 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                           sliver: SliverToBoxAdapter(
                             child: _ErrorPanel(
                               message: _error!,
-                              onRetry: () => _fetchPage(reset: true),
+                              onRetry: () =>
+                                  _fetchPage(reset: true, forceRefresh: true),
                               retryText: t(lang, "common.try_again"),
                               scheme: scheme,
                             ),
