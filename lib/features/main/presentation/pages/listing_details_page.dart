@@ -11,6 +11,7 @@ import "package:shared_preferences/shared_preferences.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/listing_details_shared.dart";
@@ -177,40 +178,38 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
           child: _loading
               ? const _PageSkeleton()
               : _error != null
-                  ? _ErrorState(message: _error!, onRetry: _fetch)
-                  : _place == null
-                      ? _ErrorState(
-                          message: t(lang, "listings.no_data"),
-                          onRetry: _fetch,
-                        )
-                      : Stack(
-                          children: [
-                            // HERO
-                            Positioned.fill(
-                              child: _HeroPager(images: _place!.images),
-                            ),
+              ? _ErrorState(message: _error!, onRetry: _fetch)
+              : _place == null
+              ? _ErrorState(
+                  message: t(lang, "listings.no_data"),
+                  onRetry: _fetch,
+                )
+              : Stack(
+                  children: [
+                    // HERO
+                    Positioned.fill(child: _HeroPager(images: _place!.images)),
 
-                            // TOP BAR (BACK)
-                            Positioned(
-                              left: 16,
-                              top: MediaQuery.of(context).padding.top + 14,
-                              child: _RoundIconButton(
-                                icon: HugeIcons.strokeRoundedArrowLeft01,
-                                onTap: () => Navigator.maybePop(context),
-                              ),
-                            ),
+                    // TOP BAR (BACK)
+                    Positioned(
+                      left: 16,
+                      top: MediaQuery.of(context).padding.top + 14,
+                      child: _RoundIconButton(
+                        icon: HugeIcons.strokeRoundedArrowLeft01,
+                        onTap: () => Navigator.maybePop(context),
+                      ),
+                    ),
 
-                            // BOTTOM SHEET CONTENT
-                            Align(
-                              alignment: Alignment.bottomCenter,
-                              child: _DetailsSheet(
-                                place: _place!,
-                                saved: _saved,
-                                onToggleSaved: _toggleFavorite,
-                              ),
-                            ),
-                          ],
-                        ),
+                    // BOTTOM SHEET CONTENT
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _DetailsSheet(
+                        place: _place!,
+                        saved: _saved,
+                        onToggleSaved: _toggleFavorite,
+                      ),
+                    ),
+                  ],
+                ),
         ),
         bottomNavigationBar: (_place != null && !_loading && _error == null)
             ? SafeArea(
@@ -223,7 +222,9 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                             ? null
                             : () async {
                                 setState(() => _ctaBusy = true);
-                                await Future.delayed(const Duration(milliseconds: 900));
+                                await Future.delayed(
+                                  const Duration(milliseconds: 900),
+                                );
                                 if (!mounted) return;
 
                                 toastification.show(
@@ -287,8 +288,9 @@ class _DetailsSheet extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: scheme.surface.withOpacity(0.92),
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.08),
@@ -467,16 +469,15 @@ class _HeroPagerState extends State<_HeroPager> {
                   final url = imgs[i].trim();
                   if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
 
-                  return Image.network(
-                    url,
+                  return AppCachedImage(
+                    imageUrl: url,
                     fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high, // sharper
-                    isAntiAlias: true,
-                    errorBuilder: (_, __, ___) => _HeroPlaceholder(scheme: scheme),
-                    loadingBuilder: (_, child, evt) {
-                      if (evt == null) return child;
-                      return _HeroPlaceholder(scheme: scheme);
-                    },
+                    memCacheWidth: 1800,
+                    memCacheHeight: 1400,
+                    maxWidthDiskCache: 2400,
+                    maxHeightDiskCache: 1800,
+                    placeholderBuilder: (_) => _HeroPlaceholder(scheme: scheme),
+                    errorBuilder: (_) => _HeroPlaceholder(scheme: scheme),
                   );
                 },
               ),
@@ -496,10 +497,7 @@ class _HeroPagerState extends State<_HeroPager> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.18),
-                  ],
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.18)],
                 ),
               ),
             ),
@@ -562,10 +560,7 @@ class _HeroPagerState extends State<_HeroPager> {
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.85),
-      builder: (_) => ListingImagePreview(
-        images: imgs,
-        initialIndex: _index,
-      ),
+      builder: (_) => ListingImagePreview(images: imgs, initialIndex: _index),
     );
   }
 
@@ -628,10 +623,7 @@ class _PillTabBar extends StatelessWidget {
         ),
         labelColor: scheme.onSurface,
         unselectedLabelColor: scheme.onSurface.withOpacity(0.55),
-        labelStyle: const TextStyle(
-          fontWeight: FontWeight.w800,
-          fontSize: 13,
-        ),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
         unselectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 13,
@@ -676,10 +668,15 @@ class _ThumbRow extends StatelessWidget {
                 width: 54,
                 height: 54,
                 color: scheme.surfaceVariant.withOpacity(0.35),
-                child: Image.network(
-                  url,
+                child: AppCachedImage(
+                  imageUrl: url,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _thumbFallback(scheme),
+                  memCacheWidth: 240,
+                  memCacheHeight: 240,
+                  maxWidthDiskCache: 320,
+                  maxHeightDiskCache: 320,
+                  errorBuilder: (_) => _thumbFallback(scheme),
+                  placeholderBuilder: (_) => _thumbFallback(scheme),
                 ),
               ),
             ),
@@ -698,12 +695,19 @@ class _ThumbRow extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (shown.isNotEmpty)
-                    Image.network(
-                      shown.last,
+                    AppCachedImage(
+                      imageUrl: shown.last,
                       fit: BoxFit.cover,
-                      color: Colors.black.withOpacity(0.35),
-                      colorBlendMode: BlendMode.darken,
-                      errorBuilder: (_, __, ___) => _thumbFallback(scheme),
+                      memCacheWidth: 240,
+                      memCacheHeight: 240,
+                      maxWidthDiskCache: 320,
+                      maxHeightDiskCache: 320,
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withOpacity(0.35),
+                        BlendMode.darken,
+                      ),
+                      errorBuilder: (_) => _thumbFallback(scheme),
+                      placeholderBuilder: (_) => _thumbFallback(scheme),
                     )
                   else
                     _thumbFallback(scheme),
@@ -778,10 +782,7 @@ class _RoundIconButton extends StatelessWidget {
   final dynamic icon;
   final VoidCallback onTap;
 
-  const _RoundIconButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _RoundIconButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -850,10 +851,7 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withOpacity(0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
             ),
             boxShadow: [
               BoxShadow(
@@ -919,10 +917,7 @@ class _FavoriteCircleButton extends StatefulWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _FavoriteCircleButton({
-    required this.active,
-    required this.onTap,
-  });
+  const _FavoriteCircleButton({required this.active, required this.onTap});
 
   @override
   State<_FavoriteCircleButton> createState() => _FavoriteCircleButtonState();
@@ -1014,8 +1009,10 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
           children: List.generate(3, (i) {
             final phase = i * 0.18;
             final v = (t - phase);
-            final pulse =
-                (0.5 + 0.5 * (1 - math.cos(v * 2 * math.pi))).clamp(0.0, 1.0);
+            final pulse = (0.5 + 0.5 * (1 - math.cos(v * 2 * math.pi))).clamp(
+              0.0,
+              1.0,
+            );
             final size = 6 + 4 * pulse;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
