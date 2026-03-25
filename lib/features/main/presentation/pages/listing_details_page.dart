@@ -11,6 +11,7 @@ import "package:shared_preferences/shared_preferences.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
+import "../../../../core/observers/audit_route_observer.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -433,10 +434,17 @@ class _HeroPager extends StatefulWidget {
   State<_HeroPager> createState() => _HeroPagerState();
 }
 
-class _HeroPagerState extends State<_HeroPager> {
+class _HeroPagerState extends State<_HeroPager>
+    with WidgetsBindingObserver, RouteAware {
   int _index = 0;
   late final PageController _pageCtrl;
   Timer? _auto;
+  ModalRoute<dynamic>? _route;
+  bool _isAppInForeground = true;
+  bool _isRouteVisible = true;
+
+  bool get _canAutoRotate =>
+      _isAppInForeground && _isRouteVisible && widget.images.length > 1;
 
   @override
   Widget build(BuildContext context) {
@@ -537,14 +545,38 @@ class _HeroPagerState extends State<_HeroPager> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pageCtrl = PageController();
-    _startAuto();
+    _syncAutoRotation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route == null || identical(route, _route)) return;
+
+    AuditRouteObserver.instance.unsubscribe(this);
+    _route = route;
+    AuditRouteObserver.instance.subscribe(this, route as dynamic);
+    _isRouteVisible = route.isCurrent;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppInForeground = state == AppLifecycleState.resumed;
+    _syncAutoRotation();
   }
 
   void _startAuto() {
     _auto?.cancel();
+    if (!_canAutoRotate) {
+      _auto = null;
+      return;
+    }
     _auto = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
+      if (!mounted || !_canAutoRotate) return;
       final total = widget.images.isEmpty ? 1 : widget.images.length;
       if (total <= 1) return;
       final next = (_index + 1) % total;
@@ -554,6 +586,39 @@ class _HeroPagerState extends State<_HeroPager> {
         curve: Curves.easeOutCubic,
       );
     });
+  }
+
+  void _syncAutoRotation() {
+    if (_canAutoRotate) {
+      _startAuto();
+      return;
+    }
+    _auto?.cancel();
+    _auto = null;
+  }
+
+  @override
+  void didPush() {
+    _isRouteVisible = true;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didPopNext() {
+    _isRouteVisible = true;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didPushNext() {
+    _isRouteVisible = false;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didPop() {
+    _isRouteVisible = false;
+    _syncAutoRotation();
   }
 
   void _openPreview(BuildContext context, List<String> imgs) {
@@ -566,6 +631,8 @@ class _HeroPagerState extends State<_HeroPager> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    AuditRouteObserver.instance.unsubscribe(this);
     _auto?.cancel();
     _pageCtrl.dispose();
     super.dispose();
