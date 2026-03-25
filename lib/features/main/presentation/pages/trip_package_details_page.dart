@@ -1,13 +1,10 @@
-import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
-import "package:http/http.dart" as http;
 
-import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/repositories/public_discovery_repository.dart";
 import "../../../../core/services/audit_service.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
@@ -37,7 +34,7 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch());
   }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({bool forceRefresh = false}) async {
     final id =
         widget.packageId ??
         ModalRoute.of(context)?.settings.arguments as String?;
@@ -56,10 +53,12 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
     });
 
     try {
-      final uri = Api.url(PackageEndpoints.detail(id));
-      final resp = await http.get(uri, headers: {"Accept": "application/json"});
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body) as Map<String, dynamic>;
+      final resp = await PublicDiscoveryRepository.instance.fetchPackageDetail(
+        id,
+        forceRefresh: forceRefresh,
+      );
+      if (resp.isSuccess) {
+        final decoded = resp.decodeJson() as Map<String, dynamic>;
         _package = PackageDetailData.fromJson(decoded);
         AuditService.instance.enrichEntityContext(
           routeName: AppRoutes.tripPackageDetails,
@@ -92,14 +91,14 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
             : (_error != null || pkg == null)
             ? _ErrorState(
                 message: _error ?? t(lang, "common.coming_soon"),
-                onRetry: _fetch,
+                onRetry: () => _fetch(forceRefresh: true),
               )
             : _PackageBody(
                 pkg: pkg,
                 lang: lang,
                 scheme: scheme,
                 onBack: () => Navigator.maybePop(context),
-                onRefresh: _fetch,
+                onRefresh: () => _fetch(forceRefresh: true),
               ),
       ),
     );
