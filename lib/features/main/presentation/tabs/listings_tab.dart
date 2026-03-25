@@ -4,13 +4,11 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
 import "package:toastification/toastification.dart";
 
-import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/constants/api/place_endpoints.dart";
+import "../../../../core/repositories/public_discovery_repository.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -118,7 +116,10 @@ class _ListingsTabState extends State<ListingsTab>
     if (show != _showBackToTop.value) _showBackToTop.value = show;
   }
 
-  Future<void> _fetchPage({required bool reset}) async {
+  Future<void> _fetchPage({
+    required bool reset,
+    bool forceRefresh = false,
+  }) async {
     setState(() {
       _loading = true;
       if (reset) {
@@ -130,16 +131,14 @@ class _ListingsTabState extends State<ListingsTab>
     });
 
     try {
-      final uri = Api.url(
-        "${PlaceEndpoints.list}"
-        "?page=$_page&page_size=$_pageSize"
-        "${_query.isNotEmpty ? "&search=$_query" : ""}",
+      final resp = await PublicDiscoveryRepository.instance.fetchListingsPage(
+        page: _page,
+        pageSize: _pageSize,
+        search: _query,
+        forceRefresh: forceRefresh,
       );
-
-      final resp = await http.get(uri);
-
-      if (resp.statusCode >= 200 && resp.statusCode < 300) {
-        final decoded = jsonDecode(resp.body);
+      if (resp.isSuccess) {
+        final decoded = resp.decodeJson();
 
         List<dynamic> results = const [];
         int? count;
@@ -195,7 +194,8 @@ class _ListingsTabState extends State<ListingsTab>
     }
   }
 
-  Future<void> _onRefresh() async => _fetchPage(reset: true);
+  Future<void> _onRefresh() async =>
+      _fetchPage(reset: true, forceRefresh: true);
 
   void _onSearchChanged(String v) {
     setState(() {});
@@ -381,7 +381,8 @@ class _ListingsTabState extends State<ListingsTab>
                         sliver: SliverToBoxAdapter(
                           child: _ErrorPanel(
                             message: _error!,
-                            onRetry: () => _fetchPage(reset: true),
+                            onRetry: () =>
+                                _fetchPage(reset: true, forceRefresh: true),
                             retryText: t(lang, "common.try_again"),
                           ),
                         ),
