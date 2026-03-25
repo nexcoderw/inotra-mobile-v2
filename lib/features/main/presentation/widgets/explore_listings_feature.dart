@@ -1,6 +1,4 @@
 import "dart:convert";
-import "dart:ui";
-
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
@@ -457,9 +455,6 @@ class _FavoriteButtonState extends State<_FavoriteButton> {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
 
-    final bg = widget.active
-        ? Colors.red
-        : Colors.white.withOpacity(isDark ? 0.10 : 0.16);
     final border = widget.active
         ? Colors.red.withOpacity(0.9)
         : Colors.white.withOpacity(isDark ? 0.14 : 0.18);
@@ -476,24 +471,42 @@ class _FavoriteButtonState extends State<_FavoriteButton> {
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOutCubic,
         scale: _pressed ? 0.96 : 1,
-        child: ClipOval(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: bg,
-                border: Border.all(color: border),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: widget.active
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.red.shade400, Colors.red.shade600],
+                  )
+                : LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(isDark ? 0.18 : 0.24),
+                      Colors.white.withOpacity(isDark ? 0.08 : 0.14),
+                    ],
+                  ),
+            border: Border.all(color: border),
+            boxShadow: [
+              BoxShadow(
+                color: widget.active
+                    ? Colors.red.withOpacity(0.28)
+                    : Colors.black.withOpacity(isDark ? 0.16 : 0.10),
+                blurRadius: widget.active ? 12 : 10,
+                offset: const Offset(0, 4),
               ),
-              child: Center(
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedBookmark01,
-                  size: 12,
-                  strokeWidth: 2,
-                  color: iconColor,
-                ),
-              ),
+            ],
+          ),
+          child: Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedBookmark01,
+              size: 12,
+              strokeWidth: 2,
+              color: iconColor,
             ),
           ),
         ),
@@ -511,22 +524,30 @@ class _GlassFooter extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(isDark ? 0.10 : 0.14),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.14 : 0.18),
-            ),
-          ),
-          child: child,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(isDark ? 0.14 : 0.18),
+            Colors.white.withOpacity(isDark ? 0.07 : 0.11),
+          ],
         ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Colors.white.withOpacity(isDark ? 0.14 : 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 }
@@ -692,21 +713,23 @@ class _ListingSkeleton extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: const SizedBox.expand(),
-              ),
-            ),
             Positioned(
               left: 12,
               right: 12,
               bottom: 12,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: Container(
-                  height: 92,
-                  color: Colors.white.withOpacity(0.10),
+              child: Container(
+                height: 92,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.12),
+                      Colors.white.withOpacity(0.07),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.white.withOpacity(0.10)),
                 ),
               ),
             ),
@@ -727,29 +750,38 @@ class _GlassButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              decoration: BoxDecoration(
-                color: scheme.surface.withOpacity(0.50),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                scheme.surface.withOpacity(0.78),
+                scheme.surface.withOpacity(0.58),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12.5,
-                ),
-              ),
+            ],
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: scheme.primary,
+              fontWeight: FontWeight.w900,
+              fontSize: 12.5,
             ),
           ),
         ),
