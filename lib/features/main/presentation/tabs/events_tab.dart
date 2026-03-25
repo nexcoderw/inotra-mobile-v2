@@ -733,29 +733,8 @@ class _EventPosterCard extends StatefulWidget {
   State<_EventPosterCard> createState() => _EventPosterCardState();
 }
 
-class _EventPosterCardState extends State<_EventPosterCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pressCtrl;
-  late Animation<double> _pressScale;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 130),
-    );
-    _pressScale = Tween<double>(
-      begin: 1.0,
-      end: 0.974,
-    ).animate(CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _pressCtrl.dispose();
-    super.dispose();
-  }
+class _EventPosterCardState extends State<_EventPosterCard> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -770,12 +749,14 @@ class _EventPosterCardState extends State<_EventPosterCard>
         ? widget.event.location()
         : "—";
 
-    return ScaleTransition(
-      scale: _pressScale,
+    return AnimatedScale(
+      scale: _pressed ? 0.974 : 1.0,
+      duration: const Duration(milliseconds: 130),
+      curve: Curves.easeInOut,
       child: GestureDetector(
-        onTapDown: (_) => _pressCtrl.forward(),
-        onTapUp: (_) => _pressCtrl.reverse(),
-        onTapCancel: () => _pressCtrl.reverse(),
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
         onTap: widget.onTap,
         child: ClipRRect(
           borderRadius: radius,
