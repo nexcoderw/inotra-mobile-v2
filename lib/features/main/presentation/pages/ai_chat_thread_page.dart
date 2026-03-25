@@ -24,12 +24,22 @@ class AiChatThreadPage extends StatefulWidget {
   final String threadId;
   final String title;
   final String? avatarUrl;
+  final bool embedded;
+  final bool showHeader;
+  final bool showBackButton;
+  final String? statusLabel;
+  final String? introMessage;
 
   const AiChatThreadPage({
     super.key,
     required this.threadId,
     required this.title,
     this.avatarUrl,
+    this.embedded = false,
+    this.showHeader = true,
+    this.showBackButton = true,
+    this.statusLabel,
+    this.introMessage,
   });
 
   @override
@@ -115,12 +125,16 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     if (token == null || token.isEmpty) return;
 
     try {
-      final uri = Api.url(ChatEndpoints.messages(widget.threadId))
-          .replace(queryParameters: {"page": "1", "page_size": "20"});
-      final resp = await http.get(uri, headers: {
-        "Accept": "application/json",
-        "Authorization": "Bearer $token",
-      });
+      final uri = Api.url(
+        ChatEndpoints.messages(widget.threadId),
+      ).replace(queryParameters: {"page": "1", "page_size": "20"});
+      final resp = await http.get(
+        uri,
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
 
       if (!mounted || resp.statusCode != 200) return;
 
@@ -145,7 +159,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
       if (incoming.isEmpty) return;
 
       // Only auto-scroll if the user is already near the bottom (≤120 px away).
-      final atBottom = !_scrollCtrl.hasClients ||
+      final atBottom =
+          !_scrollCtrl.hasClients ||
           _scrollCtrl.position.pixels >=
               _scrollCtrl.position.maxScrollExtent - 120;
 
@@ -169,19 +184,33 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     _stopPolling();
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) {
-      if (mounted) setState(() { _loading = false; _error = "auth"; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = "auth";
+        });
       return;
     }
 
-    if (mounted) setState(() { _loading = true; _error = null; _page = 1; _hasMore = true; });
+    if (mounted)
+      setState(() {
+        _loading = true;
+        _error = null;
+        _page = 1;
+        _hasMore = true;
+      });
 
     try {
-      final uri = Api.url(ChatEndpoints.messages(widget.threadId))
-          .replace(queryParameters: {"page": "1", "page_size": "$_pageSize"});
-      final resp = await http.get(uri, headers: {
-        "Accept": "application/json",
-        "Authorization": "Bearer $token",
-      });
+      final uri = Api.url(
+        ChatEndpoints.messages(widget.threadId),
+      ).replace(queryParameters: {"page": "1", "page_size": "$_pageSize"});
+      final resp = await http.get(
+        uri,
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
 
       if (!mounted) return;
 
@@ -220,12 +249,23 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         _startPolling();
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
-        if (mounted) setState(() { _loading = false; _error = "401"; });
+        if (mounted)
+          setState(() {
+            _loading = false;
+            _error = "401";
+          });
       } else {
-        setState(() { _loading = false; _error = "${resp.statusCode}"; });
+        setState(() {
+          _loading = false;
+          _error = "${resp.statusCode}";
+        });
       }
     } catch (e) {
-      if (mounted) setState(() { _loading = false; _error = e.toString(); });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = e.toString();
+        });
     }
   }
 
@@ -240,15 +280,16 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
 
     final nextPage = _page + 1;
     try {
-      final uri = Api.url(ChatEndpoints.messages(widget.threadId))
-          .replace(queryParameters: {
-        "page": "$nextPage",
-        "page_size": "$_pageSize",
-      });
-      final resp = await http.get(uri, headers: {
-        "Accept": "application/json",
-        "Authorization": "Bearer $token",
-      });
+      final uri = Api.url(ChatEndpoints.messages(widget.threadId)).replace(
+        queryParameters: {"page": "$nextPage", "page_size": "$_pageSize"},
+      );
+      final resp = await http.get(
+        uri,
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
 
       if (!mounted) return;
 
@@ -272,7 +313,10 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
             .toList();
 
         if (older.isEmpty) {
-          setState(() { _loadingMore = false; _hasMore = false; });
+          setState(() {
+            _loadingMore = false;
+            _hasMore = false;
+          });
           return;
         }
 
@@ -384,7 +428,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           });
         } else {
           setState(() {
-            if (idx != -1) _messages[idx] = _messages[idx].copyWith(pending: false);
+            if (idx != -1)
+              _messages[idx] = _messages[idx].copyWith(pending: false);
             _sending = false;
           });
         }
@@ -396,7 +441,10 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         final idx = _messages.indexWhere((m) => m.id == optimisticId);
         setState(() {
           if (idx != -1) {
-            _messages[idx] = _messages[idx].copyWith(pending: false, failed: true);
+            _messages[idx] = _messages[idx].copyWith(
+              pending: false,
+              failed: true,
+            );
           }
           _sending = false;
         });
@@ -407,7 +455,10 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         final idx = _messages.indexWhere((m) => m.id == optimisticId);
         setState(() {
           if (idx != -1) {
-            _messages[idx] = _messages[idx].copyWith(pending: false, failed: true);
+            _messages[idx] = _messages[idx].copyWith(
+              pending: false,
+              failed: true,
+            );
           }
           _sending = false;
         });
@@ -427,10 +478,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ConvSharePickerSheet(
-        lang: lang,
-        accessToken: token,
-      ),
+      builder: (_) => ConvSharePickerSheet(lang: lang, accessToken: token),
     );
 
     if (result != null && mounted) {
@@ -464,6 +512,99 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     );
   }
 
+  List<ConvMessage> _buildDisplayMessages() {
+    final intro = (widget.introMessage ?? "").trim();
+    if (intro.isEmpty) {
+      return _messages;
+    }
+
+    final alreadyPresent = _messages.any(
+      (message) => !message.isMine && message.text.trim() == intro,
+    );
+    if (alreadyPresent) {
+      return _messages;
+    }
+
+    final introCreatedAt = _messages.isNotEmpty
+        ? _messages.first.createdAt.subtract(const Duration(minutes: 1))
+        : DateTime.now();
+
+    return [
+      ConvMessage(
+        id: "__intro__${widget.threadId}",
+        text: intro,
+        createdAt: introCreatedAt,
+        isMine: false,
+        authorName: widget.title,
+      ),
+      ..._messages,
+    ];
+  }
+
+  Widget _buildConversationBody({
+    required String lang,
+    required ColorScheme scheme,
+  }) {
+    final displayMessages = _buildDisplayMessages();
+
+    return DecoratedBox(
+      decoration: BoxDecoration(color: scheme.surface),
+      child: Column(
+        children: [
+          if (widget.showHeader)
+            ConvHeader(
+              name: widget.title,
+              avatarUrl: widget.avatarUrl,
+              statusLabel: widget.statusLabel,
+              showBackButton: widget.showBackButton,
+              onBack: () => Navigator.maybePop(context),
+            ),
+          Expanded(
+            child: _loading
+                ? const ConvSkeleton()
+                : _error != null
+                ? ConvErrorState(message: _error!, onRetry: _fetch)
+                : displayMessages.isEmpty
+                ? ConvEmptyState(lang: lang)
+                : Column(
+                    children: [
+                      if (_loadingMore)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: scheme.primary,
+                            ),
+                          ),
+                        ),
+                      Expanded(
+                        child: ConvMessageList(
+                          messages: displayMessages,
+                          scrollCtrl: _scrollCtrl,
+                          lang: lang,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+          ConvComposer(
+            controller: _inputCtrl,
+            focusNode: _focusNode,
+            onSend: _send,
+            onAttach: _openSharePicker,
+            onClearAttach: () => setState(() => _pendingShared = null),
+            pendingShared: _pendingShared,
+            busy: _sending,
+            lang: lang,
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -472,66 +613,18 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
 
+    final conversationBody = _buildConversationBody(lang: lang, scheme: scheme);
+
+    if (widget.embedded) {
+      return conversationBody;
+    }
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         backgroundColor: scheme.surface,
         resizeToAvoidBottomInset: true,
-        body: SafeArea(
-          child: Column(
-            children: [
-              ConvHeader(
-                name: widget.title,
-                avatarUrl: widget.avatarUrl,
-                onBack: () => Navigator.maybePop(context),
-              ),
-              Expanded(
-                child: _loading
-                    ? const ConvSkeleton()
-                    : _error != null
-                        ? ConvErrorState(
-                            message: _error!,
-                            onRetry: _fetch,
-                          )
-                        : _messages.isEmpty
-                            ? ConvEmptyState(lang: lang)
-                            : Column(
-                                children: [
-                                  if (_loadingMore)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      child: SizedBox(
-                                        height: 18,
-                                        width: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: scheme.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  Expanded(
-                                    child: ConvMessageList(
-                                      messages: _messages,
-                                      scrollCtrl: _scrollCtrl,
-                                      lang: lang,
-                                    ),
-                                  ),
-                                ],
-                              ),
-              ),
-              ConvComposer(
-                controller: _inputCtrl,
-                focusNode: _focusNode,
-                onSend: _send,
-                onAttach: _openSharePicker,
-                onClearAttach: () => setState(() => _pendingShared = null),
-                pendingShared: _pendingShared,
-                busy: _sending,
-                lang: lang,
-              ),
-            ],
-          ),
-        ),
+        body: SafeArea(child: conversationBody),
       ),
     );
   }
