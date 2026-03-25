@@ -7,6 +7,7 @@ import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/chat_endpoints.dart";
+import "../../../../core/observers/audit_route_observer.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/chat/conversation/composer.dart";
@@ -47,7 +48,7 @@ class AiChatThreadPage extends StatefulWidget {
 }
 
 class _AiChatThreadPageState extends State<AiChatThreadPage>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteAware {
   final List<ConvMessage> _messages = [];
   final _knownIds = <String>{};
   final _inputCtrl = TextEditingController();
@@ -64,6 +65,12 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   String? _error;
   SharedItem? _pendingShared;
   Timer? _pollTimer;
+  ModalRoute<dynamic>? _route;
+  bool _isAppInForeground = true;
+  bool _isRouteVisible = true;
+
+  bool get _canPoll =>
+      _isAppInForeground && _isRouteVisible && !_loading && mounted;
 
   @override
   void initState() {
@@ -74,8 +81,22 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route == null || identical(route, _route)) return;
+
+    AuditRouteObserver.instance.unsubscribe(this);
+    _route = route;
+    AuditRouteObserver.instance.subscribe(this, route as dynamic);
+    _isRouteVisible = route.isCurrent;
+    _syncPollingState();
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    AuditRouteObserver.instance.unsubscribe(this);
     _stopPolling();
     _scrollCtrl.removeListener(_onScroll);
     _inputCtrl.dispose();
@@ -87,12 +108,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   // Pause polling when app goes to background; resume when it comes back.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _startPolling();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      _stopPolling();
-    }
+    _isAppInForeground = state == AppLifecycleState.resumed;
+    _syncPollingState(immediate: _isAppInForeground);
   }
 
   void _onScroll() {
@@ -108,6 +125,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   // ── Polling ───────────────────────────────────────────────────────────────
 
   void _startPolling() {
+    final token = AuthSession.instance.value.accessToken;
+    if (!_canPoll || token == null || token.isEmpty) return;
     if (_pollTimer?.isActive ?? false) return;
     _pollTimer = Timer.periodic(_pollInterval, (_) => _pollNewMessages());
   }
@@ -115,6 +134,41 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  void _syncPollingState({bool immediate = false}) {
+    if (!_canPoll) {
+      _stopPolling();
+      return;
+    }
+    if (immediate) {
+      _pollNewMessages();
+    }
+    _startPolling();
+  }
+
+  @override
+  void didPush() {
+    _isRouteVisible = true;
+    _syncPollingState(immediate: true);
+  }
+
+  @override
+  void didPopNext() {
+    _isRouteVisible = true;
+    _syncPollingState(immediate: true);
+  }
+
+  @override
+  void didPushNext() {
+    _isRouteVisible = false;
+    _syncPollingState();
+  }
+
+  @override
+  void didPop() {
+    _isRouteVisible = false;
+    _syncPollingState();
   }
 
   /// Silently fetches the latest page of messages and appends any that are new.
@@ -246,7 +300,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         });
         _scrollToBottom();
         _markRead(token);
-        _startPolling();
+        _syncPollingState();
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
         if (mounted)
