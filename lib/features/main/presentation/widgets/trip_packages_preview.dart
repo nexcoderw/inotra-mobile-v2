@@ -5,8 +5,9 @@ import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
-import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/config/app_routes.dart";
+import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -59,7 +60,8 @@ class _TripPackagesPreviewState extends State<TripPackagesPreview>
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body);
-        final results = (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
+        final results =
+            (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
         _items = results
             .whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e))
@@ -105,7 +107,8 @@ class _TripPackagesPreviewState extends State<TripPackagesPreview>
               ),
               _GlassButton(
                 label: t(lang, "packages.see_all"),
-                onTap: () => Navigator.pushNamed(context, AppRoutes.tripPackages),
+                onTap: () =>
+                    Navigator.pushNamed(context, AppRoutes.tripPackages),
               ),
             ],
           ),
@@ -116,27 +119,25 @@ class _TripPackagesPreviewState extends State<TripPackagesPreview>
           child: _loading
               ? _LoadingCarousel(height: height, isTablet: isTablet)
               : _error != null
-                  ? _ErrorState(
-                      message: _error!,
-                      onRetry: _load,
-                      tryAgainText: t(lang, "common.try_again"),
-                    )
-                  : _items.isEmpty
-                      ? _EmptyState(
-                          label: t(lang, "packages.title"),
-                        )
-                      : _Carousel(
-                          pageCtrl: _pageCtrl,
-                          page: _page,
-                          items: _items,
-                          isTablet: isTablet,
-                          onOpen: (id) => Navigator.pushNamed(
-                            context,
-                            AppRoutes.tripPackageDetails,
-                            arguments: id,
-                          ),
-                          lang: lang,
-                        ),
+              ? _ErrorState(
+                  message: _error!,
+                  onRetry: _load,
+                  tryAgainText: t(lang, "common.try_again"),
+                )
+              : _items.isEmpty
+              ? _EmptyState(label: t(lang, "packages.title"))
+              : _Carousel(
+                  pageCtrl: _pageCtrl,
+                  page: _page,
+                  items: _items,
+                  isTablet: isTablet,
+                  onOpen: (id) => Navigator.pushNamed(
+                    context,
+                    AppRoutes.tripPackageDetails,
+                    arguments: id,
+                  ),
+                  lang: lang,
+                ),
         ),
         if (!_loading && _error == null && _items.isNotEmpty) ...[
           const SizedBox(height: 10),
@@ -241,8 +242,12 @@ class _PackageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(isTablet ? 26 : 22);
 
-    final title = (pkg.title?.trim().isNotEmpty ?? false) ? pkg.title!.trim() : titleFallback;
-    final subtitle = (pkg.subtitle?.trim().isNotEmpty ?? false) ? pkg.subtitle!.trim() : "";
+    final title = (pkg.title?.trim().isNotEmpty ?? false)
+        ? pkg.title!.trim()
+        : titleFallback;
+    final subtitle = (pkg.subtitle?.trim().isNotEmpty ?? false)
+        ? pkg.subtitle!.trim()
+        : "";
 
     return GestureDetector(
       onTap: onTap,
@@ -257,10 +262,7 @@ class _PackageCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      scheme.surface,
-                      scheme.surface.withOpacity(0.8),
-                    ],
+                    colors: [scheme.surface, scheme.surface.withOpacity(0.8)],
                   ),
                 ),
                 child: const SizedBox.expand(),
@@ -271,18 +273,19 @@ class _PackageCard extends StatelessWidget {
                 Positioned.fill(
                   child: Transform.translate(
                     offset: Offset(parallax * 18, 0),
-                    child: Image.network(
-                      pkg.imageUrl!,
+                    child: AppCachedImage(
+                      imageUrl: pkg.imageUrl!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      memCacheWidth: 1200,
+                      memCacheHeight: 900,
+                      maxWidthDiskCache: 1600,
+                      maxHeightDiskCache: 1200,
+                      errorBuilder: (_) => Container(
                         color: scheme.surfaceVariant.withOpacity(0.7),
                       ),
-                      loadingBuilder: (context, child, evt) {
-                        if (evt == null) return child;
-                        return Container(
-                          color: scheme.surfaceVariant.withOpacity(0.7),
-                        );
-                      },
+                      placeholderBuilder: (_) => Container(
+                        color: scheme.surfaceVariant.withOpacity(0.7),
+                      ),
                     ),
                   ),
                 )
@@ -384,10 +387,7 @@ class _GlassFooter extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.12),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.18),
-              width: 1,
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.18), width: 1),
           ),
           child: child,
         ),
@@ -408,10 +408,7 @@ class _MetaChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.22),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.14),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white.withOpacity(0.14), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -475,7 +472,9 @@ class _Dots extends StatelessWidget {
             width: active ? 22 : 8,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(999),
-              color: active ? scheme.primary : scheme.onSurface.withOpacity(0.18),
+              color: active
+                  ? scheme.primary
+                  : scheme.onSurface.withOpacity(0.18),
             ),
           );
         }),
@@ -582,16 +581,15 @@ class _EmptyState extends StatelessWidget {
             children: [
               const Icon(Icons.inbox_rounded, size: 30),
               const SizedBox(height: 8),
-              Text(
-                label,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
               const SizedBox(height: 2),
               Text(
                 "No packages yet",
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.65),
                 ),
               ),
             ],
@@ -718,7 +716,9 @@ class _Package {
       id: json["id"]?.toString() ?? "",
       title: json["title"] as String? ?? json["name"] as String?,
       subtitle: json["location"] as String? ?? json["description"] as String?,
-      imageUrl: (json["cover_url"] ?? json["image"] ?? json["cover_image"]) as String?,
+      imageUrl:
+          (json["cover_url"] ?? json["image"] ?? json["cover_image"])
+              as String?,
       durationDays: (json["duration_days"] as num?)?.toInt() ?? 0,
     );
   }
