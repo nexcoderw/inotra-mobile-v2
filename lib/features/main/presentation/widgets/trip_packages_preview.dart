@@ -1,9 +1,12 @@
+import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:http/http.dart" as http;
 
+import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
-import "../../../../core/repositories/public_discovery_repository.dart";
+import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -46,17 +49,20 @@ class _TripPackagesPreviewState extends State<TripPackagesPreview>
   }
 
   Future<void> _load({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      // Kept for compatibility with existing retry handlers.
+    }
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final resp = await PublicDiscoveryRepository.instance
-          .fetchTripPackagesPreview(limit: 3, forceRefresh: forceRefresh);
+      final uri = Api.url("${PackageEndpoints.list}?limit=3");
+      final resp = await http.get(uri);
 
-      if (resp.isSuccess) {
-        final decoded = resp.decodeJson();
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = jsonDecode(resp.body);
         final results =
             (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
         _items = results
