@@ -42,6 +42,8 @@ class ConvMessage {
   final SharedItem? shared;
   final bool pending;
   final bool failed;
+  final String senderType; // "USER" | "AI" | "HUMAN" | "SYSTEM"
+  final Map<String, dynamic> metadata;
 
   const ConvMessage({
     required this.id,
@@ -54,6 +56,8 @@ class ConvMessage {
     this.shared,
     this.pending = false,
     this.failed = false,
+    this.senderType = "",
+    this.metadata = const {},
   });
 
   ConvMessage copyWith({bool? pending, bool? failed}) => ConvMessage(
@@ -67,6 +71,8 @@ class ConvMessage {
         shared: shared,
         pending: pending ?? this.pending,
         failed: failed ?? this.failed,
+        senderType: senderType,
+        metadata: metadata,
       );
 
   factory ConvMessage.fromJson(Map<String, dynamic> json) {
@@ -95,9 +101,22 @@ class ConvMessage {
       shared = SharedItem.fromJson(Map<String, dynamic>.from(sharedRaw));
     }
 
+    final senderType = (json["sender_type"] ?? "").toString().toUpperCase();
+
+    // For HUMAN messages (rep), prefer user_lang_text (translated into the user's language).
+    final userLangText = (json["user_lang_text"] ?? "").toString().trim();
+    final sourceText = (json["source_text"] ?? json["text"] ?? json["content"] ?? json["body"] ?? "").toString();
+    final text = (senderType == "HUMAN" && userLangText.isNotEmpty) ? userLangText : sourceText;
+
+    Map<String, dynamic> metadata = const {};
+    final rawMeta = json["metadata"];
+    if (rawMeta is Map) {
+      metadata = Map<String, dynamic>.from(rawMeta);
+    }
+
     return ConvMessage(
       id: (json["id"] ?? "").toString(),
-      text: (json["source_text"] ?? json["text"] ?? json["content"] ?? json["body"] ?? "").toString(),
+      text: text,
       createdAt: tryParse(
             (json["created_at"] ?? json["timestamp"] ?? json["sent_at"])?.toString(),
           ) ??
@@ -107,6 +126,8 @@ class ConvMessage {
       authorName: authorName,
       authorAvatarUrl: authorAvatarUrl,
       shared: shared,
+      senderType: senderType,
+      metadata: metadata,
     );
   }
 }
