@@ -30,6 +30,8 @@ class AiChatThreadPage extends StatefulWidget {
   final bool showBackButton;
   final String? statusLabel;
   final String? introMessage;
+  /// When true, polls the thread status endpoint to show a rep-typing indicator.
+  final bool checkTyping;
 
   const AiChatThreadPage({
     super.key,
@@ -41,6 +43,7 @@ class AiChatThreadPage extends StatefulWidget {
     this.showBackButton = true,
     this.statusLabel,
     this.introMessage,
+    this.checkTyping = false,
   });
 
   @override
@@ -68,6 +71,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   ModalRoute<dynamic>? _route;
   bool _isAppInForeground = true;
   bool _isRouteVisible = true;
+  bool _isRepTyping = false;
 
   bool get _canPoll =>
       _isAppInForeground && _isRouteVisible && !_loading && mounted;
@@ -178,6 +182,9 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) return;
 
+    // Poll typing status in parallel when requested.
+    if (widget.checkTyping) _pollTypingStatus(token).ignore();
+
     try {
       final uri = Api.url(
         ChatEndpoints.messages(widget.threadId),
@@ -229,6 +236,26 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
       _markRead(token);
     } catch (_) {
       // Silent — polling errors are non-fatal.
+    }
+  }
+
+  Future<void> _pollTypingStatus(String token) async {
+    try {
+      final resp = await http.get(
+        Api.url(ChatEndpoints.threadStatus(widget.threadId)),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+      if (!mounted || resp.statusCode != 200) return;
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final isTyping = data["is_rep_typing"] as bool? ?? false;
+      if (_isRepTyping != isTyping) {
+        setState(() => _isRepTyping = isTyping);
+      }
+    } catch (_) {
+      // Silent — non-fatal.
     }
   }
 
@@ -644,6 +671,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
                     ],
                   ),
           ),
+          if (_isRepTyping) _RepTypingBubble(scheme: scheme),
           ConvComposer(
             controller: _inputCtrl,
             focusNode: _focusNode,
@@ -679,6 +707,155 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         backgroundColor: scheme.surface,
         resizeToAvoidBottomInset: true,
         body: SafeArea(child: conversationBody),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rep typing indicator bubble (shown when the assigned rep is composing a reply)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RepTypingBubble extends StatefulWidget {
+  final ColorScheme scheme;
+
+  const _RepTypingBubble({required this.scheme});
+
+  @override
+  State<_RepTypingBubble> createState() => _RepTypingBubbleState();
+}
+
+class _RepTypingBubbleState extends State<_RepTypingBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat(reverse: true);
+    _fade = Tween<double>(begin: 0.45, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = widget.scheme;
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            height: 28,
+            width: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.support_agent_rounded,
+                size: 15,
+                color: scheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FadeTransition(
+            opacity: _fade,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? scheme.surfaceContainerHighest
+                    : scheme.surfaceContainerHigh,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  _TypingDot(delay: 0),
+                  SizedBox(width: 5),
+                  _TypingDot(delay: 180),
+                  SizedBox(width: 5),
+                  _TypingDot(delay: 360),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypingDot extends StatefulWidget {
+  final int delay;
+
+  const _TypingDot({required this.delay});
+
+  @override
+  State<_TypingDot> createState() => _TypingDotState();
+}
+
+class _TypingDotState extends State<_TypingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  Timer? _delayTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _scale = Tween<double>(begin: 0.7, end: 1.2).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+    _delayTimer = Timer(Duration(milliseconds: widget.delay), () {
+      if (mounted) _ctrl.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _delayTimer?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return ScaleTransition(
+      scale: _scale,
+      child: Container(
+        height: 7,
+        width: 7,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: scheme.onSurface.withValues(alpha: 0.5),
+        ),
       ),
     );
   }
