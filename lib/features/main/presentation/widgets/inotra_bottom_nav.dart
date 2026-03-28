@@ -9,11 +9,13 @@ import "../../../../i18n/translations.dart";
 class InotraBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onChanged;
+  final int chatBadgeCount;
 
   const InotraBottomNav({
     super.key,
     required this.currentIndex,
     required this.onChanged,
+    this.chatBadgeCount = 0,
   });
 
   String _lang() {
@@ -77,6 +79,7 @@ class InotraBottomNav extends StatelessWidget {
                     label: t(lang, "nav.ai_chat"),
                     icon: HugeIcons.strokeRoundedSparkles,
                     onTap: () => onChanged(2),
+                    hasBadge: chatBadgeCount > 0,
                   ),
                   _NavItem(
                     selected: currentIndex == 3,
@@ -105,12 +108,14 @@ class _NavItem extends StatelessWidget {
   final String label;
   final dynamic icon; // HugeIcons.* type
   final VoidCallback onTap;
+  final bool hasBadge;
 
   const _NavItem({
     required this.selected,
     required this.label,
     required this.icon,
     required this.onTap,
+    this.hasBadge = false,
   });
 
   @override
@@ -143,15 +148,37 @@ class _NavItem extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: HugeIcon(
-                      icon: icon,
-                      key: ValueKey("$label-$selected"),
-                      color: fg,
-                      size: 14,
-                      strokeWidth: 2.0,
-                    ),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: HugeIcon(
+                          icon: icon,
+                          key: ValueKey("$label-$selected"),
+                          color: fg,
+                          size: 14,
+                          strokeWidth: 2.0,
+                        ),
+                      ),
+                      if (hasBadge && !selected)
+                        Positioned(
+                          top: -3,
+                          right: -4,
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF3B30),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primary,
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   if (selected) ...[
                     const SizedBox(width: 7),
