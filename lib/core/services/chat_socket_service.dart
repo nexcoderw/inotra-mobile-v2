@@ -1,6 +1,7 @@
 import "dart:async";
 import "dart:convert";
 
+import "package:flutter/foundation.dart";
 import "package:web_socket_channel/web_socket_channel.dart";
 
 import "../config/env.dart";
@@ -12,12 +13,15 @@ typedef ChatSocketMessageCallback = void Function(Map<String, dynamic> message);
 /// - Fires [onNewMessage] for every `new_message` event pushed by the server.
 /// - Fires [onRemoteTyping] when the other participant's typing state changes.
 ///   The typing indicator is auto-cleared after 3 s with no update.
+/// - Fires [onChatEnded] when the server closes the thread (`chat_ended` event).
+///   The socket is permanently closed on this event — no reconnect is attempted.
 /// - Reconnects automatically with exponential back-off (up to 6 retries).
 class ChatSocketService {
   final String threadId;
   final String accessToken;
   final ChatSocketMessageCallback onNewMessage;
   final void Function(bool isTyping)? onRemoteTyping;
+  final VoidCallback? onChatEnded;
 
   static const int _maxRetries = 6;
   static const Duration _typingClearDelay = Duration(seconds: 3);
@@ -34,6 +38,7 @@ class ChatSocketService {
     required this.accessToken,
     required this.onNewMessage,
     this.onRemoteTyping,
+    this.onChatEnded,
   });
 
   // ── URL derivation ─────────────────────────────────────────────────────────
@@ -123,6 +128,10 @@ class ChatSocketService {
             if (!_closed) onRemoteTyping?.call(false);
           });
         }
+      } else if (type == "chat_ended") {
+        // Server has closed the thread. Stop reconnecting and notify caller.
+        disconnect();
+        onChatEnded?.call();
       }
     } catch (_) {
       // Ignore malformed frames.
