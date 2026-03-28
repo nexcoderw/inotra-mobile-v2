@@ -9,6 +9,7 @@ import "package:hugeicons/hugeicons.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/chat_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/chat_socket_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../pages/ai_chat_thread_page.dart";
@@ -48,8 +49,7 @@ class _AiChatTabState extends State<AiChatTab> {
   final _knownIds = <String>{};
   List<String> _currentChoices = [];
   bool _awaitingResponse = false;
-  Timer? _pollTimer;
-  static const _pollInterval = Duration(seconds: 3);
+  ChatSocketService? _socket;
   final _scrollCtrl = ScrollController();
 
   @override
@@ -60,7 +60,7 @@ class _AiChatTabState extends State<AiChatTab> {
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _socket?.disconnect();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -136,7 +136,7 @@ class _AiChatTabState extends State<AiChatTab> {
           _apiLoading = false;
           _flow = _AiFlow.questions;
         });
-        _startPolling();
+        _initSocket();
         _scrollToBottom();
       }
     } catch (e) {
@@ -191,7 +191,7 @@ class _AiChatTabState extends State<AiChatTab> {
           _flow = _AiFlow.questions;
           _updateCurrentChoices();
         });
-        _startPolling();
+        _initSocket();
         _scrollToBottom();
       }
     } catch (_) {
@@ -283,7 +283,6 @@ class _AiChatTabState extends State<AiChatTab> {
         senderType: "USER",
       ));
     });
-    _stopPolling();
     _scrollToBottom();
 
     try {
@@ -343,7 +342,9 @@ class _AiChatTabState extends State<AiChatTab> {
       });
 
       _scrollToBottom();
-      if (!isHandoff) _startPolling();
+      if (isHandoff) {
+        _socket?.disconnect();
+      }
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -356,54 +357,35 @@ class _AiChatTabState extends State<AiChatTab> {
     }
   }
 
-  // ── Polling ───────────────────────────────────────────────────────────────
+  // ── WebSocket ──────────────────────────────────────────────────────────────
 
-  void _startPolling() {
-    if (_pollTimer?.isActive ?? false) return;
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _pollMessages());
+  void _initSocket() {
+    _socket?.disconnect();
+    if (_threadId == null || _token.isEmpty) return;
+    _socket = ChatSocketService(
+      threadId: _threadId!,
+      accessToken: _token,
+      onNewMessage: _onSocketMessage,
+    );
+    _socket!.connect();
   }
 
-  void _stopPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
-  }
+  void _onSocketMessage(Map<String, dynamic> raw) {
+    if (!mounted || _flow != _AiFlow.questions) return;
+    final msg = ConvMessage.fromJson(raw);
+    if (_knownIds.contains(msg.id)) return;
 
-  Future<void> _pollMessages() async {
-    if (!mounted || _awaitingResponse || _threadId == null) return;
-    try {
-      final uri = Api.url(ChatEndpoints.messages(_threadId!))
-          .replace(queryParameters: {"page": "1", "page_size": "20"});
-      final resp = await http.get(
-        uri,
-        headers: {"Accept": "application/json", "Authorization": "Bearer $_token"},
-      );
-      if (!mounted || resp.statusCode != 200) return;
+    final atBottom = !_scrollCtrl.hasClients ||
+        _scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 120;
 
-      final body = jsonDecode(resp.body);
-      final raw = (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
-      final incoming = raw
-          .whereType<Map>()
-          .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
-          .where((m) => !_knownIds.contains(m.id))
-          .toList()
-          .reversed
-          .toList();
+    setState(() {
+      _knownIds.add(msg.id);
+      _messages.add(msg);
+      _updateCurrentChoices();
+    });
 
-      if (incoming.isEmpty) return;
-
-      final atBottom = !_scrollCtrl.hasClients ||
-          _scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 120;
-
-      setState(() {
-        for (final m in incoming) {
-          _knownIds.add(m.id);
-          _messages.add(m);
-        }
-        _updateCurrentChoices();
-      });
-
-      if (atBottom) _scrollToBottom();
-    } catch (_) {}
+    if (atBottom) _scrollToBottom();
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
