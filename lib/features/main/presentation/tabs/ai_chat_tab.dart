@@ -46,6 +46,8 @@ class _AiChatTabState extends State<AiChatTab> {
 
   // Chat history (shown when no active thread)
   List<Map<String, dynamic>> _historicalThreads = [];
+  bool _historyLoading = false;
+  bool _historyError = false;
 
   // Questions flow
   final List<ConvMessage> _messages = [];
@@ -226,6 +228,7 @@ class _AiChatTabState extends State<AiChatTab> {
   // ── Fetch thread history (closed + open threads) ──────────────────────────
 
   Future<void> _fetchHistory() async {
+    if (mounted) setState(() { _historyLoading = true; _historyError = false; });
     try {
       final uri = Api.url(ChatEndpoints.threads)
           .replace(queryParameters: {"page": "1", "page_size": "20"});
@@ -233,19 +236,24 @@ class _AiChatTabState extends State<AiChatTab> {
         uri,
         headers: {"Accept": "application/json", "Authorization": "Bearer $_token"},
       );
+      if (!mounted) return;
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
         final raw = (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
-        if (mounted) {
-          setState(() {
-            _historicalThreads = raw
-                .whereType<Map>()
-                .map((t) => Map<String, dynamic>.from(t))
-                .toList();
-          });
-        }
+        setState(() {
+          _historicalThreads = raw
+              .whereType<Map>()
+              .map((t) => Map<String, dynamic>.from(t))
+              .toList();
+          _historyLoading = false;
+          _historyError = false;
+        });
+      } else {
+        setState(() { _historyLoading = false; _historyError = true; });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) setState(() { _historyLoading = false; _historyError = true; });
+    }
   }
 
   // ── Languages ─────────────────────────────────────────────────────────────
@@ -557,18 +565,43 @@ class _AiChatTabState extends State<AiChatTab> {
         ),
 
         // ── Previous conversations ───────────────────────────────────────────
-        if (_historicalThreads.isNotEmpty) ...[
-          const SizedBox(height: 28),
-          Text(
-            "Previous Conversations",
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.1,
-              color: scheme.onSurface.withValues(alpha: 0.55),
-            ),
+        const SizedBox(height: 28),
+        Text(
+          "Previous Conversations",
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+            color: scheme.onSurface.withValues(alpha: 0.55),
           ),
+        ),
+        const SizedBox(height: 10),
+        if (_historyLoading) ...[
+          _HistoryShimmerCard(scheme: scheme, isDark: isDark),
           const SizedBox(height: 10),
+          _HistoryShimmerCard(scheme: scheme, isDark: isDark),
+          const SizedBox(height: 10),
+          _HistoryShimmerCard(scheme: scheme, isDark: isDark),
+        ] else if (_historyError)
+          _HistoryErrorRow(
+            scheme: scheme,
+            isDark: isDark,
+            onRetry: _fetchHistory,
+          )
+        else if (_historicalThreads.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: Text(
+                "No previous conversations",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: scheme.onSurface.withValues(alpha: 0.38),
+                ),
+              ),
+            ),
+          )
+        else
           ..._historicalThreads.map((thread) {
             final threadId = thread["id"]?.toString() ?? "";
             final topic = thread["topic"]?.toString() ?? "Trip Planning";
@@ -603,7 +636,6 @@ class _AiChatTabState extends State<AiChatTab> {
               ),
             );
           }),
-        ],
       ],
     );
   }
@@ -1438,6 +1470,179 @@ class _HistoryThreadCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _HistoryShimmerCard — pulsing placeholder while history is loading
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HistoryShimmerCard extends StatefulWidget {
+  final ColorScheme scheme;
+  final bool isDark;
+
+  const _HistoryShimmerCard({required this.scheme, required this.isDark});
+
+  @override
+  State<_HistoryShimmerCard> createState() => _HistoryShimmerCardState();
+}
+
+class _HistoryShimmerCardState extends State<_HistoryShimmerCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 850),
+    )..repeat(reverse: true);
+    _pulse = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = widget.scheme;
+    final isDark = widget.isDark;
+
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (_, __) {
+        final v = _pulse.value;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: isDark
+                ? scheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.black.withValues(alpha: 0.06),
+              width: 0.7,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 38,
+                width: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.onSurface.withValues(alpha: v * 0.12),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 12,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: scheme.onSurface.withValues(alpha: v * 0.12),
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Container(
+                      height: 10,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        color: scheme.onSurface.withValues(alpha: v * 0.08),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                height: 20,
+                width: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: scheme.onSurface.withValues(alpha: v * 0.08),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _HistoryErrorRow — inline error + retry for the history section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HistoryErrorRow extends StatelessWidget {
+  final ColorScheme scheme;
+  final bool isDark;
+  final VoidCallback onRetry;
+
+  const _HistoryErrorRow({
+    required this.scheme,
+    required this.isDark,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: scheme.errorContainer.withValues(alpha: isDark ? 0.18 : 0.10),
+        border: Border.all(
+          color: scheme.error.withValues(alpha: isDark ? 0.22 : 0.14),
+          width: 0.7,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 18,
+            color: scheme.error.withValues(alpha: 0.8),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Couldn't load history",
+              style: TextStyle(
+                fontSize: 13,
+                color: scheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onRetry,
+            child: Text(
+              "Retry",
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: scheme.primary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
