@@ -11,7 +11,7 @@ import "../models/app_notification.dart";
 
 @pragma("vm:entry-point")
 void _onBackgroundNotificationTap(NotificationResponse response) {
-  LocalNotificationService._navigate(response.payload);
+  LocalNotificationService.navigate(response.payload);
 }
 
 // ── Local Notification Service ────────────────────────────────────────────────
@@ -78,6 +78,40 @@ class LocalNotificationService {
 
   // ── Show a banner ──────────────────────────────────────────────────────────
 
+  /// Shows a notification banner with arbitrary title/body and a raw payload
+  /// map (encoded as JSON).  Used by [FcmService] for foreground FCM messages.
+  Future<void> showRawNotification({
+    required String title,
+    required String body,
+    required String payload,
+  }) async {
+    if (kIsWeb) return;
+    await _plugin.show(
+      payload.hashCode.abs(),
+      title,
+      body.isNotEmpty ? body : null,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          channelDescription: "INOTRA real-time alerts",
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: "@mipmap/ic_launcher",
+          playSound: true,
+          enableVibration: true,
+          vibrationPattern: Int64List.fromList([0, 250, 100, 250]),
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: payload,
+    );
+  }
+
   Future<void> showNotification(AppNotification notif) async {
     if (kIsWeb) return;
 
@@ -112,10 +146,12 @@ class LocalNotificationService {
   // ── Tap handlers ───────────────────────────────────────────────────────────
 
   static void _onForegroundTap(NotificationResponse response) {
-    _navigate(response.payload);
+    navigate(response.payload);
   }
 
-  static void _navigate(String? payload) {
+  /// Navigates to the screen indicated by [payload] (JSON-encoded data map).
+  /// Public so [FcmService] can reuse it for FCM notification taps.
+  static void navigate(String? payload) {
     if (payload == null || payload.isEmpty) return;
     try {
       final data = jsonDecode(payload) as Map<String, dynamic>;
@@ -133,6 +169,8 @@ class LocalNotificationService {
           nav.pushNamed("/event-details", arguments: entityId);
         case "PACKAGE":
           nav.pushNamed("/trip-package-details", arguments: entityId);
+        case "CHAT":
+          nav.pushNamed("/ai-chat");
       }
     } catch (_) {}
   }
