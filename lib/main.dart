@@ -6,6 +6,7 @@ import "app.dart";
 import "core/config/env.dart";
 import "core/services/auth_session.dart";
 import "core/services/device_info_service.dart";
+import "core/services/fcm_service.dart";
 import "core/services/local_notification_service.dart";
 import "core/services/notification_service.dart";
 import "core/services/session_heartbeat_service.dart";
@@ -40,6 +41,9 @@ Future<void> main() async {
     // Also starts the 30-second poll + app-resume listener.
     NotificationService.instance.fetch();
     NotificationService.instance.startPolling();
+
+    // Register FCM token and set up push notification handlers.
+    FcmService.instance.initialize();
   }
 
   // Listen for future sign-in / sign-out to activate or clear notifications.
@@ -70,7 +74,9 @@ void _onAuthChange() {
       NotificationService.instance.fetch();
       NotificationService.instance.startPolling();
     });
+    FcmService.instance.initialize();
   } else {
     NotificationService.instance.clear();
+    FcmService.instance.deregister();
   }
 }
