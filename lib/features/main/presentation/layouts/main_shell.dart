@@ -30,6 +30,7 @@ class _MainShellState extends State<MainShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late int _index;
+  int _chatUnreadCount = 0;
   AuthSession? _authSession;
   late final List<Widget Function()> _tabBuilders;
   late final List<Widget?> _tabCache;
@@ -41,7 +42,7 @@ class _MainShellState extends State<MainShell> {
     _tabBuilders = [
       () => const ExploreTab(),
       () => const ListingsTab(),
-      () => const AiChatTab(),
+      () => AiChatTab(onUnreadMessage: _onChatUnread),
       () => const EventsTab(),
       () => const HighlightsTab(),
     ];
@@ -77,6 +78,10 @@ class _MainShellState extends State<MainShell> {
     _tabCache[index] = _tabBuilders[index]();
   }
 
+  void _onChatUnread() {
+    if (_index != 2 && mounted) setState(() => _chatUnreadCount++);
+  }
+
   void _onTabChange(int next) async {
     if (next == _index) return;
 
@@ -85,7 +90,10 @@ class _MainShellState extends State<MainShell> {
     }
 
     _ensureTabLoaded(next);
-    setState(() => _index = next);
+    setState(() {
+      _index = next;
+      if (next == 2) _chatUnreadCount = 0;
+    });
   }
 
   void _handleAuthChange() {
@@ -172,6 +180,7 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: InotraBottomNav(
         currentIndex: _index,
         onChanged: _onTabChange,
+        chatBadgeCount: _chatUnreadCount,
       ),
     );
   }
