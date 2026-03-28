@@ -65,31 +65,6 @@ class ConvBubble extends StatelessWidget {
             crossAxisAlignment:
                 isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              // Author name + sender-type badge (theirs, first in group)
-              if (!isMine && isFirstInGroup)
-                Padding(
-                  padding: const EdgeInsets.only(left: 2, bottom: 3),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (message.authorName != null)
-                        Text(
-                          message.authorName!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSurface.withValues(alpha: 0.42),
-                            letterSpacing: 0.1,
-                          ),
-                        ),
-                      if (message.senderType == "AI" || message.senderType == "HUMAN") ...[
-                        const SizedBox(width: 4),
-                        _SenderTypeBadge(senderType: message.senderType),
-                      ],
-                    ],
-                  ),
-                ),
-
               // Bubble
               _BubbleBody(
                 message: message,
@@ -412,36 +387,3 @@ class _TimeRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _SenderTypeBadge — small pill shown next to the author name for AI / Rep
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _SenderTypeBadge extends StatelessWidget {
-  final String senderType;
-
-  const _SenderTypeBadge({required this.senderType});
-
-  @override
-  Widget build(BuildContext context) {
-    final isAI = senderType == "AI";
-    final color = isAI ? const Color(0xFF7C3AED) : const Color(0xFF0D9488);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.25), width: 0.5),
-      ),
-      child: Text(
-        isAI ? "AI" : "Rep",
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.4,
-        ),
-      ),
-    );
-  }
-}
