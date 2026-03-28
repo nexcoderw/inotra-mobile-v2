@@ -18,6 +18,7 @@ import "../../features/me/presentation/layouts/me_shell.dart";
 
 // AI chat
 import "../../features/main/presentation/pages/ai_chat_conversations_page.dart";
+import "../../features/main/presentation/pages/ai_chat_thread_page.dart";
 
 // Discover & details
 import "../../features/main/presentation/pages/event_details_page.dart";
@@ -157,6 +158,23 @@ final class AppRouter {
           featureLabel: t(lang, "nav.ai_chat"),
           description: null,
           builder: (_) => const AiChatConversationsPage(),
+        );
+      case AppRoutes.aiChatThread:
+        final threadArgs = settings.arguments is Map
+            ? Map<String, dynamic>.from(settings.arguments as Map)
+            : const <String, dynamic>{};
+        final threadId = threadArgs["threadId"]?.toString() ?? "";
+        final threadTitle = threadArgs["title"]?.toString() ?? "Chat";
+        final threadAvatar = threadArgs["avatarUrl"]?.toString();
+        return AuthGuard.protect(
+          featureLabel: t(lang, "nav.ai_chat"),
+          description: null,
+          builder: (_) => AiChatThreadPage(
+            threadId: threadId,
+            title: threadTitle,
+            avatarUrl: threadAvatar,
+            showBackButton: true,
+          ),
         );
 
       // -------------------
