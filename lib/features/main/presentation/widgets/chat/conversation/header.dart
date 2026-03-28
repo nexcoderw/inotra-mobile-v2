@@ -16,6 +16,8 @@ class ConvHeader extends StatelessWidget {
   final String? statusLabel; // e.g. "Online" or null
   final VoidCallback onBack;
   final bool showBackButton;
+  /// Optional widget placed at the trailing end of the header (e.g. menu button).
+  final Widget? trailing;
 
   const ConvHeader({
     super.key,
@@ -24,6 +26,7 @@ class ConvHeader extends StatelessWidget {
     this.avatarUrl,
     this.statusLabel,
     this.showBackButton = true,
+    this.trailing,
   });
 
   @override
@@ -92,6 +95,9 @@ class ConvHeader extends StatelessWidget {
                   ],
                 ),
               ),
+
+              // Trailing action (e.g. end-chat menu)
+              if (trailing != null) trailing!,
             ],
           ),
         ),
