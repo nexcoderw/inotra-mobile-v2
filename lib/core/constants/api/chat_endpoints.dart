@@ -14,6 +14,9 @@ final class ChatEndpoints {
   static String markRead(String threadId) =>
       "api/me/chats/threads/$threadId/read/";
 
+  static String endThread(String threadId) =>
+      "api/me/chats/threads/$threadId/end/";
+
   static String threadStatus(String threadId) =>
       "api/me/chats/threads/$threadId/status/";
 
