@@ -35,6 +35,9 @@ class AiChatThreadPage extends StatefulWidget {
   /// Called after the user successfully ends the chat. Use this when embedded
   /// inside AiChatTab to switch back to the no-active-chat screen.
   final VoidCallback? onChatEnded;
+  /// Called whenever a new incoming message is received via WebSocket.
+  /// Used by the parent to track unread messages when this tab is not visible.
+  final VoidCallback? onNewMessage;
 
   const AiChatThreadPage({
     super.key,
@@ -48,6 +51,7 @@ class AiChatThreadPage extends StatefulWidget {
     this.introMessage,
     this.checkTyping = false,
     this.onChatEnded,
+    this.onNewMessage,
   });
 
   @override
@@ -155,6 +159,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
       _messages.add(msg);
     });
 
+    widget.onNewMessage?.call();
     if (atBottom) _scrollToBottom();
     final token = AuthSession.instance.value.accessToken;
     if (token != null) _markRead(token);
