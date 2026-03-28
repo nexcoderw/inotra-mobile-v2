@@ -132,6 +132,11 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
               }
             }
           : null,
+      onChatEnded: widget.onChatEnded != null
+          ? () {
+              if (mounted) widget.onChatEnded!();
+            }
+          : null,
     );
     _socket!.connect();
   }
