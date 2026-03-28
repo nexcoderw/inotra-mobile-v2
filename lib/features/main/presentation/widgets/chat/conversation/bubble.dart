@@ -65,18 +65,28 @@ class ConvBubble extends StatelessWidget {
             crossAxisAlignment:
                 isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              // Author name (theirs, first in group)
-              if (!isMine && isFirstInGroup && message.authorName != null)
+              // Author name + sender-type badge (theirs, first in group)
+              if (!isMine && isFirstInGroup)
                 Padding(
                   padding: const EdgeInsets.only(left: 2, bottom: 3),
-                  child: Text(
-                    message.authorName!,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface.withValues(alpha: 0.42),
-                      letterSpacing: 0.1,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (message.authorName != null)
+                        Text(
+                          message.authorName!,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurface.withValues(alpha: 0.42),
+                            letterSpacing: 0.1,
+                          ),
+                        ),
+                      if (message.senderType == "AI" || message.senderType == "HUMAN") ...[
+                        const SizedBox(width: 4),
+                        _SenderTypeBadge(senderType: message.senderType),
+                      ],
+                    ],
                   ),
                 ),
 
@@ -87,6 +97,7 @@ class ConvBubble extends StatelessWidget {
                 isDark: isDark,
                 scheme: scheme,
                 radius: _radius(isMine),
+                senderType: message.senderType,
               ),
 
               // Timestamp row
@@ -118,6 +129,7 @@ class _BubbleBody extends StatelessWidget {
   final bool isDark;
   final ColorScheme scheme;
   final BorderRadius radius;
+  final String senderType;
 
   const _BubbleBody({
     required this.message,
@@ -125,6 +137,7 @@ class _BubbleBody extends StatelessWidget {
     required this.isDark,
     required this.scheme,
     required this.radius,
+    this.senderType = "",
   });
 
   @override
@@ -132,10 +145,20 @@ class _BubbleBody extends StatelessWidget {
     final textColor = isMine ? Colors.white : scheme.onSurface;
     final failedTextColor = isDark ? Colors.red[200]! : Colors.red[800]!;
 
-    // Outgoing: solid blue. Incoming: glassmorphism frosted pill.
+    // Outgoing: solid primary. Incoming: glassmorphism frosted pill with
+    // optional tint based on sender type (violet=AI, teal=human rep).
+    Color? tint;
+    if (!isMine) {
+      if (senderType == "AI") {
+        tint = const Color(0xFF7C3AED); // violet
+      } else if (senderType == "HUMAN") {
+        tint = const Color(0xFF0D9488); // teal
+      }
+    }
+
     Widget body = isMine
         ? _solidBubble(textColor, failedTextColor)
-        : _frostedBubble(textColor);
+        : _frostedBubble(textColor, tint: tint);
 
     return body;
   }
@@ -161,16 +184,18 @@ class _BubbleBody extends StatelessWidget {
     );
   }
 
-  Widget _frostedBubble(Color textColor) {
+  Widget _frostedBubble(Color textColor, {Color? tint}) {
+    final bubbleColor = tint != null
+        ? tint.withValues(alpha: isDark ? 0.14 : 0.08)
+        : (isDark ? Colors.white.withValues(alpha: 0.10) : Colors.white.withValues(alpha: 0.80));
+
     return ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.10)
-                : Colors.white.withValues(alpha: 0.80),
+            color: bubbleColor,
             borderRadius: radius,
             border: Border.all(
               color: isDark
@@ -383,6 +408,40 @@ class _TimeRow extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _SenderTypeBadge — small pill shown next to the author name for AI / Rep
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SenderTypeBadge extends StatelessWidget {
+  final String senderType;
+
+  const _SenderTypeBadge({required this.senderType});
+
+  @override
+  Widget build(BuildContext context) {
+    final isAI = senderType == "AI";
+    final color = isAI ? const Color(0xFF7C3AED) : const Color(0xFF0D9488);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 0.5),
+      ),
+      child: Text(
+        isAI ? "AI" : "Rep",
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: color,
+          letterSpacing: 0.4,
+        ),
+      ),
     );
   }
 }
