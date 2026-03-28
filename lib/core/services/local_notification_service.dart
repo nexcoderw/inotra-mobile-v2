@@ -5,6 +5,7 @@ import "package:flutter/foundation.dart";
 import "package:flutter/widgets.dart";
 import "package:flutter_local_notifications/flutter_local_notifications.dart";
 
+import "../config/app_routes.dart";
 import "../models/app_notification.dart";
 
 // ── Background tap handler (top-level, required by flutter_local_notifications) ─
@@ -170,7 +171,14 @@ class LocalNotificationService {
         case "PACKAGE":
           nav.pushNamed("/trip-package-details", arguments: entityId);
         case "CHAT":
-          nav.pushNamed("/ai-chat");
+          if (entityId.isEmpty) {
+            nav.pushNamed(AppRoutes.aiChat);
+          } else {
+            nav.pushNamed(
+              AppRoutes.aiChatThread,
+              arguments: {"threadId": entityId, "title": "Chat"},
+            );
+          }
       }
     } catch (_) {}
   }
