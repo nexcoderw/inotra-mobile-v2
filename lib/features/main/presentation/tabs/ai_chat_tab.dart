@@ -28,7 +28,11 @@ enum _AiFlow { loading, languagePicker, questions, conversation, noActiveChat }
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AiChatTab extends StatefulWidget {
-  const AiChatTab({super.key});
+  /// Fired whenever a new incoming message arrives while the tab may be hidden.
+  /// The parent (MainShell) uses this to show the unread badge on the tab icon.
+  final VoidCallback? onUnreadMessage;
+
+  const AiChatTab({super.key, this.onUnreadMessage});
 
   @override
   State<AiChatTab> createState() => _AiChatTabState();
@@ -667,6 +671,7 @@ class _AiChatTabState extends State<AiChatTab> {
       _messages.add(msg);
       _updateCurrentChoices();
     });
+    widget.onUnreadMessage?.call();
 
     if (atBottom) _scrollToBottom();
   }
@@ -704,6 +709,7 @@ class _AiChatTabState extends State<AiChatTab> {
           showBackButton: false,
           checkTyping: true,
           onChatEnded: _onChatEnded,
+          onNewMessage: widget.onUnreadMessage,
         ),
       );
     }
