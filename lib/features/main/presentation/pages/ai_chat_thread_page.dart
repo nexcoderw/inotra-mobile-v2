@@ -32,6 +32,9 @@ class AiChatThreadPage extends StatefulWidget {
   final String? introMessage;
   /// When true, shows a typing indicator when the rep is composing a reply.
   final bool checkTyping;
+  /// Called after the user successfully ends the chat. Use this when embedded
+  /// inside AiChatTab to switch back to the no-active-chat screen.
+  final VoidCallback? onChatEnded;
 
   const AiChatThreadPage({
     super.key,
@@ -44,6 +47,7 @@ class AiChatThreadPage extends StatefulWidget {
     this.statusLabel,
     this.introMessage,
     this.checkTyping = false,
+    this.onChatEnded,
   });
 
   @override
@@ -481,6 +485,55 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     );
   }
 
+  // ── End chat ─────────────────────────────────────────────────────────────
+
+  Future<void> _endChat() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("End this chat?"),
+        content: const Text(
+          "The conversation will be closed. You can start a new one at any time.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("End Chat"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final resp = await http.post(
+        Api.url(ChatEndpoints.endThread(widget.threadId)),
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+      if (!mounted) return;
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        _socket?.disconnect();
+        widget.onChatEnded?.call();
+      } else {
+        _showSnack("Could not end chat (${resp.statusCode}).");
+      }
+    } catch (_) {
+      if (mounted) _showSnack("Could not end chat.");
+    }
+  }
+
   List<ConvMessage> _buildDisplayMessages() {
     final intro = (widget.introMessage ?? "").trim();
     if (intro.isEmpty) {
@@ -527,6 +580,33 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
               statusLabel: widget.statusLabel,
               showBackButton: widget.showBackButton,
               onBack: () => Navigator.maybePop(context),
+              trailing: widget.onChatEnded != null
+                  ? PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert_rounded,
+                        color: scheme.onSurface.withValues(alpha: 0.6),
+                        size: 22,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      onSelected: (value) {
+                        if (value == "end") _endChat();
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: "end",
+                          child: Row(
+                            children: [
+                              Icon(Icons.stop_circle_outlined, size: 18),
+                              SizedBox(width: 10),
+                              Text("End Chat"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : null,
             ),
           Expanded(
             child: _loading
