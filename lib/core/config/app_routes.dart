@@ -25,6 +25,7 @@ final class AppRoutes {
   static const listingDetails = "/listing-details";
   static const eventDetails = "/event-details";
   static const aiChatConversations = "/ai-chat-conversations";
+  static const aiChatThread = "/ai-chat-thread";
 
   static const dashboard = "/dashboard";
   static const myEvents = "/events/my";
