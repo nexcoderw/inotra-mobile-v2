@@ -7,8 +7,8 @@ import "package:http/http.dart" as http;
 
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/chat_endpoints.dart";
-import "../../../../core/observers/audit_route_observer.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/chat_socket_service.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/chat/conversation/composer.dart";
 import "../widgets/chat/conversation/header.dart";
@@ -30,7 +30,7 @@ class AiChatThreadPage extends StatefulWidget {
   final bool showBackButton;
   final String? statusLabel;
   final String? introMessage;
-  /// When true, polls the thread status endpoint to show a rep-typing indicator.
+  /// When true, shows a typing indicator when the rep is composing a reply.
   final bool checkTyping;
 
   const AiChatThreadPage({
@@ -51,7 +51,7 @@ class AiChatThreadPage extends StatefulWidget {
 }
 
 class _AiChatThreadPageState extends State<AiChatThreadPage>
-    with WidgetsBindingObserver, RouteAware {
+    with WidgetsBindingObserver {
   final List<ConvMessage> _messages = [];
   final _knownIds = <String>{};
   final _inputCtrl = TextEditingController();
@@ -64,17 +64,11 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   bool _hasMore = true;
   int _page = 1;
   static const int _pageSize = 50;
-  static const Duration _pollInterval = Duration(seconds: 3);
   String? _error;
   SharedItem? _pendingShared;
-  Timer? _pollTimer;
-  ModalRoute<dynamic>? _route;
-  bool _isAppInForeground = true;
-  bool _isRouteVisible = true;
   bool _isRepTyping = false;
 
-  bool get _canPoll =>
-      _isAppInForeground && _isRouteVisible && !_loading && mounted;
+  ChatSocketService? _socket;
 
   @override
   void initState() {
@@ -85,23 +79,9 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final route = ModalRoute.of(context);
-    if (route == null || identical(route, _route)) return;
-
-    AuditRouteObserver.instance.unsubscribe(this);
-    _route = route;
-    AuditRouteObserver.instance.subscribe(this, route as dynamic);
-    _isRouteVisible = route.isCurrent;
-    _syncPollingState();
-  }
-
-  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    AuditRouteObserver.instance.unsubscribe(this);
-    _stopPolling();
+    _socket?.disconnect();
     _scrollCtrl.removeListener(_onScroll);
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
@@ -109,11 +89,15 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     super.dispose();
   }
 
-  // Pause polling when app goes to background; resume when it comes back.
+  // Disconnect socket when app goes to background; reconnect when resumed.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _isAppInForeground = state == AppLifecycleState.resumed;
-    _syncPollingState(immediate: _isAppInForeground);
+    if (state == AppLifecycleState.resumed) {
+      _socket?.connect();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _socket?.disconnect();
+    }
   }
 
   void _onScroll() {
@@ -126,143 +110,51 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     }
   }
 
-  // ── Polling ───────────────────────────────────────────────────────────────
+  // ── WebSocket ──────────────────────────────────────────────────────────────
 
-  void _startPolling() {
-    final token = AuthSession.instance.value.accessToken;
-    if (!_canPoll || token == null || token.isEmpty) return;
-    if (_pollTimer?.isActive ?? false) return;
-    _pollTimer = Timer.periodic(_pollInterval, (_) => _pollNewMessages());
-  }
-
-  void _stopPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = null;
-  }
-
-  void _syncPollingState({bool immediate = false}) {
-    if (!_canPoll) {
-      _stopPolling();
-      return;
-    }
-    if (immediate) {
-      _pollNewMessages();
-    }
-    _startPolling();
-  }
-
-  @override
-  void didPush() {
-    _isRouteVisible = true;
-    _syncPollingState(immediate: true);
-  }
-
-  @override
-  void didPopNext() {
-    _isRouteVisible = true;
-    _syncPollingState(immediate: true);
-  }
-
-  @override
-  void didPushNext() {
-    _isRouteVisible = false;
-    _syncPollingState();
-  }
-
-  @override
-  void didPop() {
-    _isRouteVisible = false;
-    _syncPollingState();
-  }
-
-  /// Silently fetches the latest page of messages and appends any that are new.
-  /// Never triggers a loading spinner — runs completely in the background.
-  Future<void> _pollNewMessages() async {
-    if (!mounted || _loading) return;
+  void _initSocket() {
+    _socket?.disconnect();
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) return;
 
-    // Poll typing status in parallel when requested.
-    if (widget.checkTyping) _pollTypingStatus(token).ignore();
-
-    try {
-      final uri = Api.url(
-        ChatEndpoints.messages(widget.threadId),
-      ).replace(queryParameters: {"page": "1", "page_size": "20"});
-      final resp = await http.get(
-        uri,
-        headers: {
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-
-      if (!mounted || resp.statusCode != 200) return;
-
-      final decoded = jsonDecode(resp.body);
-      List raw = const [];
-      if (decoded is Map) {
-        raw = (decoded["results"] as List?) ?? const [];
-      } else if (decoded is List) {
-        raw = decoded;
-      }
-
-      // API returns newest-first. Filter out already-known messages, then
-      // reverse to chronological order before appending.
-      final incoming = raw
-          .whereType<Map>()
-          .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
-          .where((m) => !_knownIds.contains(m.id))
-          .toList()
-          .reversed
-          .toList();
-
-      if (incoming.isEmpty) return;
-
-      // Only auto-scroll if the user is already near the bottom (≤120 px away).
-      final atBottom =
-          !_scrollCtrl.hasClients ||
-          _scrollCtrl.position.pixels >=
-              _scrollCtrl.position.maxScrollExtent - 120;
-
-      setState(() {
-        for (final msg in incoming) {
-          _knownIds.add(msg.id);
-          _messages.add(msg);
-        }
-      });
-
-      if (atBottom) _scrollToBottom();
-      _markRead(token);
-    } catch (_) {
-      // Silent — polling errors are non-fatal.
-    }
+    _socket = ChatSocketService(
+      threadId: widget.threadId,
+      accessToken: token,
+      onNewMessage: _onSocketMessage,
+      onRemoteTyping: widget.checkTyping
+          ? (isTyping) {
+              if (mounted && _isRepTyping != isTyping) {
+                setState(() => _isRepTyping = isTyping);
+              }
+            }
+          : null,
+    );
+    _socket!.connect();
   }
 
-  Future<void> _pollTypingStatus(String token) async {
-    try {
-      final resp = await http.get(
-        Api.url(ChatEndpoints.threadStatus(widget.threadId)),
-        headers: {
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-      if (!mounted || resp.statusCode != 200) return;
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final isTyping = data["is_rep_typing"] as bool? ?? false;
-      if (_isRepTyping != isTyping) {
-        setState(() => _isRepTyping = isTyping);
-      }
-    } catch (_) {
-      // Silent — non-fatal.
-    }
+  void _onSocketMessage(Map<String, dynamic> raw) {
+    if (!mounted || _loading) return;
+    final msg = ConvMessage.fromJson(raw);
+    if (_knownIds.contains(msg.id)) return;
+
+    final atBottom = !_scrollCtrl.hasClients ||
+        _scrollCtrl.position.pixels >=
+            _scrollCtrl.position.maxScrollExtent - 120;
+
+    setState(() {
+      _knownIds.add(msg.id);
+      _messages.add(msg);
+    });
+
+    if (atBottom) _scrollToBottom();
+    final token = AuthSession.instance.value.accessToken;
+    if (token != null) _markRead(token);
   }
 
   // ── Fetch (initial / refresh) ─────────────────────────────────────────────
 
   Future<void> _fetch() async {
-    _stopPolling();
+    _socket?.disconnect();
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) {
       if (mounted)
@@ -306,7 +198,6 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           raw = decoded;
         }
 
-        // API returns newest-first — reverse for chronological display.
         final parsed = raw
             .whereType<Map>()
             .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
@@ -327,7 +218,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         });
         _scrollToBottom();
         _markRead(token);
-        _syncPollingState();
+        _initSocket();
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
         if (mounted)
@@ -401,7 +292,6 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           return;
         }
 
-        // Save scroll offset so we don't jump after prepending.
         final prevExtent = _scrollCtrl.hasClients
             ? _scrollCtrl.position.maxScrollExtent
             : 0.0;
@@ -414,7 +304,6 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           _loadingMore = false;
         });
 
-        // Restore position after layout so the view doesn't jump.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollCtrl.hasClients) {
             final newExtent = _scrollCtrl.position.maxScrollExtent;
@@ -501,7 +390,6 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
             Map<String, dynamic>.from(serverMsgRaw),
           );
           setState(() {
-            // Replace optimistic ID with real server ID.
             _knownIds.remove(optimisticId);
             _knownIds.add(serverMsg.id);
             _messages[idx] = serverMsg;
