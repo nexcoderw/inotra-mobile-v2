@@ -21,7 +21,7 @@ import "../widgets/chat/conversation/models.dart";
 // Flow state machine
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum _AiFlow { loading, languagePicker, questions, conversation }
+enum _AiFlow { loading, languagePicker, questions, conversation, noActiveChat }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AiChatTab
@@ -43,6 +43,9 @@ class _AiChatTabState extends State<AiChatTab> {
 
   // Language picker
   List<Map<String, dynamic>> _languages = [];
+
+  // Chat history (shown when no active thread)
+  List<Map<String, dynamic>> _historicalThreads = [];
 
   // Questions flow
   final List<ConvMessage> _messages = [];
@@ -94,10 +97,12 @@ class _AiChatTabState extends State<AiChatTab> {
     }
 
     try {
+      // Pass auto_create:false so the server never creates a thread here.
+      // We only create when the user explicitly taps "Start New Chat".
       final resp = await http.post(
         Api.url(ChatEndpoints.aiStart),
         headers: _headers,
-        body: jsonEncode({}),
+        body: jsonEncode({"auto_create": false}),
       );
 
       if (!mounted) return;
@@ -112,6 +117,14 @@ class _AiChatTabState extends State<AiChatTab> {
       }
 
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
+
+      // No open thread exists — show history + start-new-chat screen.
+      if (data["thread_id"] == null || data["has_active_thread"] == false) {
+        await _fetchHistory();
+        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.noActiveChat; });
+        return;
+      }
+
       _threadId = data["thread_id"].toString();
       _stage = (data["onboarding_stage"] as int? ?? 0);
 
@@ -142,6 +155,97 @@ class _AiChatTabState extends State<AiChatTab> {
     } catch (e) {
       if (mounted) setState(() { _apiLoading = false; _error = e.toString(); });
     }
+  }
+
+  // ── Start a new chat (called from noActiveChat screen) ────────────────────
+
+  Future<void> _startNewChat() async {
+    if (_apiLoading) return;
+    setState(() { _apiLoading = true; _error = null; _flow = _AiFlow.loading; });
+
+    try {
+      final resp = await http.post(
+        Api.url(ChatEndpoints.aiStart),
+        headers: _headers,
+        body: jsonEncode({"auto_create": true}),
+      );
+
+      if (!mounted) return;
+
+      if (resp.statusCode == 401) {
+        await AuthSession.instance.expireSession();
+        return;
+      }
+      if (resp.statusCode >= 400) {
+        setState(() { _apiLoading = false; _error = "${resp.statusCode}"; });
+        return;
+      }
+
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      _messages.clear();
+      _knownIds.clear();
+      _threadId = data["thread_id"].toString();
+      _stage = (data["onboarding_stage"] as int? ?? 0);
+      _injectMessages(data);
+
+      if (_stage == 5) {
+        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.conversation; });
+        return;
+      }
+
+      if (_stage == 0) {
+        await _fetchLanguages();
+        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.languagePicker; });
+        return;
+      }
+
+      await _fetchMessages();
+      if (mounted) {
+        setState(() { _apiLoading = false; _flow = _AiFlow.questions; });
+        _initSocket();
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) setState(() { _apiLoading = false; _error = e.toString(); });
+    }
+  }
+
+  // ── Called by AiChatThreadPage when user ends the chat ────────────────────
+
+  void _onChatEnded() {
+    _socket?.disconnect();
+    _socket = null;
+    _threadId = null;
+    _messages.clear();
+    _knownIds.clear();
+    _fetchHistory().then((_) {
+      if (mounted) setState(() { _flow = _AiFlow.noActiveChat; });
+    });
+  }
+
+  // ── Fetch thread history (closed + open threads) ──────────────────────────
+
+  Future<void> _fetchHistory() async {
+    try {
+      final uri = Api.url(ChatEndpoints.threads)
+          .replace(queryParameters: {"page": "1", "page_size": "20"});
+      final resp = await http.get(
+        uri,
+        headers: {"Accept": "application/json", "Authorization": "Bearer $_token"},
+      );
+      if (resp.statusCode == 200) {
+        final body = jsonDecode(resp.body);
+        final raw = (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
+        if (mounted) {
+          setState(() {
+            _historicalThreads = raw
+                .whereType<Map>()
+                .map((t) => Map<String, dynamic>.from(t))
+                .toList();
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   // ── Languages ─────────────────────────────────────────────────────────────
@@ -357,6 +461,153 @@ class _AiChatTabState extends State<AiChatTab> {
     }
   }
 
+  // ── No active chat (ended or never started) ───────────────────────────────
+
+  Widget _buildNoActiveChat({required String lang, required ColorScheme scheme, required Key key}) {
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return ListView(
+      key: key,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      children: [
+        // ── Start new chat card ──────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [
+                scheme.primary.withValues(alpha: isDark ? 0.18 : 0.10),
+                scheme.primary.withValues(alpha: isDark ? 0.08 : 0.04),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: scheme.primary.withValues(alpha: isDark ? 0.24 : 0.16),
+              width: 0.8,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 56,
+                width: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                  border: Border.all(
+                    color: scheme.primary.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Center(
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedSparkles,
+                    size: 26,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                "Plan Your Next Trip",
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                  color: scheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Our AI assistant will ask you a few questions\nto match you with the perfect experience.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  height: 1.55,
+                  color: scheme.onSurface.withValues(alpha: 0.62),
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _apiLoading ? null : _startNewChat,
+                  icon: _apiLoading
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: scheme.onPrimary,
+                          ),
+                        )
+                      : const Icon(Icons.add_rounded, size: 18),
+                  label: const Text("Start New Chat"),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Previous conversations ───────────────────────────────────────────
+        if (_historicalThreads.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          Text(
+            "Previous Conversations",
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.1,
+              color: scheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+          const SizedBox(height: 10),
+          ..._historicalThreads.map((thread) {
+            final threadId = thread["id"]?.toString() ?? "";
+            final topic = thread["topic"]?.toString() ?? "Trip Planning";
+            final preview = thread["last_message_preview"]?.toString();
+            final isOpen = thread["is_open"] as bool? ?? false;
+            final rawDate = thread["last_message_at"] ?? thread["updated_at"] ?? thread["created_at"];
+            DateTime? date;
+            if (rawDate is String) date = DateTime.tryParse(rawDate);
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _HistoryThreadCard(
+                topic: topic,
+                preview: preview,
+                isOpen: isOpen,
+                date: date,
+                scheme: scheme,
+                isDark: isDark,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => AiChatThreadPage(
+                        threadId: threadId,
+                        title: topic,
+                        showBackButton: true,
+                        checkTyping: isOpen,
+                        statusLabel: isOpen ? null : "Ended",
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+
   // ── WebSocket ──────────────────────────────────────────────────────────────
 
   void _initSocket() {
@@ -420,6 +671,7 @@ class _AiChatTabState extends State<AiChatTab> {
           showHeader: true,
           showBackButton: false,
           checkTyping: true,
+          onChatEnded: _onChatEnded,
         ),
       );
     }
@@ -456,6 +708,8 @@ class _AiChatTabState extends State<AiChatTab> {
         return _buildQuestions(lang: lang, scheme: scheme, key: const ValueKey("questions"));
       case _AiFlow.conversation:
         return const SizedBox.shrink(key: ValueKey("conversation-placeholder"));
+      case _AiFlow.noActiveChat:
+        return _buildNoActiveChat(lang: lang, scheme: scheme, key: const ValueKey("no-active-chat"));
     }
   }
 
@@ -1037,6 +1291,152 @@ class _ThinkingDotState extends State<_ThinkingDot>
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: scheme.primary.withValues(alpha: 0.82),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// _HistoryThreadCard — single row in the previous conversations list
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HistoryThreadCard extends StatelessWidget {
+  final String topic;
+  final String? preview;
+  final bool isOpen;
+  final DateTime? date;
+  final ColorScheme scheme;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _HistoryThreadCard({
+    required this.topic,
+    required this.isOpen,
+    required this.scheme,
+    required this.isDark,
+    required this.onTap,
+    this.preview,
+    this.date,
+  });
+
+  String _formatDate() {
+    if (date == null) return "";
+    final now = DateTime.now();
+    final diff = now.difference(date!);
+    if (diff.inMinutes < 1) return "just now";
+    if (diff.inHours < 1) return "${diff.inMinutes}m ago";
+    if (diff.inDays < 1) return "${diff.inHours}h ago";
+    if (diff.inDays < 7) return "${diff.inDays}d ago";
+    return "${date!.day}/${date!.month}/${date!.year}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: isDark
+                ? scheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.black.withValues(alpha: 0.06),
+              width: 0.7,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 38,
+                width: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.primary.withValues(alpha: isDark ? 0.14 : 0.08),
+                ),
+                child: Center(
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedMessage02,
+                    size: 17,
+                    color: scheme.primary.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            topic,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurface,
+                            ),
+                          ),
+                        ),
+                        if (date != null) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            _formatDate(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: scheme.onSurface.withValues(alpha: 0.4),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (preview != null && preview!.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        preview!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: isOpen
+                      ? scheme.primary.withValues(alpha: isDark ? 0.18 : 0.10)
+                      : scheme.onSurface.withValues(alpha: 0.06),
+                ),
+                child: Text(
+                  isOpen ? "Active" : "Ended",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isOpen
+                        ? scheme.primary
+                        : scheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
