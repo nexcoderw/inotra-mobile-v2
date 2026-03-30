@@ -5,19 +5,25 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../../../../core/constants/app_colors.dart";
 import "../../../../../core/utils/rwf_currency.dart";
+import "../../../../../i18n/lang.dart";
+import "../../../../../i18n/translations.dart";
 
 /// Revenue overview card — fully static / sample data until the revenue
 /// analytics endpoint is available. Marked clearly with a "Coming soon" badge.
 class DashboardRevenueCard extends StatelessWidget {
   const DashboardRevenueCard({super.key});
 
-  static const _weekDays = ["W1", "W2", "W3", "W4"];
   static final _bars = [4200000.0, 6800000.0, 5100000.0, 7400000.0];
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
+    final lang = currentLangSync();
+    final weekDays = List.generate(
+      4,
+      (index) => "${t(lang, "dashboard.week_short")}${index + 1}",
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -115,8 +121,8 @@ class DashboardRevenueCard extends StatelessWidget {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  "Revenue",
+                                Text(
+                                  t(lang, "dashboard.revenue"),
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
@@ -125,7 +131,7 @@ class DashboardRevenueCard extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  "Static preview in RWF",
+                                  t(lang, "dashboard.revenue_preview"),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
@@ -152,17 +158,17 @@ class DashboardRevenueCard extends StatelessWidget {
                               ).withValues(alpha: 0.28),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              HugeIcon(
+                              const HugeIcon(
                                 icon: HugeIcons.strokeRoundedSparkles,
                                 color: Color(0xFFF4C66E),
                                 size: 12,
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Text(
-                                "Endpoint-ready",
+                                t(lang, "dashboard.endpoint_ready"),
                                 style: TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
@@ -182,31 +188,46 @@ class DashboardRevenueCard extends StatelessWidget {
                           Expanded(
                             flex: 3,
                             child: _RevenueHeadline(
+                              label: t(lang, "dashboard.booked_pipeline"),
                               total: RwfCurrency.format(23500000),
-                              subtitle:
-                                  "Projected gross bookings for the current month across listing stays and trip operations.",
+                              subtitle: t(
+                                lang,
+                                "dashboard.revenue_headline_subtitle",
+                              ),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             flex: 2,
                             child: _ForecastPanel(
+                              collectedLabel: t(lang, "dashboard.collected"),
+                              pendingLabel: t(
+                                lang,
+                                "dashboard.pending_revenue",
+                              ),
                               collected: RwfCurrency.format(16700000),
                               pending: RwfCurrency.format(6800000),
+                              footer: t(lang, "dashboard.revenue_footer"),
                             ),
                           ),
                         ],
                       )
                     else ...[
                       _RevenueHeadline(
+                        label: t(lang, "dashboard.booked_pipeline"),
                         total: RwfCurrency.format(23500000),
-                        subtitle:
-                            "Projected gross bookings for the current month across listing stays and trip operations.",
+                        subtitle: t(
+                          lang,
+                          "dashboard.revenue_headline_subtitle",
+                        ),
                       ),
                       const SizedBox(height: 14),
                       _ForecastPanel(
+                        collectedLabel: t(lang, "dashboard.collected"),
+                        pendingLabel: t(lang, "dashboard.pending_revenue"),
                         collected: RwfCurrency.format(16700000),
                         pending: RwfCurrency.format(6800000),
+                        footer: t(lang, "dashboard.revenue_footer"),
                       ),
                     ],
                     const SizedBox(height: 18),
@@ -216,26 +237,26 @@ class DashboardRevenueCard extends StatelessWidget {
                       children: [
                         SizedBox(
                           width: statWidth,
-                          child: const _RevenueStat(
-                            label: "Gross booked",
-                            value: "RWF 23,500,000",
-                            sub: "+18% vs previous month",
+                          child: _RevenueStat(
+                            label: t(lang, "dashboard.gross_booked"),
+                            value: RwfCurrency.format(23500000),
+                            sub: t(lang, "dashboard.gross_booked_sub"),
                           ),
                         ),
                         SizedBox(
                           width: statWidth,
-                          child: const _RevenueStat(
-                            label: "Listings",
-                            value: "RWF 16,200,000",
-                            sub: "69% of the previewed total",
+                          child: _RevenueStat(
+                            label: t(lang, "dashboard.listings_share"),
+                            value: RwfCurrency.format(16200000),
+                            sub: t(lang, "dashboard.listings_share_sub"),
                           ),
                         ),
                         SizedBox(
                           width: statWidth,
-                          child: const _RevenueStat(
-                            label: "Trips",
-                            value: "RWF 7,300,000",
-                            sub: "31% of the previewed total",
+                          child: _RevenueStat(
+                            label: t(lang, "dashboard.trips_share"),
+                            value: RwfCurrency.format(7300000),
+                            sub: t(lang, "dashboard.trips_share_sub"),
                           ),
                         ),
                       ],
@@ -243,14 +264,14 @@ class DashboardRevenueCard extends StatelessWidget {
                     const SizedBox(height: 22),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: List.generate(_weekDays.length, (i) {
+                      children: List.generate(weekDays.length, (i) {
                         final h = (_bars[i] / maxV * 74).clamp(18.0, 74.0);
                         final isHighest = _bars[i] == maxV;
 
                         return Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(
-                              right: i == _weekDays.length - 1 ? 0 : 10,
+                              right: i == weekDays.length - 1 ? 0 : 10,
                             ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -292,7 +313,7 @@ class DashboardRevenueCard extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _weekDays[i],
+                                  weekDays[i],
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -317,10 +338,15 @@ class DashboardRevenueCard extends StatelessWidget {
 }
 
 class _RevenueHeadline extends StatelessWidget {
+  final String label;
   final String total;
   final String subtitle;
 
-  const _RevenueHeadline({required this.total, required this.subtitle});
+  const _RevenueHeadline({
+    required this.label,
+    required this.total,
+    required this.subtitle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -328,7 +354,7 @@ class _RevenueHeadline extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Booked pipeline",
+          label,
           style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w700,
@@ -362,10 +388,19 @@ class _RevenueHeadline extends StatelessWidget {
 }
 
 class _ForecastPanel extends StatelessWidget {
+  final String collectedLabel;
+  final String pendingLabel;
   final String collected;
   final String pending;
+  final String footer;
 
-  const _ForecastPanel({required this.collected, required this.pending});
+  const _ForecastPanel({
+    required this.collectedLabel,
+    required this.pendingLabel,
+    required this.collected,
+    required this.pending,
+    required this.footer,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -383,7 +418,7 @@ class _ForecastPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _ForecastMetric(
-                  label: "Collected",
+                  label: collectedLabel,
                   value: collected,
                   tone: const Color(0xFF8FE6B7),
                 ),
@@ -391,7 +426,7 @@ class _ForecastPanel extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _ForecastMetric(
-                  label: "Pending",
+                  label: pendingLabel,
                   value: pending,
                   tone: const Color(0xFFFFD27A),
                 ),
@@ -400,7 +435,7 @@ class _ForecastPanel extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            "Finance and reservations endpoints will replace this preview with live totals while keeping the same layout.",
+            footer,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w500,
