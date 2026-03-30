@@ -11,6 +11,8 @@ import "../../../../core/constants/app_colors.dart";
 import "../../../../core/constants/api/my_event_endpoints.dart";
 import "../../../../core/constants/api/my_listing_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/dashboard/dashboard_activity_chart.dart";
 import "../widgets/dashboard/dashboard_date_filter.dart";
 import "../widgets/dashboard/dashboard_events_section.dart";
@@ -79,18 +81,19 @@ class _DashboardPageState extends State<DashboardPage> {
     if (mounted) setState(() => _statsLoading = false);
   }
 
-  Future<void> _fetchCount(
-      String endpoint, void Function(int) onResult) async {
+  Future<void> _fetchCount(String endpoint, void Function(int) onResult) async {
     try {
       final token = AuthSession.instance.value.accessToken;
       if (token == null) return;
-      final resp = await http.get(
-        Api.url(endpoint).replace(queryParameters: {"page_size": "1"}),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Accept": "application/json",
-        },
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .get(
+            Api.url(endpoint).replace(queryParameters: {"page_size": "1"}),
+            headers: {
+              "Authorization": "Bearer $token",
+              "Accept": "application/json",
+            },
+          )
+          .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         if (data is Map && data["count"] is int) {
@@ -104,14 +107,17 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final token = AuthSession.instance.value.accessToken;
       if (token == null) return;
-      final resp = await http.get(
-        Api.url(MyListingEndpoints.bookings)
-            .replace(queryParameters: {"page_size": "5", "page": "1"}),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Accept": "application/json",
-        },
-      ).timeout(const Duration(seconds: 10));
+      final resp = await http
+          .get(
+            Api.url(
+              MyListingEndpoints.bookings,
+            ).replace(queryParameters: {"page_size": "5", "page": "1"}),
+            headers: {
+              "Authorization": "Bearer $token",
+              "Accept": "application/json",
+            },
+          )
+          .timeout(const Duration(seconds: 10));
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
         List raw = [];
@@ -124,8 +130,7 @@ class _DashboardPageState extends State<DashboardPage> {
           setState(() {
             _recentBookings = raw
                 .whereType<Map>()
-                .map((m) =>
-                    BookingItem.fromJson(Map<String, dynamic>.from(m)))
+                .map((m) => BookingItem.fromJson(Map<String, dynamic>.from(m)))
                 .toList();
             _bookingsLoading = false;
           });
@@ -187,17 +192,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  String _greeting() {
+  String _greeting(String lang) {
     final h = DateTime.now().hour;
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
+    if (h < 12) return t(lang, "dashboard.greeting_morning");
+    if (h < 17) return t(lang, "dashboard.greeting_afternoon");
+    return t(lang, "dashboard.greeting_evening");
   }
 
-  String _displayName() {
-    final name = AuthSession.instance.value.displayName ?? "";
+  String _displayName(String lang) {
+    final name = AuthSession.instance.value.displayName;
     final first = name.split(" ").first;
-    return first.isNotEmpty ? first : "there";
+    return first.isNotEmpty ? first : t(lang, "dashboard.greeting_fallback");
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -207,6 +212,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
 
     return RefreshIndicator(
       color: AppColors.primary,
@@ -216,9 +222,7 @@ class _DashboardPageState extends State<DashboardPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           // ── Greeting header ─────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: _buildHeader(scheme),
-          ),
+          SliverToBoxAdapter(child: _buildHeader(scheme, lang)),
 
           // ── Date filter ─────────────────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -233,7 +237,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // ── Stat cards ───────────────────────────────────────────────────
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
-          SliverToBoxAdapter(child: _buildStatsRow()),
+          SliverToBoxAdapter(child: _buildStatsRow(lang)),
 
           // ── Activity chart ───────────────────────────────────────────────
           SliverPadding(
@@ -318,9 +322,13 @@ class _DashboardPageState extends State<DashboardPage> {
   // Greeting header
   // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(ColorScheme scheme) {
+  Widget _buildHeader(ColorScheme scheme, String lang) {
     final isDark = scheme.brightness == Brightness.dark;
     final days = _range.duration.inDays + 1;
+    final overview = t(
+      lang,
+      "dashboard.header_overview",
+    ).replaceAll("{days}", "$days");
 
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -330,14 +338,8 @@ class _DashboardPageState extends State<DashboardPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [
-                  const Color(0xFF0F2A1C),
-                  const Color(0xFF081810),
-                ]
-              : [
-                  AppColors.primary,
-                  const Color(0xFF0A3D20),
-                ],
+              ? [const Color(0xFF0F2A1C), const Color(0xFF081810)]
+              : [AppColors.primary, const Color(0xFF0A3D20)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -367,7 +369,7 @@ class _DashboardPageState extends State<DashboardPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "${_greeting()}, ${_displayName()} 👋",
+                "${_greeting(lang)}, ${_displayName(lang)}",
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -377,7 +379,7 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Here's your overview for the last $days days.",
+                overview,
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.white.withValues(alpha: 0.6),
@@ -385,22 +387,27 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               const SizedBox(height: 16),
               // Summary chips row
-              Row(children: [
-                _HeaderChip(
-                  label: "${_listingCount ?? "—"} Listings",
-                  isLoading: _statsLoading,
-                ),
-                const SizedBox(width: 8),
-                _HeaderChip(
-                  label: "${_eventCount ?? "—"} Events",
-                  isLoading: _statsLoading,
-                ),
-                const SizedBox(width: 8),
-                _HeaderChip(
-                  label: "${_bookingCount ?? "—"} Bookings",
-                  isLoading: _statsLoading,
-                ),
-              ]),
+              Row(
+                children: [
+                  _HeaderChip(
+                    label:
+                        "${_listingCount ?? "—"} ${t(lang, "dashboard.listings")}",
+                    isLoading: _statsLoading,
+                  ),
+                  const SizedBox(width: 8),
+                  _HeaderChip(
+                    label:
+                        "${_eventCount ?? "—"} ${t(lang, "dashboard.events")}",
+                    isLoading: _statsLoading,
+                  ),
+                  const SizedBox(width: 8),
+                  _HeaderChip(
+                    label:
+                        "${_bookingCount ?? "—"} ${t(lang, "dashboard.bookings")}",
+                    isLoading: _statsLoading,
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -412,47 +419,47 @@ class _DashboardPageState extends State<DashboardPage> {
   // Stats row
   // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _buildStatsRow() {
+  Widget _buildStatsRow(String lang) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           DashboardStatCard(
-            label: "Listings",
+            label: t(lang, "dashboard.listings"),
             value: _statsLoading ? "—" : "${_listingCount ?? 0}",
             icon: HugeIcons.strokeRoundedHome05,
             accentColor: AppColors.primary,
-            trend: "active",
+            trend: t(lang, "dashboard.active"),
             isUp: true,
             sparkData: _spark(1),
             isLoading: _statsLoading,
           ),
           const SizedBox(width: 12),
           DashboardStatCard(
-            label: "Events",
+            label: t(lang, "dashboard.events"),
             value: _statsLoading ? "—" : "${_eventCount ?? 0}",
             icon: HugeIcons.strokeRoundedFireworks,
             accentColor: const Color(0xFFF59E0B),
-            trend: "total",
+            trend: t(lang, "dashboard.total"),
             isUp: true,
             sparkData: _spark(2),
             isLoading: _statsLoading,
           ),
           const SizedBox(width: 12),
           DashboardStatCard(
-            label: "Bookings",
+            label: t(lang, "dashboard.bookings"),
             value: _statsLoading ? "—" : "${_bookingCount ?? 0}",
             icon: HugeIcons.strokeRoundedCalendar03,
             accentColor: const Color(0xFF0EA5E9),
-            trend: "period",
+            trend: t(lang, "dashboard.period"),
             isUp: true,
             sparkData: _spark(3),
             isLoading: _statsLoading,
           ),
           const SizedBox(width: 12),
           DashboardStatCard(
-            label: "Reviews",
+            label: t(lang, "dashboard.reviews"),
             value: _statsLoading ? "—" : "${_reviewCount ?? 0}",
             icon: HugeIcons.strokeRoundedStar,
             accentColor: const Color(0xFFEC4899),
@@ -482,8 +489,7 @@ class _HeaderChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.18)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
       ),
       child: Text(
         isLoading ? "…" : label,
@@ -496,4 +502,3 @@ class _HeaderChip extends StatelessWidget {
     );
   }
 }
-
