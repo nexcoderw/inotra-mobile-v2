@@ -97,13 +97,13 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     super.dispose();
   }
 
-  // Disconnect socket when app goes to background; reconnect when resumed.
+  // Disconnect socket only when truly backgrounded; reconnect and sync on resume.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _socket?.connect();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
+      _syncMessages();
+    } else if (state == AppLifecycleState.paused) {
       _socket?.disconnect();
     }
   }
@@ -163,6 +163,45 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     if (atBottom) _scrollToBottom();
     final token = AuthSession.instance.value.accessToken;
     if (token != null) _markRead(token);
+  }
+
+  // ── Sync missed messages after resume ────────────────────────────────────
+
+  Future<void> _syncMessages() async {
+    if (_loading) return;
+    final token = AuthSession.instance.value.accessToken;
+    if (token == null || token.isEmpty) return;
+    try {
+      final uri = Api.url(ChatEndpoints.messages(widget.threadId)).replace(
+        queryParameters: {"page": "1", "page_size": "$_pageSize"},
+      );
+      final resp = await http.get(uri, headers: {
+        "Accept": "application/json",
+        "Authorization": "Bearer $token",
+      });
+      if (!mounted || resp.statusCode < 200 || resp.statusCode >= 300) return;
+      final decoded = jsonDecode(resp.body);
+      List raw = const [];
+      if (decoded is Map) {
+        raw = (decoded["results"] as List?) ?? const [];
+      } else if (decoded is List) {
+        raw = decoded;
+      }
+      final incoming = raw
+          .whereType<Map>()
+          .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
+          .where((m) => !_knownIds.contains(m.id))
+          .toList();
+      if (incoming.isEmpty || !mounted) return;
+      setState(() {
+        for (final m in incoming) {
+          _knownIds.add(m.id);
+          _messages.add(m);
+        }
+        _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      });
+      _scrollToBottom();
+    } catch (_) {}
   }
 
   // ── Fetch (initial / refresh) ─────────────────────────────────────────────
