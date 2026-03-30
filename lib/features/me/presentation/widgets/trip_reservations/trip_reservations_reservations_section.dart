@@ -86,214 +86,179 @@ class _ReservationCard extends StatelessWidget {
             lang,
             "trip_reservations.balance_remaining",
           ).replaceAll("{amount}", RwfCurrency.format(reservation.balanceRwf));
+    final travelersLabel = t(
+      lang,
+      "trip_reservations.travelers_count",
+    ).replaceAll("{count}", "${reservation.travelers}");
+    final nightsLabel = t(
+      lang,
+      "trip_reservations.nights_count",
+    ).replaceAll("{count}", "${reservation.nights}");
 
     return TripReservationsSurfaceCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              reservation.accent.withValues(alpha: 0.10),
+              reservation.accent.withValues(alpha: 0.08),
               scheme.surfaceContainerLowest.withValues(alpha: 0.98),
-              scheme.surfaceContainerLowest.withValues(alpha: 0.94),
             ],
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: reservation.accent.withValues(alpha: 0.10)),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 760;
-                  final isMedium = constraints.maxWidth >= 540;
+                  final stackCard = constraints.maxWidth < 560;
 
-                  final headerContent = Column(
+                  final travelDock = _TravelDock(
+                    accent: reservation.accent,
+                    startLabel: localizations.formatShortMonthDay(
+                      reservation.startDate,
+                    ),
+                    endLabel: localizations.formatShortMonthDay(
+                      reservation.endDate,
+                    ),
+                    durationLabel: nightsLabel,
+                  );
+
+                  final details = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      LayoutBuilder(
+                        builder: (context, headerConstraints) {
+                          final stackHeader = headerConstraints.maxWidth < 320;
+
+                          final titleBlock = Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                reservation.packageName,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.95,
+                                  ),
+                                  letterSpacing: -0.35,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                reservation.destination,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.58,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+
+                          if (stackHeader) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                titleBlock,
+                                const SizedBox(height: 10),
+                                TripReservationStateBadge(
+                                  label: t(lang, reservation.statusKey),
+                                  color: statusTone,
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: titleBlock),
+                              const SizedBox(width: 12),
+                              TripReservationStateBadge(
+                                label: t(lang, reservation.statusKey),
+                                color: statusTone,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          TripReservationStateBadge(
-                            label: t(lang, reservation.statusKey),
-                            color: statusTone,
+                          _CompactFact(
+                            icon: HugeIcons.strokeRoundedUserGroup,
+                            label: travelersLabel,
                           ),
-                          TripReservationMetaPill(
-                            icon: HugeIcons.strokeRoundedWallet02,
-                            label: paymentStatusLabel,
-                            color: paymentTone,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        reservation.packageName,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: scheme.onSurface.withValues(alpha: 0.95),
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        reservation.destination,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: scheme.onSurface.withValues(alpha: 0.56),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          HugeIcon(
-                            icon: HugeIcons.strokeRoundedCalendar03,
+                          _CompactFact(
+                            icon: HugeIcons.strokeRoundedShield01,
+                            label: reservation.confirmationCode,
                             color: reservation.accent,
-                            size: 15,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              travelWindow,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                                color: scheme.onSurface.withValues(alpha: 0.72),
-                              ),
-                            ),
+                          _CompactFact(
+                            icon: HugeIcons.strokeRoundedCalendar03,
+                            label: travelWindow,
                           ),
                         ],
                       ),
                     ],
                   );
 
-                  final routePanel = SizedBox(
-                    width: isWide ? 148 : 132,
-                    child: _RouteWindowPanel(
-                      accent: reservation.accent,
-                      startLabel: localizations.formatShortMonthDay(
-                        reservation.startDate,
-                      ),
-                      endLabel: localizations.formatShortMonthDay(
-                        reservation.endDate,
-                      ),
-                      durationLabel: t(
-                        lang,
-                        "trip_reservations.nights_count",
-                      ).replaceAll("{count}", "${reservation.nights}"),
-                    ),
+                  final paymentCard = _PaymentSummaryCard(
+                    tone: paymentTone,
+                    statusLabel: paymentStatusLabel,
+                    amountLabel: amountPaidLabel,
+                    progressLabel: progressLabel,
+                    balanceLabel: balanceLabel,
+                    progress: reservation.paymentProgress,
                   );
 
-                  final amountPanel = _AmountSpotlight(
-                    accent: reservation.accent,
-                    label: t(lang, "trip_reservations.amount_paid"),
-                    value: amountPaidLabel,
-                    caption: balanceLabel,
-                  );
-
-                  if (isWide) {
-                    return Row(
+                  if (stackCard) {
+                    return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        routePanel,
-                        const SizedBox(width: 16),
-                        Expanded(child: headerContent),
-                        const SizedBox(width: 16),
-                        SizedBox(width: 190, child: amountPanel),
+                        travelDock,
+                        const SizedBox(height: 12),
+                        details,
+                        const SizedBox(height: 12),
+                        paymentCard,
                       ],
                     );
                   }
 
-                  if (isMedium) {
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        routePanel,
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              headerContent,
-                              const SizedBox(height: 14),
-                              amountPanel,
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return Column(
+                  return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      routePanel,
-                      const SizedBox(height: 14),
-                      headerContent,
-                      const SizedBox(height: 14),
-                      amountPanel,
+                      SizedBox(width: 104, child: travelDock),
+                      const SizedBox(width: 12),
+                      Expanded(child: details),
+                      const SizedBox(width: 12),
+                      SizedBox(width: 188, child: paymentCard),
                     ],
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: scheme.surface.withValues(alpha: 0.68),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: scheme.outline.withValues(alpha: 0.08),
-                  ),
-                ),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    TripReservationMetaPill(
-                      icon: HugeIcons.strokeRoundedUserGroup,
-                      label: t(
-                        lang,
-                        "trip_reservations.travelers_count",
-                      ).replaceAll("{count}", "${reservation.travelers}"),
-                    ),
-                    TripReservationMetaPill(
-                      icon: HugeIcons.strokeRoundedTicket01,
-                      label: ticketCountLabel,
-                      color: const Color(0xFF1877B8),
-                    ),
-                    TripReservationMetaPill(
-                      icon: HugeIcons.strokeRoundedShield01,
-                      label: reservation.confirmationCode,
-                      color: reservation.accent,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              _PaymentStrip(
-                tone: paymentTone,
-                statusLabel: paymentStatusLabel,
-                amountLabel: amountPaidLabel,
-                progressLabel: progressLabel,
-                balanceLabel: balanceLabel,
-                progress: reservation.paymentProgress,
-              ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
+              Divider(height: 1, color: scheme.outline.withValues(alpha: 0.10)),
+              const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final compactFooter = constraints.maxWidth < 640;
-                  final documentsNote = _DocumentsNote(
+                  final compactFooter = constraints.maxWidth < 560;
+                  final documentsCard = _DocumentsCard(
                     accent: reservation.accent,
-                    label:
-                        "$ticketCountLabel • ${reservation.invoice.invoiceNumber}",
+                    invoiceNumber: reservation.invoice.invoiceNumber,
+                    ticketCountLabel: ticketCountLabel,
                   );
 
                   final ticketsButton = TripReservationActionButton(
@@ -322,7 +287,7 @@ class _ReservationCard extends StatelessWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        documentsNote,
+                        documentsCard,
                         const SizedBox(height: 12),
                         SizedBox(width: double.infinity, child: ticketsButton),
                         const SizedBox(height: 10),
@@ -332,8 +297,9 @@ class _ReservationCard extends StatelessWidget {
                   }
 
                   return Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(child: documentsNote),
+                      Expanded(flex: 4, child: documentsCard),
                       const SizedBox(width: 12),
                       Expanded(child: ticketsButton),
                       const SizedBox(width: 10),
@@ -350,8 +316,8 @@ class _ReservationCard extends StatelessWidget {
   }
 }
 
-class _RouteWindowPanel extends StatelessWidget {
-  const _RouteWindowPanel({
+class _TravelDock extends StatelessWidget {
+  const _TravelDock({
     required this.accent,
     required this.startLabel,
     required this.endLabel,
@@ -368,137 +334,91 @@ class _RouteWindowPanel extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.08),
+        color: accent.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: accent.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _RouteStop(label: startLabel, accent: accent, emphasize: true),
-          Padding(
-            padding: const EdgeInsets.only(left: 5),
-            child: Container(
-              width: 1.5,
-              height: 20,
-              color: accent.withValues(alpha: 0.26),
-            ),
-          ),
-          _RouteStop(label: endLabel, accent: accent),
-          const SizedBox(height: 12),
           Text(
-            durationLabel,
+            startLabel,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(alpha: 0.64),
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface.withValues(alpha: 0.94),
+              letterSpacing: -0.2,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RouteStop extends StatelessWidget {
-  const _RouteStop({
-    required this.label,
-    required this.accent,
-    this.emphasize = false,
-  });
-
-  final String label;
-  final Color accent;
-  final bool emphasize;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: emphasize ? accent : accent.withValues(alpha: 0.16),
-            shape: BoxShape.circle,
-            border: Border.all(color: accent.withValues(alpha: 0.30)),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            height: 1,
+            color: accent.withValues(alpha: 0.18),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
+          const SizedBox(height: 10),
+          Text(
+            endLabel,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(
-                alpha: emphasize ? 0.90 : 0.62,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface.withValues(alpha: 0.82),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              durationLabel,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: accent,
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _AmountSpotlight extends StatelessWidget {
-  const _AmountSpotlight({
-    required this.accent,
-    required this.label,
-    required this.value,
-    required this.caption,
-  });
+class _CompactFact extends StatelessWidget {
+  const _CompactFact({required this.icon, required this.label, this.color});
 
-  final Color accent;
+  final dynamic icon;
   final String label;
-  final String value;
-  final String caption;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final tone = color ?? scheme.onSurface.withValues(alpha: 0.56);
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withValues(alpha: 0.12)),
+        color: scheme.surface.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          HugeIcon(icon: icon, color: tone, size: 14),
+          const SizedBox(width: 7),
           Text(
             label,
             style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(alpha: 0.48),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: scheme.onSurface.withValues(alpha: 0.92),
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            caption,
-            style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w600,
-              height: 1.35,
-              color: scheme.onSurface.withValues(alpha: 0.56),
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.72),
             ),
           ),
         ],
@@ -507,8 +427,8 @@ class _AmountSpotlight extends StatelessWidget {
   }
 }
 
-class _PaymentStrip extends StatelessWidget {
-  const _PaymentStrip({
+class _PaymentSummaryCard extends StatelessWidget {
+  const _PaymentSummaryCard({
     required this.tone,
     required this.statusLabel,
     required this.amountLabel,
@@ -530,75 +450,31 @@ class _PaymentStrip extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: 0.74),
-        borderRadius: BorderRadius.circular(20),
+        color: scheme.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t(lang, "trip_reservations.payment_status"),
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: scheme.onSurface.withValues(alpha: 0.46),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: tone,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    t(lang, "trip_reservations.amount_paid"),
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: scheme.onSurface.withValues(alpha: 0.46),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    amountLabel,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w900,
-                      color: scheme.onSurface.withValues(alpha: 0.92),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          Text(
+            t(lang, "trip_reservations.amount_paid"),
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.46),
+            ),
           ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 9,
-              backgroundColor: scheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(tone),
+          const SizedBox(height: 6),
+          Text(
+            amountLabel,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface.withValues(alpha: 0.92),
+              letterSpacing: -0.2,
             ),
           ),
           const SizedBox(height: 10),
@@ -606,23 +482,34 @@ class _PaymentStrip extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  balanceLabel,
+                  statusLabel,
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface.withValues(alpha: 0.54),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: tone,
                   ),
                 ),
               ),
               Text(
                 progressLabel,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: tone,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          _StaticProgressBar(progress: progress, tone: tone),
+          const SizedBox(height: 8),
+          Text(
+            balanceLabel,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface.withValues(alpha: 0.54),
+            ),
           ),
         ],
       ),
@@ -630,45 +517,104 @@ class _PaymentStrip extends StatelessWidget {
   }
 }
 
-class _DocumentsNote extends StatelessWidget {
-  const _DocumentsNote({required this.accent, required this.label});
+class _StaticProgressBar extends StatelessWidget {
+  const _StaticProgressBar({required this.progress, required this.tone});
 
-  final Color accent;
-  final String label;
+  final double progress;
+  final Color tone;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Row(
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedFile01,
-              color: accent,
-              size: 16,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        height: 8,
+        color: scheme.surfaceContainerHighest,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: FractionallySizedBox(
+            widthFactor: progress.clamp(0.0, 1.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: tone,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withValues(alpha: 0.58),
+      ),
+    );
+  }
+}
+
+class _DocumentsCard extends StatelessWidget {
+  const _DocumentsCard({
+    required this.accent,
+    required this.invoiceNumber,
+    required this.ticketCountLabel,
+  });
+
+  final Color accent;
+  final String invoiceNumber;
+  final String ticketCountLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Center(
+              child: HugeIcon(
+                icon: HugeIcons.strokeRoundedFile01,
+                color: accent,
+                size: 15,
+              ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  invoiceNumber,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withValues(alpha: 0.84),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  ticketCountLabel,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface.withValues(alpha: 0.54),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
