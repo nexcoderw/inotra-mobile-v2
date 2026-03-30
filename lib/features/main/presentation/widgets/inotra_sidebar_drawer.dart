@@ -137,11 +137,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                             onTap: onMyEventSubmissionsTap,
                           ),
                           _GlassSubTile(
-                            title: t(_lang, "nav.event_payments"),
-                            icon: HugeIcons.strokeRoundedCreditCard,
-                            onTap: onEventPaymentsTap,
-                          ),
-                          _GlassSubTile(
                             title: t(_lang, "nav.event_tickets"),
                             icon: HugeIcons.strokeRoundedTicket01,
                             onTap: onEventTicketsTap,
@@ -167,11 +162,6 @@ class InotraSidebarDrawer extends StatelessWidget {
                             title: t(_lang, "nav.listing_reviews"),
                             icon: HugeIcons.strokeRoundedStar,
                             onTap: onListingReviewsTap,
-                          ),
-                          _GlassSubTile(
-                            title: t(_lang, "nav.listing_payments"),
-                            icon: HugeIcons.strokeRoundedWallet02,
-                            onTap: onListingPaymentsTap,
                           ),
                           _GlassSubTile(
                             title: t(_lang, "nav.listing_booking"),
