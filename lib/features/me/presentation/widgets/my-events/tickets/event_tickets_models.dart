@@ -9,7 +9,6 @@ class EventTicketPreview {
     required this.endAt,
     required this.ticketCategoryKey,
     required this.ticketStateKey,
-    required this.holderName,
     required this.quantity,
     required this.unitPriceRwf,
     required this.orderNumber,
@@ -17,10 +16,9 @@ class EventTicketPreview {
     required this.paymentMethodKey,
     required this.paymentReference,
     required this.purchasedAt,
-    required this.sectionLabel,
-    required this.entryWindow,
+    required this.consumable,
+    required this.consumableDescription,
     required this.accent,
-    this.perkKeys = const [],
   });
 
   final String eventTitle;
@@ -30,7 +28,6 @@ class EventTicketPreview {
   final DateTime endAt;
   final String ticketCategoryKey;
   final String ticketStateKey;
-  final String holderName;
   final int quantity;
   final int unitPriceRwf;
   final String orderNumber;
@@ -38,10 +35,9 @@ class EventTicketPreview {
   final String paymentMethodKey;
   final String paymentReference;
   final DateTime purchasedAt;
-  final String sectionLabel;
-  final String entryWindow;
+  final bool consumable;
+  final String? consumableDescription;
   final Color accent;
-  final List<String> perkKeys;
 
   int get totalPaidRwf => quantity * unitPriceRwf;
 
@@ -95,7 +91,6 @@ final sampleEventTickets = [
     endAt: DateTime(2026, 4, 2, 23, 30),
     ticketCategoryKey: "my_events.ticket_vip",
     ticketStateKey: "my_events.tickets.ticket_ready",
-    holderName: "Primary Holder",
     quantity: 2,
     unitPriceRwf: 120000,
     orderNumber: "EVT-24018",
@@ -103,14 +98,9 @@ final sampleEventTickets = [
     paymentMethodKey: "my_events.tickets.payment_method_card",
     paymentReference: "CARD-804321",
     purchasedAt: DateTime(2026, 3, 29, 16, 15),
-    sectionLabel: "Sky Lounge",
-    entryWindow: "18:15 - 19:15",
+    consumable: true,
+    consumableDescription: "Signature cocktail and plated bites",
     accent: const Color(0xFF0F8F5F),
-    perkKeys: [
-      "my_events.tickets.perk_priority_lane",
-      "my_events.tickets.perk_welcome_drink",
-      "my_events.tickets.perk_lounge_access",
-    ],
   ),
   EventTicketPreview(
     eventTitle: "Rwanda Tech Expo Summit",
@@ -120,7 +110,6 @@ final sampleEventTickets = [
     endAt: DateTime(2026, 4, 19, 18, 0),
     ticketCategoryKey: "my_events.ticket_regular",
     ticketStateKey: "my_events.tickets.ticket_ready",
-    holderName: "Primary Holder",
     quantity: 1,
     unitPriceRwf: 45000,
     orderNumber: "EVT-24107",
@@ -128,13 +117,9 @@ final sampleEventTickets = [
     paymentMethodKey: "my_events.tickets.payment_method_mobile_money",
     paymentReference: "MOMO-981502",
     purchasedAt: DateTime(2026, 3, 28, 12, 42),
-    sectionLabel: "Hall C",
-    entryWindow: "08:00 - 09:30",
+    consumable: false,
+    consumableDescription: null,
     accent: const Color(0xFF1877B8),
-    perkKeys: [
-      "my_events.tickets.perk_networking_access",
-      "my_events.tickets.perk_parking_access",
-    ],
   ),
   EventTicketPreview(
     eventTitle: "Lake Kivu Sunset Sessions",
@@ -144,7 +129,6 @@ final sampleEventTickets = [
     endAt: DateTime(2026, 3, 16, 22, 0),
     ticketCategoryKey: "my_events.ticket_table",
     ticketStateKey: "my_events.tickets.ticket_used",
-    holderName: "Primary Holder",
     quantity: 4,
     unitPriceRwf: 80000,
     orderNumber: "EVT-23892",
@@ -152,12 +136,8 @@ final sampleEventTickets = [
     paymentMethodKey: "my_events.tickets.payment_method_bank_transfer",
     paymentReference: "BNK-410224",
     purchasedAt: DateTime(2026, 3, 4, 10, 8),
-    sectionLabel: "Lakeside Deck",
-    entryWindow: "16:45 - 18:00",
+    consumable: true,
+    consumableDescription: "Sunset platter and soft drinks",
     accent: const Color(0xFFC07A12),
-    perkKeys: [
-      "my_events.tickets.perk_table_service",
-      "my_events.tickets.perk_host_fast_track",
-    ],
   ),
 ];
