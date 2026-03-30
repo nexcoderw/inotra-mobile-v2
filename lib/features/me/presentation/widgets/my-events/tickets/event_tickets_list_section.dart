@@ -78,37 +78,6 @@ class _EventTicketCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _TotalPaidSection(ticket: ticket),
-                const SizedBox(height: 14),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wideFacts = constraints.maxWidth >= 720;
-                    final factWidth = wideFacts
-                        ? (constraints.maxWidth - 24) / 3
-                        : (constraints.maxWidth - 10) / 2;
-
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _TicketFact(
-                          width: factWidth,
-                          label: t(lang, "my_events.tickets.ticket_code"),
-                          value: ticket.ticketCode,
-                        ),
-                        _TicketFact(
-                          width: factWidth,
-                          label: t(lang, "my_events.tickets.purchased_on"),
-                          value: formatIssuedDate(context, ticket.purchasedAt),
-                        ),
-                        _TicketFact(
-                          width: factWidth,
-                          label: t(lang, "my_events.tickets.payment_reference"),
-                          value: ticket.paymentReference,
-                        ),
-                      ],
-                    );
-                  },
-                ),
                 const SizedBox(height: 16),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -318,57 +287,6 @@ class _TicketPriceRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TicketFact extends StatelessWidget {
-  const _TicketFact({
-    required this.width,
-    required this.label,
-    required this.value,
-  });
-
-  final double width;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: width,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withValues(alpha: 0.50),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-              color: scheme.onSurface.withValues(alpha: 0.92),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
