@@ -49,7 +49,7 @@ import "../../features/me/presentation/pages/listings/my_listing_edit_page.dart"
 import "../../features/me/presentation/pages/listings/my_listing_submission_detail_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_submissions_page.dart";
 import "../../features/me/presentation/pages/listings/my_listings_page.dart";
-import "../../features/me/presentation/pages/trips/trip_reservations_page.dart";
+import "../../features/me/presentation/pages/trip_reservations_page.dart";
 import "../../features/me/presentation/pages/profile/profile_account_details_page.dart";
 import "../../features/me/presentation/pages/profile/profile_change_password_page.dart";
 import "../../features/me/presentation/pages/profile/profile_danger_zone_page.dart";
