@@ -1,31 +1,14 @@
 import "package:flutter/material.dart";
-import "package:hugeicons/hugeicons.dart";
 
-import "../../../../../../core/utils/rwf_currency.dart";
 import "../../../../../../i18n/lang.dart";
 import "../../../../../../i18n/translations.dart";
-import "event_tickets_models.dart";
-import "event_tickets_shared.dart";
 
 class EventTicketsHeader extends StatelessWidget {
-  const EventTicketsHeader({
-    super.key,
-    required this.displayName,
-    required this.email,
-    required this.nextTicket,
-  });
-
-  final String displayName;
-  final String email;
-  final EventTicketPreview nextTicket;
+  const EventTicketsHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final nextTicketTone = eventTicketTone(
-      nextTicket.ticketStateKey,
-      Theme.of(context).colorScheme,
-    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -48,175 +31,15 @@ class EventTicketsHeader extends StatelessWidget {
           ),
         ],
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final showInlinePanel = constraints.maxWidth >= 860;
-
-          return showInlinePanel
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _buildLead(context, lang)),
-                    const SizedBox(width: 18),
-                    SizedBox(
-                      width: 304,
-                      child: _buildNextTicketPanel(
-                        context,
-                        lang,
-                        nextTicketTone,
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLead(context, lang),
-                    const SizedBox(height: 16),
-                    _buildNextTicketPanel(context, lang, nextTicketTone),
-                  ],
-                );
-        },
-      ),
-    );
-  }
-
-  Widget _buildLead(BuildContext context, String lang) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          t(lang, "nav.event_tickets"),
-          style: const TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w900,
-            height: 1,
-            letterSpacing: -0.9,
-            color: Colors.white,
-          ),
+      child: Text(
+        t(lang, "nav.event_tickets"),
+        style: const TextStyle(
+          fontSize: 30,
+          fontWeight: FontWeight.w900,
+          height: 1,
+          letterSpacing: -0.9,
+          color: Colors.white,
         ),
-        const SizedBox(height: 10),
-        Text(
-          t(
-            lang,
-            "my_events.tickets.header_subtitle",
-          ).replaceAll("{name}", displayName),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            height: 1.45,
-            color: Colors.white.withValues(alpha: 0.70),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Center(
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedUser,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    email,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white.withValues(alpha: 0.56),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNextTicketPanel(BuildContext context, String lang, Color tone) {
-    return EventTicketsSurfaceCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            t(lang, "my_events.tickets.next_entry"),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1,
-              color: tone,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            nextTicket.eventTitle,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            formatEventWindow(context, nextTicket.startAt, nextTicket.endAt),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.58),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              EventTicketsStateBadge(
-                label: t(lang, nextTicket.ticketStateKey),
-                color: tone,
-              ),
-              EventTicketsMetaPill(
-                icon: HugeIcons.strokeRoundedLocation01,
-                label: nextTicket.venue,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.56),
-              ),
-              EventTicketsMetaPill(
-                icon: HugeIcons.strokeRoundedWallet02,
-                label: RwfCurrency.compact(nextTicket.totalPaidRwf),
-                color: tone,
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
