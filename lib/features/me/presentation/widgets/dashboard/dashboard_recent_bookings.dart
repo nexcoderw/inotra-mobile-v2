@@ -2,6 +2,8 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 import "../../../../../core/constants/app_colors.dart";
+import "../../../../../i18n/lang.dart";
+import "../../../../../i18n/translations.dart";
 import "dashboard_shared.dart";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,24 +36,29 @@ class BookingItem {
     final listing = json["listing"] ?? json["place"] ?? {};
     String name = "";
     if (listing is Map) {
-      name = (listing["title"] ?? listing["name"] ?? listing["place_name"] ?? "")
-          .toString();
+      name =
+          (listing["title"] ?? listing["name"] ?? listing["place_name"] ?? "")
+              .toString();
     }
     if (name.isEmpty) {
-      name = (json["listing_title"] ?? json["place_name"] ?? json["title"] ?? "Listing")
-          .toString();
+      name =
+          (json["listing_title"] ?? json["place_name"] ?? json["title"] ?? "")
+              .toString();
     }
 
     final user = json["user"] ?? json["guest"] ?? {};
     String guest = "";
     if (user is Map) {
-      guest = (user["display_name"] ?? user["full_name"] ?? user["name"] ??
-              user["email"] ?? "")
-          .toString();
+      guest =
+          (user["display_name"] ??
+                  user["full_name"] ??
+                  user["name"] ??
+                  user["email"] ??
+                  "")
+              .toString();
     }
     if (guest.isEmpty) {
-      guest =
-          (json["guest_name"] ?? json["user_name"] ?? "").toString();
+      guest = (json["guest_name"] ?? json["user_name"] ?? "").toString();
     }
 
     final price = json["total_price"] ?? json["price"] ?? json["amount"];
@@ -62,7 +69,7 @@ class BookingItem {
 
     return BookingItem(
       id: (json["id"] ?? "").toString(),
-      listingName: name.isEmpty ? "Listing" : name,
+      listingName: name,
       guestName: guest.isEmpty ? null : guest,
       checkIn: (json["check_in"] ?? json["check_in_date"] ?? "").toString(),
       checkOut: (json["check_out"] ?? json["check_out_date"] ?? "").toString(),
@@ -91,6 +98,8 @@ class DashboardRecentBookings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lang = currentLangSync();
+
     return DashboardSectionCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,8 +107,10 @@ class DashboardRecentBookings extends StatelessWidget {
           DashboardSectionHeader(
             icon: HugeIcons.strokeRoundedCalendar03,
             iconColor: const Color(0xFF0EA5E9),
-            title: "Recent Bookings",
-            subtitle: isLoading ? "Loading…" : "${bookings.length} shown",
+            title: t(lang, "dashboard.recent_bookings"),
+            subtitle: isLoading
+                ? t(lang, "dashboard.loading")
+                : "${bookings.length} ${t(lang, "dashboard.shown")}",
             onViewAll: onViewAll,
           ),
           const SizedBox(height: 16),
@@ -117,63 +128,73 @@ class DashboardRecentBookings extends StatelessWidget {
   List<Widget> _buildSkeletons(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     return List.generate(
-        3,
-        (_) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: s.onSurface.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
+      3,
+      (_) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: s.onSurface.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: s.onSurface.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                          width: double.infinity,
-                          height: 12,
-                          decoration: BoxDecoration(
-                              color: s.onSurface.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(4))),
-                      const SizedBox(height: 6),
-                      Container(
-                          width: 120,
-                          height: 10,
-                          decoration: BoxDecoration(
-                              color: s.onSurface.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(4))),
-                    ],
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 120,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: s.onSurface.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
-                ),
-              ]),
-            ));
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildEmpty(BuildContext context) {
     final s = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Center(
-        child: Column(children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedCalendarRemove02,
-            color: s.onSurface.withValues(alpha: 0.25),
-            size: 32,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "No bookings yet",
-            style: TextStyle(
-              fontSize: 13,
-              color: s.onSurface.withValues(alpha: 0.4),
+        child: Column(
+          children: [
+            HugeIcon(
+              icon: HugeIcons.strokeRoundedCalendarRemove02,
+              color: s.onSurface.withValues(alpha: 0.25),
+              size: 32,
             ),
-          ),
-        ]),
+            const SizedBox(height: 8),
+            Text(
+              t(lang, "dashboard.no_bookings"),
+              style: TextStyle(
+                fontSize: 13,
+                color: s.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -197,9 +218,22 @@ class _BookingRow extends StatelessWidget {
   Color _statusColor() =>
       _statusColors[booking.status] ?? const Color(0xFF9CA3AF);
 
-  String _statusLabel() {
+  String _statusLabel(String lang) {
     final s = booking.status;
-    return s.isEmpty ? "Pending" : "${s[0].toUpperCase()}${s.substring(1)}";
+    switch (s) {
+      case "confirmed":
+        return t(lang, "dashboard.status_confirmed");
+      case "pending":
+        return t(lang, "dashboard.status_pending");
+      case "cancelled":
+        return t(lang, "dashboard.status_cancelled");
+      case "completed":
+        return t(lang, "dashboard.status_completed");
+      default:
+        return s.isEmpty
+            ? t(lang, "dashboard.status_pending")
+            : "${s[0].toUpperCase()}${s.substring(1)}";
+    }
   }
 
   String _initials() {
@@ -213,96 +247,106 @@ class _BookingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
     final statusColor = _statusColor();
+    final listingTitle = booking.listingName.isEmpty
+        ? t(lang, "dashboard.listing_fallback")
+        : booking.listingName;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(children: [
-        // Initials avatar
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Center(
-            child: Text(
-              _initials(),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primary,
+      child: Row(
+        children: [
+          // Initials avatar
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Center(
+              child: Text(
+                _initials(),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
+          const SizedBox(width: 12),
 
-        // Title + meta
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                booking.listingName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
-              ),
-              if ((booking.guestName ?? "").isNotEmpty ||
-                  (booking.checkIn ?? "").isNotEmpty)
+          // Title + meta
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  [
-                    if ((booking.guestName ?? "").isNotEmpty) booking.guestName!,
-                    if ((booking.checkIn ?? "").isNotEmpty)
-                      _formatDate(booking.checkIn!),
-                  ].join(" · "),
+                  listingTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11,
-                    color: scheme.onSurface.withValues(alpha: 0.45),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface,
                   ),
                 ),
+                if ((booking.guestName ?? "").isNotEmpty ||
+                    (booking.checkIn ?? "").isNotEmpty)
+                  Text(
+                    [
+                      if ((booking.guestName ?? "").isNotEmpty)
+                        booking.guestName!,
+                      if ((booking.checkIn ?? "").isNotEmpty)
+                        _formatDate(booking.checkIn!),
+                    ].join(" · "),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: scheme.onSurface.withValues(alpha: 0.45),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Right side: price + status
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (booking.totalPrice != null)
+                Text(
+                  "${booking.currency ?? 'RWF'} ${_formatPrice(booking.totalPrice!)}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              const SizedBox(height: 3),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _statusLabel(lang),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
-        const SizedBox(width: 8),
-
-        // Right side: price + status
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          if (booking.totalPrice != null)
-            Text(
-              "${booking.currency ?? 'RWF'} ${_formatPrice(booking.totalPrice!)}",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-              ),
-            ),
-          const SizedBox(height: 3),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _statusLabel(),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
-              ),
-            ),
-          ),
-        ]),
-      ]),
+        ],
+      ),
     );
   }
 
@@ -310,8 +354,18 @@ class _BookingRow extends StatelessWidget {
     try {
       final d = DateTime.parse(iso);
       const m = [
-        "Jan","Feb","Mar","Apr","May","Jun",
-        "Jul","Aug","Sep","Oct","Nov","Dec"
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
       ];
       return "${m[d.month - 1]} ${d.day}";
     } catch (_) {
