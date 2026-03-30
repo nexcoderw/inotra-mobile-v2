@@ -3,6 +3,8 @@ import "dart:math" as math;
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
+import "../../../../../i18n/lang.dart";
+import "../../../../../i18n/translations.dart";
 import "dashboard_shared.dart";
 
 /// Dashboard section for the user's events: totals, submission count,
@@ -22,17 +24,26 @@ class DashboardEventsSection extends StatelessWidget {
   });
 
   static const _accentColor = Color(0xFFF59E0B);
-  static const _categories = ["Music", "Sports", "Art", "Food", "Tech"];
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
     final total = eventCount ?? 0;
+    final categories = [
+      t(lang, "dashboard.category_music"),
+      t(lang, "dashboard.category_sports"),
+      t(lang, "dashboard.category_art"),
+      t(lang, "dashboard.category_food"),
+      t(lang, "dashboard.category_tech"),
+    ];
 
     // Deterministic sample bars seeded by event count
     final rng = math.Random(total + 7);
-    final values =
-        List.generate(_categories.length, (_) => rng.nextDouble() * 80 + 20);
+    final values = List.generate(
+      categories.length,
+      (_) => rng.nextDouble() * 80 + 20,
+    );
     final maxV = values.reduce(math.max);
 
     return DashboardSectionCard(
@@ -43,41 +54,45 @@ class DashboardEventsSection extends StatelessWidget {
           DashboardSectionHeader(
             icon: HugeIcons.strokeRoundedFireworks,
             iconColor: _accentColor,
-            title: "Events",
-            subtitle: isLoading ? "Loading…" : "$total total",
+            title: t(lang, "dashboard.events"),
+            subtitle: isLoading
+                ? t(lang, "dashboard.loading")
+                : "$total ${t(lang, "dashboard.total")}",
             onViewAll: onViewAll,
           ),
           const SizedBox(height: 18),
 
           // 3-tile stat row
-          Row(children: [
-            Expanded(
-              child: _EventTile(
-                icon: HugeIcons.strokeRoundedFireworks,
-                label: "Events",
-                value: isLoading ? "—" : "$total",
-                color: _accentColor,
+          Row(
+            children: [
+              Expanded(
+                child: _EventTile(
+                  icon: HugeIcons.strokeRoundedFireworks,
+                  label: t(lang, "dashboard.events"),
+                  value: isLoading ? "—" : "$total",
+                  color: _accentColor,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _EventTile(
-                icon: HugeIcons.strokeRoundedFile02,
-                label: "Submissions",
-                value: isLoading ? "—" : "${submissionCount ?? 0}",
-                color: const Color(0xFF8B5CF6),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _EventTile(
+                  icon: HugeIcons.strokeRoundedFile02,
+                  label: t(lang, "dashboard.submissions"),
+                  value: isLoading ? "—" : "${submissionCount ?? 0}",
+                  color: const Color(0xFF8B5CF6),
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _EventTile(
-                icon: HugeIcons.strokeRoundedUserGroup,
-                label: "Attendance",
-                value: isLoading ? "—" : "${(total * 42).clamp(0, 9999)}",
-                color: const Color(0xFF0EA5E9),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _EventTile(
+                  icon: HugeIcons.strokeRoundedUserGroup,
+                  label: t(lang, "dashboard.attendance"),
+                  value: isLoading ? "—" : "${(total * 42).clamp(0, 9999)}",
+                  color: const Color(0xFF0EA5E9),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           const SizedBox(height: 18),
 
           // Chart sub-header
@@ -85,7 +100,7 @@ class DashboardEventsSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Ticket Sales by Category",
+                t(lang, "dashboard.ticket_sales_by_category"),
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -94,14 +109,13 @@ class DashboardEventsSection extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: scheme.onSurface.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  "Sample data",
+                  t(lang, "dashboard.sample_data"),
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w600,
@@ -114,57 +128,61 @@ class DashboardEventsSection extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Horizontal progress bars
-          ...List.generate(_categories.length, (i) {
+          ...List.generate(categories.length, (i) {
             final pct = values[i] / maxV;
             return Padding(
               padding: const EdgeInsets.only(bottom: 9),
-              child: Row(children: [
-                SizedBox(
-                  width: 46,
-                  child: Text(
-                    _categories[i],
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: scheme.onSurface.withValues(alpha: 0.55),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Stack(children: [
-                    Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: scheme.onSurface.withValues(alpha: 0.07),
-                        borderRadius: BorderRadius.circular(4),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 46,
+                    child: Text(
+                      categories[i],
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),
-                    FractionallySizedBox(
-                      widthFactor: pct.clamp(0.0, 1.0),
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _accentColor,
-                          borderRadius: BorderRadius.circular(4),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: scheme.onSurface.withValues(alpha: 0.07),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
-                      ),
-                    ),
-                  ]),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    "${values[i].round()}",
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface.withValues(alpha: 0.7),
+                        FractionallySizedBox(
+                          widthFactor: pct.clamp(0.0, 1.0),
+                          child: Container(
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _accentColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ]),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 28,
+                    child: Text(
+                      "${values[i].round()}",
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             );
           }),
         ],
