@@ -3,6 +3,8 @@ import "dart:math" as math;
 import "package:flutter/material.dart";
 
 import "../../../../../core/constants/app_colors.dart";
+import "../../../../../i18n/lang.dart";
+import "../../../../../i18n/translations.dart";
 
 /// Full-width area chart that overlays two data series over the selected
 /// date range. Series 1 = listing activity (green), Series 2 = bookings
@@ -20,25 +22,21 @@ class DashboardActivityChart extends StatelessWidget {
     required this.bookingsData,
   });
 
-  static const _months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
-
-  static String _fmt(DateTime d) => "${_months[d.month - 1]} ${d.day}";
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = scheme.brightness == Brightness.dark;
+    final lang = currentLangSync();
+    final localizations = MaterialLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
         color: isDark ? scheme.surfaceContainerHighest : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: scheme.outline.withValues(alpha: isDark ? 0.08 : 0.09)),
+        border: Border.all(
+          color: scheme.outline.withValues(alpha: isDark ? 0.08 : 0.09),
+        ),
         boxShadow: isDark
             ? []
             : [
@@ -61,7 +59,7 @@ class DashboardActivityChart extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Activity Overview",
+                    t(lang, "dashboard.activity_overview"),
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -71,7 +69,7 @@ class DashboardActivityChart extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    "${_fmt(range.start)} – ${_fmt(range.end)}",
+                    "${localizations.formatShortMonthDay(range.start)} – ${localizations.formatShortMonthDay(range.end)}",
                     style: TextStyle(
                       fontSize: 11.5,
                       color: scheme.onSurface.withValues(alpha: 0.45),
@@ -79,19 +77,21 @@ class DashboardActivityChart extends StatelessWidget {
                   ),
                 ],
               ),
-              Row(children: [
-                _Legend(
-                  color: AppColors.primary,
-                  label: "Listings",
-                  scheme: scheme,
-                ),
-                const SizedBox(width: 14),
-                _Legend(
-                  color: const Color(0xFF0EA5E9),
-                  label: "Bookings",
-                  scheme: scheme,
-                ),
-              ]),
+              Row(
+                children: [
+                  _Legend(
+                    color: AppColors.primary,
+                    label: t(lang, "dashboard.listings"),
+                    scheme: scheme,
+                  ),
+                  const SizedBox(width: 14),
+                  _Legend(
+                    color: const Color(0xFF0EA5E9),
+                    label: t(lang, "dashboard.bookings"),
+                    scheme: scheme,
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -130,15 +130,11 @@ class _XAxisLabels extends StatelessWidget {
 
   const _XAxisLabels({required this.range, required this.scheme});
 
-  static const _months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
-
   @override
   Widget build(BuildContext context) {
     final days = range.end.difference(range.start).inDays + 1;
     final labelCount = math.min(days, 5);
+    final localizations = MaterialLocalizations.of(context);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -148,7 +144,7 @@ class _XAxisLabels extends StatelessWidget {
             : ((days - 1) * i / (labelCount - 1)).round().clamp(0, days - 1);
         final d = range.start.add(Duration(days: offset));
         return Text(
-          "${_months[d.month - 1]} ${d.day}",
+          localizations.formatShortMonthDay(d),
           style: TextStyle(
             fontSize: 10,
             color: scheme.onSurface.withValues(alpha: 0.38),
@@ -169,26 +165,33 @@ class _Legend extends StatelessWidget {
   final String label;
   final ColorScheme scheme;
 
-  const _Legend(
-      {required this.color, required this.label, required this.scheme});
+  const _Legend({
+    required this.color,
+    required this.label,
+    required this.scheme,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-      const SizedBox(width: 5),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: scheme.onSurface.withValues(alpha: 0.55),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-      ),
-    ]);
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: scheme.onSurface.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -254,7 +257,13 @@ class _AreaChartPainter extends CustomPainter {
     for (int i = 1; i < pts.length; i++) {
       final cpX = (pts[i - 1].dx + pts[i].dx) / 2;
       fillPath.cubicTo(
-          cpX, pts[i - 1].dy, cpX, pts[i].dy, pts[i].dx, pts[i].dy);
+        cpX,
+        pts[i - 1].dy,
+        cpX,
+        pts[i].dy,
+        pts[i].dx,
+        pts[i].dy,
+      );
     }
     fillPath
       ..lineTo(pts.last.dx, size.height)
@@ -279,7 +288,13 @@ class _AreaChartPainter extends CustomPainter {
     for (int i = 1; i < pts.length; i++) {
       final cpX = (pts[i - 1].dx + pts[i].dx) / 2;
       linePath.cubicTo(
-          cpX, pts[i - 1].dy, cpX, pts[i].dy, pts[i].dx, pts[i].dy);
+        cpX,
+        pts[i - 1].dy,
+        cpX,
+        pts[i].dy,
+        pts[i].dx,
+        pts[i].dy,
+      );
     }
     canvas.drawPath(
       linePath,
@@ -294,9 +309,20 @@ class _AreaChartPainter extends CustomPainter {
     // Peak dot
     final peakIdx = data.indexOf(data.reduce(math.max));
     canvas
-      ..drawCircle(pts[peakIdx], 4, Paint()..color = color..style = PaintingStyle.fill)
-      ..drawCircle(pts[peakIdx], 2.5,
-          Paint()..color = Colors.white..style = PaintingStyle.fill);
+      ..drawCircle(
+        pts[peakIdx],
+        4,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill,
+      )
+      ..drawCircle(
+        pts[peakIdx],
+        2.5,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.fill,
+      );
   }
 
   @override
