@@ -704,6 +704,62 @@ const translations = {
     "my_events.tickets.total_paid": "Total paid",
     "my_events.tickets.details": "Details",
     "my_events.tickets.details_dialog_title": "Ticket details",
+    "my_listings.bookings.header_eyebrow": "BOOKED STAYS",
+    "my_listings.bookings.header_subtitle":
+        "Keep every stay, payment record, and booking window connected to {name}'s account in one premium workspace.",
+    "my_listings.bookings.next_stay": "Next stay",
+    "my_listings.bookings.loading_panel_title": "Loading booking summary",
+    "my_listings.bookings.loading_panel_subtitle":
+        "We are preparing your upcoming stay snapshot.",
+    "my_listings.bookings.empty_panel_title": "No booked stays yet",
+    "my_listings.bookings.empty_panel_subtitle":
+        "Once you reserve a listing, the next stay summary will appear here.",
+    "my_listings.bookings.summary_upcoming": "Upcoming stays",
+    "my_listings.bookings.summary_upcoming_sub":
+        "Confirmed and pending arrivals ahead",
+    "my_listings.bookings.summary_nights": "Booked nights",
+    "my_listings.bookings.summary_nights_sub":
+        "Nights reserved across your stays",
+    "my_listings.bookings.summary_paid": "Total paid",
+    "my_listings.bookings.summary_paid_sub":
+        "RWF committed to listing bookings",
+    "my_listings.bookings.summary_properties": "Properties",
+    "my_listings.bookings.summary_properties_sub":
+        "Unique listings booked so far",
+    "my_listings.bookings.list_title": "My listing bookings",
+    "my_listings.bookings.list_subtitle":
+        "Every stay you reserve appears here with its booking window, payment details, and accommodation summary.",
+    "my_listings.bookings.empty_title": "No listing bookings yet",
+    "my_listings.bookings.empty_subtitle":
+        "When you reserve a stay, it will appear here with its payment and stay details.",
+    "my_listings.bookings.error_title": "Unable to load stays",
+    "my_listings.bookings.error_subtitle":
+        "We couldn't retrieve your listing bookings right now. Please try again.",
+    "my_listings.bookings.location_fallback": "Location to be confirmed",
+    "my_listings.bookings.stay_fallback": "Stay",
+    "my_listings.bookings.details": "Details",
+    "my_listings.bookings.details_dialog_title": "Booking details",
+    "my_listings.bookings.guests": "Guests",
+    "my_listings.bookings.guests_count": "{count} guests",
+    "my_listings.bookings.nights": "Nights",
+    "my_listings.bookings.nights_count": "{count} nights",
+    "my_listings.bookings.booking_code": "Booking code",
+    "my_listings.bookings.payment_method": "Payment method",
+    "my_listings.bookings.payment_reference": "Payment reference",
+    "my_listings.bookings.booked_on": "Booked on",
+    "my_listings.bookings.check_in": "Check-in",
+    "my_listings.bookings.check_out": "Check-out",
+    "my_listings.bookings.nightly_rate": "Nightly rate",
+    "my_listings.bookings.total_paid": "Total paid",
+    "my_listings.bookings.status_confirmed": "Confirmed",
+    "my_listings.bookings.status_pending": "Pending",
+    "my_listings.bookings.status_checked_in": "Checked in",
+    "my_listings.bookings.status_completed": "Completed",
+    "my_listings.bookings.status_cancelled": "Cancelled",
+    "my_listings.bookings.payment_method_card": "Card payment",
+    "my_listings.bookings.payment_method_mobile_money": "Mobile money",
+    "my_listings.bookings.payment_method_bank_transfer": "Bank transfer",
+    "my_listings.bookings.payment_method_cash": "Cash",
     "trip_reservations.guest_fallback": "Traveler",
     "trip_reservations.header_eyebrow": "BOOKED TRIPS",
     "trip_reservations.header_subtitle":
