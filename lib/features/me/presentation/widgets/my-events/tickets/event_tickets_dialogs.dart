@@ -7,7 +7,7 @@ import "../../../../../../i18n/translations.dart";
 import "event_tickets_models.dart";
 import "event_tickets_shared.dart";
 
-Future<void> showEventTicketPassDialog(
+Future<void> showEventTicketDetailsDialog(
   BuildContext context,
   EventTicketPreview ticket,
 ) {
@@ -20,8 +20,10 @@ Future<void> showEventTicketPassDialog(
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
+      final scheme = Theme.of(dialogContext).colorScheme;
+
       return _EventTicketDialogShell(
-        title: t(lang, "my_events.tickets.pass_dialog_title"),
+        title: t(lang, "my_events.tickets.details_dialog_title"),
         subtitle: ticket.eventTitle,
         accent: accent,
         child: Column(
@@ -40,9 +42,26 @@ Future<void> showEventTicketPassDialog(
                 children: [
                   Row(
                     children: [
-                      EventTicketsStateBadge(
-                        label: t(lang, ticket.ticketStateKey),
-                        color: accent,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.primary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: scheme.primary.withValues(alpha: 0.14),
+                          ),
+                        ),
+                        child: Text(
+                          t(lang, ticket.ticketCategoryKey),
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.primary,
+                          ),
+                        ),
                       ),
                       const Spacer(),
                       Text(
@@ -62,10 +81,19 @@ Future<void> showEventTicketPassDialog(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.4,
-                      color: Theme.of(dialogContext).colorScheme.onSurface,
+                      color: scheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
+                  Text(
+                    "${ticket.venue} · ${ticket.city}",
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface.withValues(alpha: 0.62),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     formatEventWindow(
                       dialogContext,
@@ -75,9 +103,7 @@ Future<void> showEventTicketPassDialog(
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(
-                        dialogContext,
-                      ).colorScheme.onSurface.withValues(alpha: 0.62),
+                      color: scheme.onSurface.withValues(alpha: 0.62),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -88,9 +114,7 @@ Future<void> showEventTicketPassDialog(
                       vertical: 16,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(
-                        dialogContext,
-                      ).colorScheme.surfaceContainerLowest,
+                      color: scheme.surfaceContainerLowest,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
@@ -102,9 +126,7 @@ Future<void> showEventTicketPassDialog(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.1,
-                            color: Theme.of(
-                              dialogContext,
-                            ).colorScheme.onSurface.withValues(alpha: 0.48),
+                            color: scheme.onSurface.withValues(alpha: 0.48),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -114,9 +136,7 @@ Future<void> showEventTicketPassDialog(
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
-                            color: Theme.of(
-                              dialogContext,
-                            ).colorScheme.onSurface,
+                            color: scheme.onSurface,
                           ),
                         ),
                       ],
@@ -131,95 +151,18 @@ Future<void> showEventTicketPassDialog(
               runSpacing: 12,
               children: [
                 _DialogFact(
+                  label: t(lang, "my_events.tickets.ticket_price"),
+                  value: RwfCurrency.format(ticket.unitPriceRwf),
+                ),
+                _DialogFact(
                   label: t(lang, "my_events.tickets.quantity"),
                   value: _countLabel(lang, ticket.quantity),
                 ),
                 _DialogFact(
-                  label: t(lang, "my_events.tickets.order_number"),
-                  value: ticket.orderNumber,
+                  label: t(lang, "my_events.tickets.purchased_on"),
+                  value: formatIssuedDate(dialogContext, ticket.purchasedAt),
                 ),
-                _DialogFact(
-                  label: t(lang, "my_events.tickets.payment_method"),
-                  value: t(lang, ticket.paymentMethodKey),
-                ),
-                if (ticket.consumable &&
-                    (ticket.consumableDescription ?? "").trim().isNotEmpty)
-                  _DialogFact(
-                    label: t(lang, "my_events.tickets.consumables"),
-                    value: ticket.consumableDescription!.trim(),
-                  ),
               ],
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-Future<void> showEventTicketPaymentDialog(
-  BuildContext context,
-  EventTicketPreview ticket,
-) {
-  final lang = currentLangSync();
-  final accent = eventTicketTone(
-    ticket.ticketStateKey,
-    Theme.of(context).colorScheme,
-  );
-
-  return showDialog<void>(
-    context: context,
-    builder: (dialogContext) {
-      final scheme = Theme.of(dialogContext).colorScheme;
-
-      return _EventTicketDialogShell(
-        title: t(lang, "my_events.tickets.payment_dialog_title"),
-        subtitle: ticket.orderNumber,
-        accent: accent,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: accent.withValues(alpha: 0.18)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    t(lang, "my_events.tickets.total_paid"),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.1,
-                      color: accent,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    RwfCurrency.format(ticket.totalPaidRwf),
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.7,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    ticket.eventTitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface.withValues(alpha: 0.62),
-                    ),
-                  ),
-                ],
-              ),
             ),
             const SizedBox(height: 18),
             _DialogRow(
@@ -231,32 +174,14 @@ Future<void> showEventTicketPaymentDialog(
               value: ticket.paymentReference,
             ),
             _DialogRow(
-              label: t(lang, "my_events.tickets.purchased_on"),
-              value: formatIssuedDate(dialogContext, ticket.purchasedAt),
-            ),
-            _DialogRow(
               label: t(lang, "my_events.tickets.order_number"),
               value: ticket.orderNumber,
             ),
             _DialogRow(
               label: t(lang, "my_events.tickets.ticket_code"),
               value: ticket.ticketCode,
+              isLast: true,
             ),
-            _DialogRow(
-              label: t(lang, "my_events.tickets.quantity"),
-              value: _countLabel(lang, ticket.quantity),
-            ),
-            _DialogRow(
-              label: t(lang, "my_events.tickets.unit_price"),
-              value: RwfCurrency.format(ticket.unitPriceRwf),
-            ),
-            if (ticket.consumable &&
-                (ticket.consumableDescription ?? "").trim().isNotEmpty)
-              _DialogRow(
-                label: t(lang, "my_events.tickets.consumables"),
-                value: ticket.consumableDescription!.trim(),
-                isLast: true,
-              ),
           ],
         ),
       );
