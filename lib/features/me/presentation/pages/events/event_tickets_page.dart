@@ -1,7 +1,6 @@
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
-import "../../../../../core/services/auth_session.dart";
 import "../../../../../core/utils/rwf_currency.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
@@ -16,9 +15,6 @@ class EventTicketsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final session = AuthSession.instance.value;
-    final email = (session.user?["email"] ?? "traveler@inotra.app").toString();
-    final displayName = _displayName(session.displayName, email, lang);
     final tickets = sampleEventTickets;
 
     final upcomingCount = tickets.where((ticket) => ticket.isUpcoming).length;
@@ -34,11 +30,6 @@ class EventTicketsPage extends StatelessWidget {
         .map((ticket) => ticket.paymentMethodKey)
         .toSet()
         .length;
-    final nextTicket = tickets.firstWhere(
-      (ticket) => ticket.isUpcoming,
-      orElse: () => tickets.first,
-    );
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
@@ -77,11 +68,7 @@ class EventTicketsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      EventTicketsHeader(
-                        displayName: displayName,
-                        email: email,
-                        nextTicket: nextTicket,
-                      ),
+                      const EventTicketsHeader(),
                       const SizedBox(height: 16),
                       EventTicketsMetricsRow(
                         items: [
@@ -141,19 +128,5 @@ class EventTicketsPage extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _displayName(String? displayName, String email, String lang) {
-    final trimmed = (displayName ?? "").trim();
-    if (trimmed.isNotEmpty) {
-      return trimmed.split(" ").first;
-    }
-
-    final emailName = email.split("@").first.trim();
-    if (emailName.isNotEmpty) {
-      return emailName;
-    }
-
-    return t(lang, "trip_reservations.guest_fallback");
   }
 }
