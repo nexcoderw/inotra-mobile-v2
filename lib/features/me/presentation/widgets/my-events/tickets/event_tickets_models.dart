@@ -16,8 +16,6 @@ class EventTicketPreview {
     required this.paymentMethodKey,
     required this.paymentReference,
     required this.purchasedAt,
-    required this.consumable,
-    required this.consumableDescription,
     required this.accent,
   });
 
@@ -35,8 +33,6 @@ class EventTicketPreview {
   final String paymentMethodKey;
   final String paymentReference;
   final DateTime purchasedAt;
-  final bool consumable;
-  final String? consumableDescription;
   final Color accent;
 
   int get totalPaidRwf => quantity * unitPriceRwf;
@@ -46,19 +42,6 @@ class EventTicketPreview {
     final today = DateTime(now.year, now.month, now.day);
     final endDay = DateTime(endAt.year, endAt.month, endAt.day);
     return !endDay.isBefore(today);
-  }
-
-  String get eventStatusKey {
-    final now = DateTime.now();
-    if (endAt.isBefore(now)) return "events.status_ended";
-    if (!startAt.isAfter(now) && !endAt.isBefore(now)) {
-      return "events.status_happening";
-    }
-
-    final tomorrow = DateTime(now.year, now.month, now.day + 1);
-    final startDay = DateTime(startAt.year, startAt.month, startAt.day);
-    if (_isSameDay(startDay, tomorrow)) return "events.status_tomorrow";
-    return "events.status_future";
   }
 }
 
@@ -78,10 +61,6 @@ class EventTicketMetricItem {
   final Color accent;
 }
 
-bool _isSameDay(DateTime a, DateTime b) {
-  return a.year == b.year && a.month == b.month && a.day == b.day;
-}
-
 final sampleEventTickets = [
   EventTicketPreview(
     eventTitle: "Kigali Jazz Nights",
@@ -98,8 +77,6 @@ final sampleEventTickets = [
     paymentMethodKey: "my_events.tickets.payment_method_card",
     paymentReference: "CARD-804321",
     purchasedAt: DateTime(2026, 3, 29, 16, 15),
-    consumable: true,
-    consumableDescription: "Signature cocktail and plated bites",
     accent: const Color(0xFF0F8F5F),
   ),
   EventTicketPreview(
@@ -117,8 +94,6 @@ final sampleEventTickets = [
     paymentMethodKey: "my_events.tickets.payment_method_mobile_money",
     paymentReference: "MOMO-981502",
     purchasedAt: DateTime(2026, 3, 28, 12, 42),
-    consumable: false,
-    consumableDescription: null,
     accent: const Color(0xFF1877B8),
   ),
   EventTicketPreview(
@@ -136,8 +111,6 @@ final sampleEventTickets = [
     paymentMethodKey: "my_events.tickets.payment_method_bank_transfer",
     paymentReference: "BNK-410224",
     purchasedAt: DateTime(2026, 3, 4, 10, 8),
-    consumable: true,
-    consumableDescription: "Sunset platter and soft drinks",
     accent: const Color(0xFFC07A12),
   ),
 ];
