@@ -184,7 +184,7 @@ class InotraSidebarDrawer extends StatelessWidget {
                       _GlassNavTile(
                         icon: HugeIcons.strokeRoundedTicket01,
                         title: t(_lang, "nav.trip_reservations"),
-                        subtitle: t(_lang, "common.coming_soon"),
+                        subtitle: t(_lang, "trip_reservations.drawer_subtitle"),
                         onTap: onTripReservationsTap,
                         showTrailing: false,
                       ),
