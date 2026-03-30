@@ -131,47 +131,25 @@ Future<void> showEventTicketPassDialog(
               runSpacing: 12,
               children: [
                 _DialogFact(
-                  label: t(lang, "my_events.tickets.issued_to"),
-                  value: ticket.holderName,
-                ),
-                _DialogFact(
                   label: t(lang, "my_events.tickets.quantity"),
                   value: _countLabel(lang, ticket.quantity),
                 ),
                 _DialogFact(
-                  label: t(lang, "my_events.tickets.section"),
-                  value: ticket.sectionLabel,
+                  label: t(lang, "my_events.tickets.order_number"),
+                  value: ticket.orderNumber,
                 ),
                 _DialogFact(
-                  label: t(lang, "my_events.tickets.entry_window"),
-                  value: ticket.entryWindow,
+                  label: t(lang, "my_events.tickets.payment_method"),
+                  value: t(lang, ticket.paymentMethodKey),
                 ),
+                if (ticket.consumable &&
+                    (ticket.consumableDescription ?? "").trim().isNotEmpty)
+                  _DialogFact(
+                    label: t(lang, "my_events.tickets.consumables"),
+                    value: ticket.consumableDescription!.trim(),
+                  ),
               ],
             ),
-            if (ticket.perkKeys.isNotEmpty) ...[
-              const SizedBox(height: 18),
-              Text(
-                t(lang, "my_events.tickets.includes"),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(dialogContext).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final perkKey in ticket.perkKeys)
-                    EventTicketsMetaPill(
-                      icon: HugeIcons.strokeRoundedCheckmarkBadge01,
-                      label: t(lang, perkKey),
-                      color: accent,
-                    ),
-                ],
-              ),
-            ],
           ],
         ),
       );
@@ -272,35 +250,13 @@ Future<void> showEventTicketPaymentDialog(
               label: t(lang, "my_events.tickets.unit_price"),
               value: RwfCurrency.format(ticket.unitPriceRwf),
             ),
-            _DialogRow(
-              label: t(lang, "my_events.tickets.section"),
-              value: ticket.sectionLabel,
-              isLast: ticket.perkKeys.isEmpty,
-            ),
-            if (ticket.perkKeys.isNotEmpty) ...[
-              const SizedBox(height: 18),
-              Text(
-                t(lang, "my_events.tickets.includes"),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: scheme.onSurface,
-                ),
+            if (ticket.consumable &&
+                (ticket.consumableDescription ?? "").trim().isNotEmpty)
+              _DialogRow(
+                label: t(lang, "my_events.tickets.consumables"),
+                value: ticket.consumableDescription!.trim(),
+                isLast: true,
               ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final perkKey in ticket.perkKeys)
-                    EventTicketsMetaPill(
-                      icon: HugeIcons.strokeRoundedCheckmarkCircle01,
-                      label: t(lang, perkKey),
-                      color: accent,
-                    ),
-                ],
-              ),
-            ],
           ],
         ),
       );
