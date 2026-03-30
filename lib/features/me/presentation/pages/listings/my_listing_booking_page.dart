@@ -126,15 +126,6 @@ class _MyListingBookingPageState extends State<MyListingBookingPage> {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final session = AuthSession.instance.value;
-    final email = (session.user?["email"] ?? "traveler@inotra.app").toString();
-    final displayName = _displayName(session.displayName, email, lang);
-    final nextBooking = _bookings.firstWhere(
-      (booking) => booking.isUpcoming,
-      orElse: () => _bookings.isNotEmpty
-          ? _bookings.first
-          : MyListingBookingPreview.empty,
-    );
     final hasBookings = _bookings.isNotEmpty;
 
     final upcomingCount = _bookings
@@ -196,12 +187,7 @@ class _MyListingBookingPageState extends State<MyListingBookingPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        MyListingBookingHeader(
-                          displayName: displayName,
-                          email: email,
-                          nextBooking: hasBookings ? nextBooking : null,
-                          isLoading: _isLoading && !hasBookings,
-                        ),
+                        const MyListingBookingHeader(),
                         const SizedBox(height: 16),
                         MyListingBookingMetricsRow(
                           items: [
@@ -282,19 +268,5 @@ class _MyListingBookingPageState extends State<MyListingBookingPage> {
         );
       },
     );
-  }
-
-  String _displayName(String? displayName, String email, String lang) {
-    final trimmed = (displayName ?? "").trim();
-    if (trimmed.isNotEmpty) {
-      return trimmed.split(" ").first;
-    }
-
-    final emailName = email.split("@").first.trim();
-    if (emailName.isNotEmpty) {
-      return emailName;
-    }
-
-    return t(lang, "trip_reservations.guest_fallback");
   }
 }
