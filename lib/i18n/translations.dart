@@ -25,7 +25,7 @@ const translations = {
     "nav.my_listing_submissions": "My Listing Submissions",
     "nav.listing_reviews": "Reviews",
     "nav.listing_payments": "Payments",
-    "nav.listing_booking": "Booking",
+    "nav.listing_booking": "Bookings",
     "nav.trip_reservations": "Trip Reservations",
     "nav.profile": "Open Profile",
     "nav.settings": "Settings",
