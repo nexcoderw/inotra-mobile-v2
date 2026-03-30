@@ -1,6 +1,9 @@
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
+import "../../../../../i18n/lang.dart";
+import "../../../../../i18n/translations.dart";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Reusable section container card shared across dashboard sections.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -21,7 +24,8 @@ class DashboardSectionCard extends StatelessWidget {
         color: isDark ? scheme.surfaceContainerHighest : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: scheme.outline.withValues(alpha: isDark ? 0.08 : 0.09)),
+          color: scheme.outline.withValues(alpha: isDark ? 0.08 : 0.09),
+        ),
         boxShadow: isDark
             ? []
             : [
@@ -29,7 +33,7 @@ class DashboardSectionCard extends StatelessWidget {
                   color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
       ),
       child: child,
@@ -60,47 +64,53 @@ class DashboardSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Center(
-              child: HugeIcon(icon: icon, color: iconColor, size: 16),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: scheme.onSurface,
-                letterSpacing: -0.2,
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Center(
+                child: HugeIcon(icon: icon, color: iconColor, size: 16),
               ),
             ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 11,
-                color: scheme.onSurface.withValues(alpha: 0.45),
-              ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: scheme.onSurface.withValues(alpha: 0.45),
+                  ),
+                ),
+              ],
             ),
-          ]),
-        ]),
+          ],
+        ),
         if (onViewAll != null)
           GestureDetector(
             onTap: onViewAll,
             child: Text(
-              "View all",
+              t(lang, "common.view_all"),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -141,27 +151,29 @@ class DashboardStatChip extends StatelessWidget {
         color: color.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(children: [
-        HugeIcon(icon: icon, color: color, size: 13),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: scheme.onSurface.withValues(alpha: 0.55),
+      child: Row(
+        children: [
+          HugeIcon(icon: icon, color: color, size: 13),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: scheme.onSurface.withValues(alpha: 0.55),
+              ),
             ),
           ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: color,
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
