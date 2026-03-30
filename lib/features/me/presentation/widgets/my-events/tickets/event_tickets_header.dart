@@ -86,16 +86,6 @@ class EventTicketsHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          t(lang, "my_events.tickets.header_eyebrow"),
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.4,
-            color: Colors.white.withValues(alpha: 0.56),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
           t(lang, "nav.event_tickets"),
           style: const TextStyle(
             fontSize: 30,
