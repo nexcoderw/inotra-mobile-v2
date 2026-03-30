@@ -43,6 +43,10 @@ String formatIssuedDate(BuildContext context, DateTime date) {
   return MaterialLocalizations.of(context).formatMediumDate(date);
 }
 
+String formatEventMonthDay(BuildContext context, DateTime date) {
+  return MaterialLocalizations.of(context).formatShortMonthDay(date);
+}
+
 class EventTicketsSurfaceCard extends StatelessWidget {
   const EventTicketsSurfaceCard({
     super.key,
