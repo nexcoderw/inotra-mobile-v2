@@ -40,7 +40,7 @@ import "../../features/me/presentation/pages/events/my_event_submission_add.dart
 import "../../features/me/presentation/pages/events/my_event_submission_detail_page.dart";
 import "../../features/me/presentation/pages/events/my_event_submissions_page.dart";
 import "../../features/me/presentation/pages/events/my_events_page.dart";
-import "../../features/me/presentation/pages/listings/listing_booking_page.dart";
+import "../../features/me/presentation/pages/listings/my_listing_booking_page.dart";
 import "../../features/me/presentation/pages/listings/listing_payments_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_reviews_page.dart";
 import "../../features/me/presentation/pages/listings/my_listing_add_page.dart";
@@ -375,7 +375,7 @@ final class AppRouter {
           description: null,
           builder: (_) => MeShell(
             title: t(lang, "nav.listing_booking"),
-            child: const ListingBookingPage(),
+            child: const MyListingBookingPage(),
           ),
         );
       case AppRoutes.tripReservations:
