@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
+import "../../../../core/services/auth_session.dart";
 import "../../../../core/utils/rwf_currency.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -11,136 +12,223 @@ import "../../../../i18n/translations.dart";
 class TripReservationsPage extends StatelessWidget {
   const TripReservationsPage({super.key});
 
-  static const _statusStages = [
-    _StagePreview(
-      label: "Confirmed",
-      detail: "Guests with approved itineraries and issued confirmations.",
-      count: 68,
-      progress: 0.78,
-      accent: Color(0xFF0F8F5F),
-    ),
-    _StagePreview(
-      label: "Awaiting Payment",
-      detail: "Reservations held while balance collection is in progress.",
-      count: 21,
-      progress: 0.42,
-      accent: Color(0xFFC07A12),
-    ),
-    _StagePreview(
-      label: "Check-in Ready",
-      detail: "Arrivals within the next 72 hours with logistics confirmed.",
-      count: 14,
-      progress: 0.34,
-      accent: Color(0xFF1877B8),
-    ),
-    _StagePreview(
-      label: "Completed",
-      detail: "Closed trips ready for reporting and payout reconciliation.",
-      count: 29,
-      progress: 0.58,
-      accent: Color(0xFF5E6B7A),
-    ),
-  ];
-
-  static const _liveModeItems = [
-    _LaunchPreview(
-      icon: HugeIcons.strokeRoundedSearchList01,
-      title: "Search, filters and partner segmentation",
-      description:
-          "Live endpoints will plug into saved filters for status, travel date, partner and payment stage.",
-    ),
-    _LaunchPreview(
-      icon: HugeIcons.strokeRoundedBubbleChatLock,
-      title: "Guest notes and operations context",
-      description:
-          "Each reservation row is designed to expand into message history, internal notes and handoff actions.",
-    ),
-    _LaunchPreview(
-      icon: HugeIcons.strokeRoundedInvoice03,
-      title: "RWF-first billing and reconciliation",
-      description:
-          "All booking totals, deposit balances and payout summaries are planned in RWF only.",
-    ),
-    _LaunchPreview(
-      icon: HugeIcons.strokeRoundedCalendar03,
-      title: "Arrival timelines",
-      description:
-          "Upcoming departures, reminder triggers and checklist milestones will flow into the same layout.",
-    ),
-  ];
-
   static const _reservations = [
-    _ReservationPreview(
-      guestName: "Aline Mukamana",
+    _TripReservation(
       packageName: "Volcano Ridge Escape",
-      travelWindow: "06 Apr - 10 Apr",
-      travelers: 4,
-      amountRwf: 1450000,
-      status: "Confirmed",
-      paymentLabel: "Paid in full",
-      accent: Color(0xFF0F8F5F),
-      note: "Airport pickup, gorilla permit and lodge check-in confirmed.",
-    ),
-    _ReservationPreview(
-      guestName: "Jean Bosco Nshimiyimana",
-      packageName: "Lake Kivu Signature Retreat",
-      travelWindow: "08 Apr - 11 Apr",
-      travelers: 2,
-      amountRwf: 980000,
-      status: "Awaiting Payment",
-      paymentLabel: "Deposit received",
-      accent: Color(0xFFC07A12),
-      note: "Final balance pending before rooming list is released.",
-    ),
-    _ReservationPreview(
-      guestName: "Keza Uwase",
-      packageName: "Akagera Premium Safari",
-      travelWindow: "09 Apr - 12 Apr",
-      travelers: 5,
-      amountRwf: 2230000,
-      status: "Check-in Ready",
-      paymentLabel: "Travel docs verified",
-      accent: Color(0xFF1877B8),
-      note: "Vehicle allocation and ranger briefing are already assigned.",
-    ),
-    _ReservationPreview(
-      guestName: "Patrick Mugisha",
-      packageName: "Kigali Curated City Weekend",
-      travelWindow: "12 Apr - 14 Apr",
+      destination: "Musanze, Rwanda",
+      travelWindow: "06 Apr - 10 Apr 2026",
+      durationLabel: "4 nights",
+      confirmationCode: "INO-TRP-24061",
+      status: "Upcoming",
+      paymentStatus: "Paid in full",
+      totalAmountRwf: 1860000,
+      amountPaidRwf: 1860000,
       travelers: 3,
-      amountRwf: 760000,
-      status: "Proposal Sent",
-      paymentLabel: "Awaiting confirmation",
-      accent: Color(0xFF7C8A9B),
-      note: "Client requested dinner add-on and private transfer upgrade.",
+      coverTone: Color(0xFF0F8F5F),
+      supportNote:
+          "Airport transfer, permit confirmation and lodge check-in are already locked in.",
+      ticketSummary:
+          "3 digital travel passes are ready for lodge access and activity check-in.",
+      tickets: [
+        _TripTicket(
+          label: "Traveler Pass",
+          holder: "Primary Guest",
+          code: "TRV-901-24A",
+          state: "Active",
+        ),
+        _TripTicket(
+          label: "Traveler Pass",
+          holder: "Guest 02",
+          code: "TRV-901-24B",
+          state: "Active",
+        ),
+        _TripTicket(
+          label: "Permit Access",
+          holder: "Guest 03",
+          code: "PRM-771-09C",
+          state: "Issued",
+        ),
+      ],
+      invoice: _InvoicePreview(
+        invoiceNumber: "INV-TRIP-24061",
+        issuedOn: "30 Mar 2026",
+        paidOn: "30 Mar 2026",
+        paymentMethod: "Card payment",
+        paymentReference: "PYR-448201",
+        status: "Paid",
+        lineItems: [
+          _InvoiceLine(
+            title: "Volcano Ridge Escape package",
+            subtitle: "3 travelers · 4 nights",
+            amountRwf: 1620000,
+          ),
+          _InvoiceLine(
+            title: "Private airport transfer",
+            subtitle: "Arrival and departure",
+            amountRwf: 120000,
+          ),
+          _InvoiceLine(
+            title: "Permit handling",
+            subtitle: "Processing and issuance",
+            amountRwf: 90000,
+          ),
+        ],
+        serviceFeeRwf: 30000,
+      ),
     ),
-  ];
-
-  static const _weeklyRevenue = [
-    _WeekRevenue(label: "Mon", value: 1280000),
-    _WeekRevenue(label: "Tue", value: 1840000),
-    _WeekRevenue(label: "Wed", value: 1660000),
-    _WeekRevenue(label: "Thu", value: 2310000),
-    _WeekRevenue(label: "Fri", value: 2780000),
-    _WeekRevenue(label: "Sat", value: 2480000),
-    _WeekRevenue(label: "Sun", value: 1930000),
+    _TripReservation(
+      packageName: "Lake Kivu Signature Retreat",
+      destination: "Karongi, Rwanda",
+      travelWindow: "18 Apr - 21 Apr 2026",
+      durationLabel: "3 nights",
+      confirmationCode: "INO-TRP-24092",
+      status: "Confirmed",
+      paymentStatus: "Deposit received",
+      totalAmountRwf: 980000,
+      amountPaidRwf: 420000,
+      travelers: 2,
+      coverTone: Color(0xFFC07A12),
+      supportNote:
+          "Your room category is reserved. Final confirmation will clear automatically after balance payment.",
+      ticketSummary:
+          "2 digital boarding vouchers will be released immediately after the remaining balance is settled.",
+      tickets: [
+        _TripTicket(
+          label: "Reservation Voucher",
+          holder: "Primary Guest",
+          code: "RSV-518-72A",
+          state: "Pending release",
+        ),
+        _TripTicket(
+          label: "Reservation Voucher",
+          holder: "Guest 02",
+          code: "RSV-518-72B",
+          state: "Pending release",
+        ),
+      ],
+      invoice: _InvoicePreview(
+        invoiceNumber: "INV-TRIP-24092",
+        issuedOn: "31 Mar 2026",
+        paidOn: "Deposit on 31 Mar 2026",
+        paymentMethod: "Mobile money",
+        paymentReference: "MOMO-981504",
+        status: "Partially paid",
+        lineItems: [
+          _InvoiceLine(
+            title: "Lake Kivu Signature Retreat",
+            subtitle: "2 travelers · 3 nights",
+            amountRwf: 840000,
+          ),
+          _InvoiceLine(
+            title: "Sunset boat cruise",
+            subtitle: "Private session",
+            amountRwf: 90000,
+          ),
+        ],
+        serviceFeeRwf: 50000,
+      ),
+    ),
+    _TripReservation(
+      packageName: "Akagera Premium Safari",
+      destination: "Eastern Province, Rwanda",
+      travelWindow: "09 Mar - 12 Mar 2026",
+      durationLabel: "3 nights",
+      confirmationCode: "INO-TRP-23814",
+      status: "Completed",
+      paymentStatus: "Closed",
+      totalAmountRwf: 2240000,
+      amountPaidRwf: 2240000,
+      travelers: 4,
+      coverTone: Color(0xFF1877B8),
+      supportNote:
+          "This stay is completed. Your invoice, itinerary copy and access passes remain available below.",
+      ticketSummary:
+          "4 archived travel passes remain accessible for reimbursement and record-keeping.",
+      tickets: [
+        _TripTicket(
+          label: "Safari Access Pass",
+          holder: "Primary Guest",
+          code: "SFR-211-11A",
+          state: "Archived",
+        ),
+        _TripTicket(
+          label: "Safari Access Pass",
+          holder: "Guest 02",
+          code: "SFR-211-11B",
+          state: "Archived",
+        ),
+        _TripTicket(
+          label: "Safari Access Pass",
+          holder: "Guest 03",
+          code: "SFR-211-11C",
+          state: "Archived",
+        ),
+        _TripTicket(
+          label: "Safari Access Pass",
+          holder: "Guest 04",
+          code: "SFR-211-11D",
+          state: "Archived",
+        ),
+      ],
+      invoice: _InvoicePreview(
+        invoiceNumber: "INV-TRIP-23814",
+        issuedOn: "01 Mar 2026",
+        paidOn: "01 Mar 2026",
+        paymentMethod: "Bank transfer",
+        paymentReference: "BNK-772014",
+        status: "Paid",
+        lineItems: [
+          _InvoiceLine(
+            title: "Akagera Premium Safari",
+            subtitle: "4 travelers · 3 nights",
+            amountRwf: 1980000,
+          ),
+          _InvoiceLine(
+            title: "Private game drive supplement",
+            subtitle: "Exclusive vehicle allocation",
+            amountRwf: 210000,
+          ),
+        ],
+        serviceFeeRwf: 50000,
+      ),
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final session = AuthSession.instance.value;
+    final displayName = _firstName(session.displayName);
+    final email = (session.user?["email"] ?? "traveler@inotra.app").toString();
+
+    final upcomingCount = _reservations.where((item) => item.isUpcoming).length;
+    final ticketCount = _reservations.fold<int>(
+      0,
+      (sum, item) => sum + item.tickets.length,
+    );
+    final paidInvoices = _reservations.where(
+      (item) => item.invoice.status.toLowerCase() == "paid",
+    );
+    final totalSpentRwf = paidInvoices.fold<int>(
+      0,
+      (sum, item) => sum + item.totalAmountRwf,
+    );
+    final nextTrip = _reservations.firstWhere(
+      (item) => item.isUpcoming,
+      orElse: () => _reservations.first,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final horizontalPadding = width >= 1200
+        final horizontalPadding = width >= 1180
             ? 28.0
             : width >= 760
             ? 24.0
             : 16.0;
         final contentWidth = math.max(0.0, width - (horizontalPadding * 2));
-        final isWide = contentWidth >= 980;
+        final isWide = contentWidth >= 1020;
 
         return Container(
           decoration: BoxDecoration(
@@ -149,7 +237,7 @@ class TripReservationsPage extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: [
                 scheme.surface,
-                scheme.surfaceContainerLowest.withValues(alpha: 0.92),
+                scheme.surfaceContainerLowest.withValues(alpha: 0.95),
               ],
             ),
           ),
@@ -163,7 +251,7 @@ class TripReservationsPage extends StatelessWidget {
                   horizontalPadding,
                   18,
                   horizontalPadding,
-                  28,
+                  32,
                 ),
                 sliver: SliverToBoxAdapter(
                   child: Column(
@@ -171,12 +259,47 @@ class TripReservationsPage extends StatelessWidget {
                     children: [
                       _HeroPanel(
                         title: t(lang, "nav.trip_reservations"),
-                        totalBooked: RwfCurrency.format(18420000),
-                        arrivalCount: "06 arrivals today",
-                        pendingValue: RwfCurrency.format(3180000),
+                        displayName: displayName,
+                        email: email,
+                        nextTrip: nextTrip,
+                        upcomingCount: upcomingCount,
+                        ticketCount: ticketCount,
+                        totalSpent: RwfCurrency.format(totalSpentRwf),
                       ),
                       const SizedBox(height: 18),
-                      _MetricsGrid(contentWidth: contentWidth),
+                      _SummaryGrid(
+                        contentWidth: contentWidth,
+                        summaryItems: [
+                          _SummaryItem(
+                            icon: HugeIcons.strokeRoundedCalendar03,
+                            label: "Upcoming trips",
+                            value: "$upcomingCount",
+                            detail: "Reserved packages still ahead",
+                            accent: const Color(0xFF0F8F5F),
+                          ),
+                          _SummaryItem(
+                            icon: HugeIcons.strokeRoundedTicket01,
+                            label: "Travel passes",
+                            value: "$ticketCount",
+                            detail: "Active and archived tickets",
+                            accent: const Color(0xFF1877B8),
+                          ),
+                          _SummaryItem(
+                            icon: HugeIcons.strokeRoundedInvoice03,
+                            label: "Invoices available",
+                            value: "${_reservations.length}",
+                            detail: "Tap any invoice to inspect details",
+                            accent: const Color(0xFFC07A12),
+                          ),
+                          _SummaryItem(
+                            icon: HugeIcons.strokeRoundedWallet02,
+                            label: "Total paid",
+                            value: RwfCurrency.format(totalSpentRwf),
+                            detail: "RWF-only billing across your trips",
+                            accent: const Color(0xFF5E6B7A),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 18),
                       if (isWide)
                         Row(
@@ -184,37 +307,43 @@ class TripReservationsPage extends StatelessWidget {
                           children: [
                             Expanded(
                               flex: 7,
-                              child: Column(
-                                children: const [
-                                  _ReservationFeedCard(
-                                    reservations: _reservations,
-                                  ),
-                                  SizedBox(height: 18),
-                                  _WeeklyRevenueCard(revenue: _weeklyRevenue),
-                                ],
+                              child: _ReservationsSection(
+                                reservations: _reservations,
+                                billedName: session.displayName,
+                                billedEmail: email,
                               ),
                             ),
                             const SizedBox(width: 18),
                             Expanded(
                               flex: 5,
                               child: Column(
-                                children: const [
-                                  _StageBreakdownCard(stages: _statusStages),
-                                  SizedBox(height: 18),
-                                  _LaunchModeCard(items: _liveModeItems),
+                                children: [
+                                  _DocumentHubCard(
+                                    reservations: _reservations,
+                                    billedName: session.displayName,
+                                    billedEmail: email,
+                                  ),
+                                  const SizedBox(height: 18),
+                                  const _SupportCard(),
                                 ],
                               ),
                             ),
                           ],
                         )
                       else ...[
-                        const _ReservationFeedCard(reservations: _reservations),
+                        _ReservationsSection(
+                          reservations: _reservations,
+                          billedName: session.displayName,
+                          billedEmail: email,
+                        ),
                         const SizedBox(height: 18),
-                        const _StageBreakdownCard(stages: _statusStages),
+                        _DocumentHubCard(
+                          reservations: _reservations,
+                          billedName: session.displayName,
+                          billedEmail: email,
+                        ),
                         const SizedBox(height: 18),
-                        const _WeeklyRevenueCard(revenue: _weeklyRevenue),
-                        const SizedBox(height: 18),
-                        const _LaunchModeCard(items: _liveModeItems),
+                        const _SupportCard(),
                       ],
                     ],
                   ),
@@ -226,28 +355,413 @@ class TripReservationsPage extends StatelessWidget {
       },
     );
   }
+
+  static Future<void> showInvoiceDialog(
+    BuildContext context, {
+    required _TripReservation reservation,
+    required String billedName,
+    required String billedEmail,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final width = MediaQuery.sizeOf(dialogContext).width;
+
+        return Dialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: width >= 720 ? 32 : 18,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 720,
+              maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.84,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 12, 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _DialogTag(
+                                icon: HugeIcons.strokeRoundedInvoice03,
+                                label: "Invoice",
+                                accent: reservation.coverTone,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                reservation.invoice.invoiceNumber,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.94,
+                                  ),
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                reservation.packageName,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.64,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              _MetaChip(
+                                icon: HugeIcons.strokeRoundedTick02,
+                                label: reservation.invoice.status,
+                              ),
+                              _MetaChip(
+                                icon: HugeIcons.strokeRoundedCalendar03,
+                                label: reservation.invoice.issuedOn,
+                              ),
+                              _MetaChip(
+                                icon: HugeIcons.strokeRoundedWallet02,
+                                label: reservation.invoice.paymentMethod,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          _InvoiceInfoGrid(
+                            children: [
+                              _InfoTile(
+                                label: "Billed to",
+                                value: billedName.trim().isEmpty
+                                    ? "Guest traveler"
+                                    : billedName,
+                              ),
+                              _InfoTile(label: "Email", value: billedEmail),
+                              _InfoTile(
+                                label: "Travel window",
+                                value: reservation.travelWindow,
+                              ),
+                              _InfoTile(
+                                label: "Reference",
+                                value: reservation.invoice.paymentReference,
+                              ),
+                              _InfoTile(
+                                label: "Confirmation code",
+                                value: reservation.confirmationCode,
+                              ),
+                              _InfoTile(
+                                label: "Payment recorded",
+                                value: reservation.invoice.paidOn,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            "Charges",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: scheme.onSurface.withValues(alpha: 0.92),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...reservation.invoice.lineItems.map(
+                            (line) => Padding(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    line == reservation.invoice.lineItems.last
+                                    ? 0
+                                    : 10,
+                              ),
+                              child: _InvoiceLineTile(line: line),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: scheme.surfaceContainerLowest.withValues(
+                                alpha: 0.86,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: scheme.onSurface.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                _AmountRow(
+                                  label: "Subtotal",
+                                  value: RwfCurrency.format(
+                                    reservation.invoice.subtotalRwf,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                _AmountRow(
+                                  label: "Service fee",
+                                  value: RwfCurrency.format(
+                                    reservation.invoice.serviceFeeRwf,
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 12),
+                                  child: Divider(height: 1),
+                                ),
+                                _AmountRow(
+                                  label: "Total",
+                                  value: RwfCurrency.format(
+                                    reservation.invoice.totalRwf,
+                                  ),
+                                  emphasize: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static Future<void> showTicketsDialog(
+    BuildContext context, {
+    required _TripReservation reservation,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 640,
+              maxHeight: MediaQuery.sizeOf(dialogContext).height * 0.80,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: scheme.surface,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 12, 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _DialogTag(
+                                icon: HugeIcons.strokeRoundedTicket01,
+                                label: "Travel passes",
+                                accent: reservation.coverTone,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                reservation.packageName,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w900,
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.94,
+                                  ),
+                                  letterSpacing: -0.4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                reservation.ticketSummary,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  height: 1.45,
+                                  fontWeight: FontWeight.w500,
+                                  color: scheme.onSurface.withValues(
+                                    alpha: 0.64,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: reservation.tickets.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final ticket = reservation.tickets[index];
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerLowest.withValues(
+                              alpha: 0.88,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: scheme.onSurface.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: reservation.coverTone.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Center(
+                                  child: HugeIcon(
+                                    icon: HugeIcons.strokeRoundedTicket01,
+                                    size: 18,
+                                    color: reservation.coverTone,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      ticket.label,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: scheme.onSurface.withValues(
+                                          alpha: 0.92,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      ticket.holder,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: scheme.onSurface.withValues(
+                                          alpha: 0.60,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      ticket.code,
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: reservation.coverTone,
+                                        letterSpacing: 0.1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              _StateBadge(
+                                label: ticket.state,
+                                accent: reservation.coverTone,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _HeroPanel extends StatelessWidget {
   final String title;
-  final String totalBooked;
-  final String arrivalCount;
-  final String pendingValue;
+  final String displayName;
+  final String email;
+  final _TripReservation nextTrip;
+  final int upcomingCount;
+  final int ticketCount;
+  final String totalSpent;
 
   const _HeroPanel({
     required this.title,
-    required this.totalBooked,
-    required this.arrivalCount,
-    required this.pendingValue,
+    required this.displayName,
+    required this.email,
+    required this.nextTrip,
+    required this.upcomingCount,
+    required this.ticketCount,
+    required this.totalSpent,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final width = MediaQuery.sizeOf(context).width;
-    final isSplit = width >= 860;
+    final split = width >= 900;
 
-    final overview = Expanded(
+    final intro = Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -268,12 +782,11 @@ class _HeroPanel extends StatelessWidget {
                 ),
                 SizedBox(width: 6),
                 Text(
-                  "Static preview",
+                  "Reservations preview",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 0.1,
                   ),
                 ),
               ],
@@ -292,10 +805,9 @@ class _HeroPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            "A polished command center for arrivals, payment follow-up and reservation operations. "
-            "Live endpoints can slot into this layout without changing the experience.",
+            "${displayName.trim().isEmpty ? "Traveler" : displayName}, your reserved packages, travel passes and billing documents are organized in one polished space.",
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.78),
+              color: Colors.white.withValues(alpha: 0.80),
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
               height: 1.45,
@@ -308,78 +820,87 @@ class _HeroPanel extends StatelessWidget {
             children: [
               _HeroChip(
                 icon: HugeIcons.strokeRoundedCalendar03,
-                label: arrivalCount,
+                label: "$upcomingCount upcoming trips",
+              ),
+              _HeroChip(
+                icon: HugeIcons.strokeRoundedTicket01,
+                label: "$ticketCount travel passes",
               ),
               _HeroChip(
                 icon: HugeIcons.strokeRoundedWallet02,
-                label: "$pendingValue pending collection",
-              ),
-              const _HeroChip(
-                icon: HugeIcons.strokeRoundedInvoice03,
-                label: "RWF-first billing",
+                label: totalSpent,
               ),
             ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            email,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.62),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
 
-    final summaryCard = Container(
-      width: isSplit ? 320 : double.infinity,
+    final nextTripCard = Container(
+      width: split ? 330 : double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Booked pipeline",
+            "Next reserved trip",
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.72),
-              letterSpacing: 0.1,
+              color: Colors.white.withValues(alpha: 0.66),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
-            totalBooked,
+            nextTrip.packageName,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
               color: Colors.white,
-              letterSpacing: -0.5,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            "Projected from confirmed and in-progress reservations for the current travel window.",
+            nextTrip.destination,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.68),
-              height: 1.45,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.74),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           Row(
-            children: const [
+            children: [
               Expanded(
                 child: _HeroMetric(
-                  label: "Conversion",
-                  value: "74%",
-                  tone: Color(0xFF8FE6B7),
+                  label: "Travel window",
+                  value: nextTrip.travelWindow,
                 ),
               ),
-              SizedBox(width: 12),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
               Expanded(
                 child: _HeroMetric(
-                  label: "Avg ticket",
-                  value: "RWF 1.2M",
-                  tone: Color(0xFFFFD27A),
+                  label: "Confirmation",
+                  value: nextTrip.confirmationCode,
                 ),
               ),
             ],
@@ -393,7 +914,7 @@ class _HeroPanel extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF072C18), Color(0xFF0F5A38), Color(0xFF0B4365)],
+          colors: [Color(0xFF072C18), Color(0xFF0E5A38), Color(0xFF0B4365)],
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
@@ -407,8 +928,8 @@ class _HeroPanel extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            top: -52,
-            right: -14,
+            top: -48,
+            right: -18,
             child: Container(
               width: 180,
               height: 180,
@@ -426,27 +947,23 @@ class _HeroPanel extends StatelessWidget {
               height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: scheme.tertiary.withValues(alpha: 0.10),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(22),
-            child: isSplit
+            child: split
                 ? Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      overview,
-                      const SizedBox(width: 18),
-                      summaryCard,
-                    ],
+                    children: [intro, const SizedBox(width: 18), nextTripCard],
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(children: [overview]),
+                      Row(children: [intro]),
                       const SizedBox(height: 18),
-                      summaryCard,
+                      nextTripCard,
                     ],
                   ),
           ),
@@ -456,44 +973,14 @@ class _HeroPanel extends StatelessWidget {
   }
 }
 
-class _MetricsGrid extends StatelessWidget {
+class _SummaryGrid extends StatelessWidget {
   final double contentWidth;
+  final List<_SummaryItem> summaryItems;
 
-  const _MetricsGrid({required this.contentWidth});
+  const _SummaryGrid({required this.contentWidth, required this.summaryItems});
 
   @override
   Widget build(BuildContext context) {
-    final items = const [
-      _MetricPreview(
-        icon: HugeIcons.strokeRoundedTickDouble03,
-        label: "Active reservations",
-        value: "124",
-        detail: "68 confirmed, 21 awaiting payment",
-        accent: Color(0xFF0F8F5F),
-      ),
-      _MetricPreview(
-        icon: HugeIcons.strokeRoundedCalendarAdd02,
-        label: "Arrival window",
-        value: "06 today",
-        detail: "14 more in the next 72 hours",
-        accent: Color(0xFF1877B8),
-      ),
-      _MetricPreview(
-        icon: HugeIcons.strokeRoundedWallet02,
-        label: "Gross booked",
-        value: "RWF 18,420,000",
-        detail: "Static preview of endpoint-backed revenue",
-        accent: Color(0xFFB97912),
-      ),
-      _MetricPreview(
-        icon: HugeIcons.strokeRoundedUserGroup03,
-        label: "Average party size",
-        value: "3.2 guests",
-        detail: "Sized for rooming, transport and guide planning",
-        accent: Color(0xFF5C7082),
-      ),
-    ];
-
     final itemWidth = contentWidth >= 1120
         ? (contentWidth - 36) / 4
         : contentWidth >= 700
@@ -503,11 +990,11 @@ class _MetricsGrid extends StatelessWidget {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: items
+      children: summaryItems
           .map(
             (item) => SizedBox(
               width: itemWidth,
-              child: _MetricCard(item: item),
+              child: _SummaryCard(item: item),
             ),
           )
           .toList(growable: false),
@@ -515,10 +1002,16 @@ class _MetricsGrid extends StatelessWidget {
   }
 }
 
-class _ReservationFeedCard extends StatelessWidget {
-  final List<_ReservationPreview> reservations;
+class _ReservationsSection extends StatelessWidget {
+  final List<_TripReservation> reservations;
+  final String billedName;
+  final String billedEmail;
 
-  const _ReservationFeedCard({required this.reservations});
+  const _ReservationsSection({
+    required this.reservations,
+    required this.billedName,
+    required this.billedEmail,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -527,10 +1020,9 @@ class _ReservationFeedCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _SectionHeader(
-            title: "Upcoming arrivals",
+            title: "Your reserved packages",
             description:
-                "A premium reservation list ready for real guest, package and payment endpoint data.",
-            trailing: _PreviewToggleRow(),
+                "Every trip you booked appears here with travel passes, payment state and direct invoice access.",
           ),
           const SizedBox(height: 18),
           Column(
@@ -540,7 +1032,11 @@ class _ReservationFeedCard extends StatelessWidget {
                     padding: EdgeInsets.only(
                       bottom: reservation == reservations.last ? 0 : 12,
                     ),
-                    child: _ReservationTile(reservation: reservation),
+                    child: _ReservationCard(
+                      reservation: reservation,
+                      billedName: billedName,
+                      billedEmail: billedEmail,
+                    ),
                   ),
                 )
                 .toList(growable: false),
@@ -551,10 +1047,16 @@ class _ReservationFeedCard extends StatelessWidget {
   }
 }
 
-class _StageBreakdownCard extends StatelessWidget {
-  final List<_StagePreview> stages;
+class _DocumentHubCard extends StatelessWidget {
+  final List<_TripReservation> reservations;
+  final String billedName;
+  final String billedEmail;
 
-  const _StageBreakdownCard({required this.stages});
+  const _DocumentHubCard({
+    required this.reservations,
+    required this.billedName,
+    required this.billedEmail,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -563,64 +1065,29 @@ class _StageBreakdownCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _SectionHeader(
-            title: "Reservation pipeline",
+            title: "Documents hub",
             description:
-                "The status rail is shaped for real-time counts and fulfillment visibility once the endpoints arrive.",
+                "Quick access to tickets and invoices for each package you reserved.",
           ),
           const SizedBox(height: 18),
-          Column(
-            children: stages
-                .map(
-                  (stage) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: stage == stages.last ? 0 : 14,
-                    ),
-                    child: _StageTile(stage: stage),
-                  ),
-                )
-                .toList(growable: false),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WeeklyRevenueCard extends StatelessWidget {
-  final List<_WeekRevenue> revenue;
-
-  const _WeeklyRevenueCard({required this.revenue});
-
-  @override
-  Widget build(BuildContext context) {
-    final peak = revenue.map((item) => item.value).reduce(math.max).toDouble();
-
-    return _SurfaceCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionHeader(
-            title: "Booked revenue this week",
-            description:
-                "Static weekly shape using RWF to preview how live demand and reservation intake will surface.",
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            height: 180,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: revenue
-                  .map(
-                    (item) => Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          right: item == revenue.last ? 0 : 10,
-                        ),
-                        child: _WeekRevenueBar(item: item, peak: peak),
-                      ),
-                    ),
-                  )
-                  .toList(growable: false),
+          ...reservations.map(
+            (reservation) => Padding(
+              padding: EdgeInsets.only(
+                bottom: reservation == reservations.last ? 0 : 12,
+              ),
+              child: _DocumentTile(
+                reservation: reservation,
+                onInvoiceTap: () => TripReservationsPage.showInvoiceDialog(
+                  context,
+                  reservation: reservation,
+                  billedName: billedName,
+                  billedEmail: billedEmail,
+                ),
+                onTicketTap: () => TripReservationsPage.showTicketsDialog(
+                  context,
+                  reservation: reservation,
+                ),
+              ),
             ),
           ),
         ],
@@ -629,34 +1096,405 @@ class _WeeklyRevenueCard extends StatelessWidget {
   }
 }
 
-class _LaunchModeCard extends StatelessWidget {
-  final List<_LaunchPreview> items;
-
-  const _LaunchModeCard({required this.items});
+class _SupportCard extends StatelessWidget {
+  const _SupportCard();
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
     return _SurfaceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _SectionHeader(
-            title: "Ready for live mode",
+            title: "Reservation support",
             description:
-                "This preview is already structured for filters, guest context, financial tracking and operational actions.",
+                "The live version of this page can surface support requests, change history and post-booking messages in the same layout.",
           ),
           const SizedBox(height: 18),
-          Column(
-            children: items
-                .map(
-                  (item) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: item == items.last ? 0 : 12,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: scheme.onSurface.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Center(
+                        child: HugeIcon(
+                          icon: HugeIcons.strokeRoundedMessage02,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
-                    child: _LaunchTile(item: item),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "Planned support features",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurface.withValues(alpha: 0.92),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const _SupportPoint(
+                  title: "Trip change requests",
+                  detail:
+                      "Date changes, traveler updates and add-on approvals.",
+                ),
+                const SizedBox(height: 10),
+                const _SupportPoint(
+                  title: "Document sync",
+                  detail:
+                      "Live invoice updates and regenerated ticket bundles.",
+                ),
+                const SizedBox(height: 10),
+                const _SupportPoint(
+                  title: "Operations messaging",
+                  detail:
+                      "One thread for pre-arrival guidance and reservation follow-up.",
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReservationCard extends StatelessWidget {
+  final _TripReservation reservation;
+  final String billedName;
+  final String billedEmail;
+
+  const _ReservationCard({
+    required this.reservation,
+    required this.billedName,
+    required this.billedEmail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final compact = MediaQuery.sizeOf(context).width < 700;
+
+    final details = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _MetaChip(
+          icon: HugeIcons.strokeRoundedCalendar03,
+          label: reservation.travelWindow,
+        ),
+        _MetaChip(
+          icon: HugeIcons.strokeRoundedUserGroup03,
+          label: "${reservation.travelers} travelers",
+        ),
+        _MetaChip(
+          icon: HugeIcons.strokeRoundedClock01,
+          label: reservation.durationLabel,
+        ),
+        _MetaChip(
+          icon: HugeIcons.strokeRoundedWallet02,
+          label: reservation.paymentStatus,
+        ),
+      ],
+    );
+
+    final actions = Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        _ActionButton(
+          label: "Tickets",
+          filled: false,
+          icon: HugeIcons.strokeRoundedTicket01,
+          onTap: () => TripReservationsPage.showTicketsDialog(
+            context,
+            reservation: reservation,
+          ),
+        ),
+        _ActionButton(
+          label: "Invoice",
+          filled: true,
+          icon: HugeIcons.strokeRoundedInvoice03,
+          onTap: () => TripReservationsPage.showInvoiceDialog(
+            context,
+            reservation: reservation,
+            billedName: billedName,
+            billedEmail: billedEmail,
+          ),
+        ),
+      ],
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: reservation.coverTone.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                )
-                .toList(growable: false),
+                  child: Center(
+                    child: HugeIcon(
+                      icon: HugeIcons.strokeRoundedLuggage02,
+                      size: 20,
+                      color: reservation.coverTone,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _StateBadge(
+                            label: reservation.status,
+                            accent: reservation.coverTone,
+                          ),
+                          _StateBadge(
+                            label: reservation.invoice.status,
+                            accent: const Color(0xFF5E6B7A),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        reservation.packageName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: scheme.onSurface.withValues(alpha: 0.94),
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        reservation.destination,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface.withValues(alpha: 0.62),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!compact)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "Booking total",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface.withValues(alpha: 0.50),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        RwfCurrency.format(reservation.totalAmountRwf),
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: scheme.onSurface.withValues(alpha: 0.92),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            if (compact) ...[
+              const SizedBox(height: 14),
+              Text(
+                RwfCurrency.format(reservation.totalAmountRwf),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.onSurface.withValues(alpha: 0.92),
+                ),
+              ),
+            ],
+            const SizedBox(height: 14),
+            details,
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      HugeIcon(
+                        icon: HugeIcons.strokeRoundedTicket01,
+                        size: 15,
+                        color: reservation.coverTone,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          reservation.ticketSummary,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            height: 1.45,
+                            color: scheme.onSurface.withValues(alpha: 0.74),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    reservation.supportNote,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: 1.45,
+                      color: scheme.onSurface.withValues(alpha: 0.60),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 14,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  "Confirmation ${reservation.confirmationCode}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: reservation.coverTone,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                Text(
+                  "Paid ${RwfCurrency.format(reservation.amountPaidRwf)}",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: scheme.onSurface.withValues(alpha: 0.60),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            actions,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocumentTile extends StatelessWidget {
+  final _TripReservation reservation;
+  final VoidCallback onInvoiceTap;
+  final VoidCallback onTicketTap;
+
+  const _DocumentTile({
+    required this.reservation,
+    required this.onInvoiceTap,
+    required this.onTicketTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            reservation.packageName,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface.withValues(alpha: 0.92),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            reservation.invoice.invoiceNumber,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: reservation.coverTone,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniDocButton(
+                  label: "Invoice",
+                  icon: HugeIcons.strokeRoundedInvoice03,
+                  onTap: onInvoiceTap,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _MiniDocButton(
+                  label: "Tickets",
+                  icon: HugeIcons.strokeRoundedTicket01,
+                  onTap: onTicketTap,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -680,20 +1518,18 @@ class _SurfaceCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            scheme.surface.withValues(alpha: isDark ? 0.88 : 0.96),
+            scheme.surface.withValues(alpha: isDark ? 0.90 : 0.98),
             scheme.surfaceContainerLowest.withValues(
-              alpha: isDark ? 0.92 : 0.98,
+              alpha: isDark ? 0.94 : 1.0,
             ),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: scheme.onSurface.withValues(alpha: isDark ? 0.14 : 0.08),
-        ),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.05),
-            blurRadius: 26,
+            blurRadius: 24,
             offset: const Offset(0, 14),
           ),
         ],
@@ -706,368 +1542,32 @@ class _SurfaceCard extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String description;
-  final Widget? trailing;
 
-  const _SectionHeader({
-    required this.title,
-    required this.description,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final width = MediaQuery.sizeOf(context).width;
-    final stacked = trailing != null && width < 720;
-
-    final textBlock = Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: scheme.onSurface.withValues(alpha: 0.94),
-              letterSpacing: -0.4,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            description,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-              height: 1.45,
-              color: scheme.onSurface.withValues(alpha: 0.62),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (trailing == null) {
-      return Row(children: [textBlock]);
-    }
-
-    if (stacked) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [textBlock]),
-          const SizedBox(height: 14),
-          trailing!,
-        ],
-      );
-    }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [textBlock, const SizedBox(width: 14), trailing!],
-    );
-  }
-}
-
-class _PreviewToggleRow extends StatelessWidget {
-  const _PreviewToggleRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: const [
-        _MiniToggle(label: "Upcoming", selected: true),
-        _MiniToggle(label: "Pending"),
-        _MiniToggle(label: "Completed"),
-      ],
-    );
-  }
-}
-
-class _MiniToggle extends StatelessWidget {
-  final String label;
-  final bool selected;
-
-  const _MiniToggle({required this.label, this.selected = false});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: selected
-            ? AppColors.primary.withValues(alpha: 0.12)
-            : scheme.surfaceContainerHighest.withValues(alpha: 0.50),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: selected
-              ? AppColors.primary.withValues(alpha: 0.22)
-              : scheme.onSurface.withValues(alpha: 0.08),
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
-          color: selected
-              ? AppColors.primary
-              : scheme.onSurface.withValues(alpha: 0.68),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReservationTile extends StatelessWidget {
-  final _ReservationPreview reservation;
-
-  const _ReservationTile({required this.reservation});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final width = MediaQuery.sizeOf(context).width;
-    final compact = width < 680;
-
-    final metaPills = Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _DataPill(
-          icon: HugeIcons.strokeRoundedCalendar03,
-          label: reservation.travelWindow,
-        ),
-        _DataPill(
-          icon: HugeIcons.strokeRoundedUserGroup03,
-          label: "${reservation.travelers} guests",
-        ),
-        _DataPill(
-          icon: HugeIcons.strokeRoundedWallet02,
-          label: reservation.paymentLabel,
-        ),
-      ],
-    );
-
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.80),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: compact
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _ReservationHeader(reservation: reservation),
-                  const SizedBox(height: 12),
-                  metaPills,
-                  const SizedBox(height: 12),
-                  Text(
-                    reservation.note,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      height: 1.45,
-                      color: scheme.onSurface.withValues(alpha: 0.64),
-                    ),
-                  ),
-                ],
-              )
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _ReservationHeader(reservation: reservation),
-                        const SizedBox(height: 12),
-                        metaPills,
-                        const SizedBox(height: 12),
-                        Text(
-                          reservation.note,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            height: 1.45,
-                            color: scheme.onSurface.withValues(alpha: 0.64),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 1,
-                    height: 88,
-                    color: scheme.onSurface.withValues(alpha: 0.08),
-                  ),
-                  const SizedBox(width: 12),
-                  _ReservationAmount(reservation: reservation),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-class _ReservationHeader extends StatelessWidget {
-  final _ReservationPreview reservation;
-
-  const _ReservationHeader({required this.reservation});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: reservation.accent.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Center(
-            child: Text(
-              _initials(reservation.guestName),
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 13,
-                color: reservation.accent,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                reservation.guestName,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: scheme.onSurface.withValues(alpha: 0.94),
-                  letterSpacing: -0.2,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                reservation.packageName,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface.withValues(alpha: 0.66),
-                ),
-              ),
-            ],
-          ),
-        ),
-        _StatusBadge(label: reservation.status, accent: reservation.accent),
-      ],
-    );
-  }
-}
-
-class _ReservationAmount extends StatelessWidget {
-  final _ReservationPreview reservation;
-
-  const _ReservationAmount({required this.reservation});
+  const _SectionHeader({required this.title, required this.description});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Booking value",
+          title,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: scheme.onSurface.withValues(alpha: 0.52),
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: scheme.onSurface.withValues(alpha: 0.94),
+            letterSpacing: -0.4,
           ),
         ),
         const SizedBox(height: 6),
         Text(
-          RwfCurrency.format(reservation.amountRwf),
+          description,
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: scheme.onSurface.withValues(alpha: 0.94),
-            letterSpacing: -0.2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WeekRevenueBar extends StatelessWidget {
-  final _WeekRevenue item;
-  final double peak;
-
-  const _WeekRevenueBar({required this.item, required this.peak});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final height = (item.value / peak * 94).clamp(20.0, 94.0);
-    final isPeak = item.value == peak;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(
-          RwfCurrency.compact(item.value),
-          style: TextStyle(
-            fontSize: 10.5,
-            fontWeight: FontWeight.w700,
-            color: scheme.onSurface.withValues(alpha: 0.62),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isPeak
-                      ? const [Color(0xFF0F8F5F), Color(0xFF0B5C3D)]
-                      : [
-                          AppColors.primary.withValues(alpha: 0.68),
-                          AppColors.primary.withValues(alpha: 0.26),
-                        ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              height: height,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          item.label,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
+            fontSize: 12.5,
+            height: 1.45,
+            fontWeight: FontWeight.w500,
             color: scheme.onSurface.withValues(alpha: 0.62),
           ),
         ),
@@ -1076,168 +1576,10 @@ class _WeekRevenueBar extends StatelessWidget {
   }
 }
 
-class _StageTile extends StatelessWidget {
-  final _StagePreview stage;
+class _SummaryCard extends StatelessWidget {
+  final _SummaryItem item;
 
-  const _StageTile({required this.stage});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: stage.accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  stage.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface.withValues(alpha: 0.92),
-                  ),
-                ),
-              ),
-              Text(
-                "${stage.count}",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: stage.accent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            stage.detail,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              height: 1.45,
-              color: scheme.onSurface.withValues(alpha: 0.62),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: stage.progress,
-              minHeight: 8,
-              backgroundColor: scheme.surfaceContainerHighest.withValues(
-                alpha: 0.70,
-              ),
-              valueColor: AlwaysStoppedAnimation<Color>(stage.accent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LaunchTile extends StatelessWidget {
-  final _LaunchPreview item;
-
-  const _LaunchTile({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Center(
-              child: HugeIcon(
-                icon: HugeIcons.strokeRoundedCheckmarkBadge01,
-                size: 18,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.title,
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          color: scheme.onSurface.withValues(alpha: 0.92),
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    HugeIcon(
-                      icon: item.icon,
-                      size: 16,
-                      color: AppColors.primary,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    height: 1.45,
-                    color: scheme.onSurface.withValues(alpha: 0.62),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final _MetricPreview item;
-
-  const _MetricCard({required this.item});
+  const _SummaryCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -1246,31 +1588,23 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.86),
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: item.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: item.icon,
-                    size: 18,
-                    color: item.accent,
-                  ),
-                ),
-              ),
-            ],
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: item.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: HugeIcon(icon: item.icon, size: 18, color: item.accent),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -1296,8 +1630,8 @@ class _MetricCard extends StatelessWidget {
             item.detail,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w500,
               height: 1.45,
+              fontWeight: FontWeight.w500,
               color: scheme.onSurface.withValues(alpha: 0.62),
             ),
           ),
@@ -1308,7 +1642,7 @@ class _MetricCard extends StatelessWidget {
 }
 
 class _HeroChip extends StatelessWidget {
-  final List<List<dynamic>> icon;
+  final dynamic icon;
   final String label;
 
   const _HeroChip({required this.icon, required this.label});
@@ -1344,13 +1678,8 @@ class _HeroChip extends StatelessWidget {
 class _HeroMetric extends StatelessWidget {
   final String label;
   final String value;
-  final Color tone;
 
-  const _HeroMetric({
-    required this.label,
-    required this.value,
-    required this.tone,
-  });
+  const _HeroMetric({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1369,16 +1698,16 @@ class _HeroMetric extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.white.withValues(alpha: 0.60),
+              color: Colors.white.withValues(alpha: 0.58),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
+            style: const TextStyle(
+              fontSize: 13.5,
               fontWeight: FontWeight.w900,
-              color: tone,
+              color: Colors.white,
               letterSpacing: -0.2,
             ),
           ),
@@ -1388,11 +1717,50 @@ class _HeroMetric extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
+class _MetaChip extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+
+  const _MetaChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.24),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HugeIcon(
+            icon: icon,
+            size: 13,
+            color: scheme.onSurface.withValues(alpha: 0.62),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.72),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StateBadge extends StatelessWidget {
   final String label;
   final Color accent;
 
-  const _StatusBadge({required this.label, required this.accent});
+  const _StateBadge({required this.label, required this.accent});
 
   @override
   Widget build(BuildContext context) {
@@ -1401,7 +1769,7 @@ class _StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: accent.withValues(alpha: 0.18)),
+        border: Border.all(color: accent.withValues(alpha: 0.20)),
       ),
       child: Text(
         label,
@@ -1415,37 +1783,142 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _DataPill extends StatelessWidget {
-  final List<List<dynamic>> icon;
+class _ActionButton extends StatelessWidget {
   final String label;
+  final bool filled;
+  final dynamic icon;
+  final VoidCallback onTap;
 
-  const _DataPill({required this.icon, required this.label});
+  const _ActionButton({
+    required this.label,
+    required this.filled,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.34),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            color: filled ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: filled
+                  ? AppColors.primary
+                  : scheme.onSurface.withValues(alpha: 0.10),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HugeIcon(
+                icon: icon,
+                size: 14,
+                color: filled ? Colors.white : scheme.onSurface,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: filled ? Colors.white : scheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniDocButton extends StatelessWidget {
+  final String label;
+  final dynamic icon;
+  final VoidCallback onTap;
+
+  const _MiniDocButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.20),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              HugeIcon(icon: icon, size: 13, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: scheme.onSurface.withValues(alpha: 0.86),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DialogTag extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+  final Color accent;
+
+  const _DialogTag({
+    required this.icon,
+    required this.label,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: accent.withValues(alpha: 0.18)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: icon,
-            size: 13,
-            color: scheme.onSurface.withValues(alpha: 0.60),
-          ),
+          HugeIcon(icon: icon, size: 13, color: accent),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(alpha: 0.70),
+              fontWeight: FontWeight.w800,
+              color: accent,
             ),
           ),
         ],
@@ -1454,14 +1927,230 @@ class _DataPill extends StatelessWidget {
   }
 }
 
-class _MetricPreview {
-  final List<List<dynamic>> icon;
+class _InvoiceInfoGrid extends StatelessWidget {
+  final List<Widget> children;
+
+  const _InvoiceInfoGrid({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final itemWidth = width >= 720 ? 200.0 : double.infinity;
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: children
+          .map((child) => SizedBox(width: itemWidth, child: child))
+          .toList(growable: false),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoTile({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.50),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface.withValues(alpha: 0.88),
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InvoiceLineTile extends StatelessWidget {
+  final _InvoiceLine line;
+
+  const _InvoiceLineTile({required this.line});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  line.title,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface.withValues(alpha: 0.90),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  line.subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: scheme.onSurface.withValues(alpha: 0.60),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            RwfCurrency.format(line.amountRwf),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface.withValues(alpha: 0.88),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AmountRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool emphasize;
+
+  const _AmountRow({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: emphasize ? 13 : 12,
+              fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
+              color: scheme.onSurface.withValues(
+                alpha: emphasize ? 0.92 : 0.62,
+              ),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: emphasize ? 15 : 13,
+            fontWeight: FontWeight.w900,
+            color: scheme.onSurface.withValues(alpha: 0.92),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SupportPoint extends StatelessWidget {
+  final String title;
+  final String detail;
+
+  const _SupportPoint({required this.title, required this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          margin: const EdgeInsets.only(top: 6),
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: scheme.onSurface.withValues(alpha: 0.90),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                detail,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1.45,
+                  fontWeight: FontWeight.w500,
+                  color: scheme.onSurface.withValues(alpha: 0.60),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryItem {
+  final dynamic icon;
   final String label;
   final String value;
   final String detail;
   final Color accent;
 
-  const _MetricPreview({
+  const _SummaryItem({
     required this.icon,
     required this.label,
     required this.value,
@@ -1470,70 +2159,99 @@ class _MetricPreview {
   });
 }
 
-class _ReservationPreview {
-  final String guestName;
+class _TripReservation {
   final String packageName;
+  final String destination;
   final String travelWindow;
-  final int travelers;
-  final int amountRwf;
+  final String durationLabel;
+  final String confirmationCode;
   final String status;
-  final String paymentLabel;
-  final Color accent;
-  final String note;
+  final String paymentStatus;
+  final int totalAmountRwf;
+  final int amountPaidRwf;
+  final int travelers;
+  final Color coverTone;
+  final String supportNote;
+  final String ticketSummary;
+  final List<_TripTicket> tickets;
+  final _InvoicePreview invoice;
 
-  const _ReservationPreview({
-    required this.guestName,
+  const _TripReservation({
     required this.packageName,
+    required this.destination,
     required this.travelWindow,
-    required this.travelers,
-    required this.amountRwf,
+    required this.durationLabel,
+    required this.confirmationCode,
     required this.status,
-    required this.paymentLabel,
-    required this.accent,
-    required this.note,
+    required this.paymentStatus,
+    required this.totalAmountRwf,
+    required this.amountPaidRwf,
+    required this.travelers,
+    required this.coverTone,
+    required this.supportNote,
+    required this.ticketSummary,
+    required this.tickets,
+    required this.invoice,
   });
+
+  bool get isUpcoming => status.toLowerCase() != "completed";
 }
 
-class _StagePreview {
+class _TripTicket {
   final String label;
-  final String detail;
-  final int count;
-  final double progress;
-  final Color accent;
+  final String holder;
+  final String code;
+  final String state;
 
-  const _StagePreview({
+  const _TripTicket({
     required this.label,
-    required this.detail,
-    required this.count,
-    required this.progress,
-    required this.accent,
+    required this.holder,
+    required this.code,
+    required this.state,
   });
 }
 
-class _LaunchPreview {
-  final List<List<dynamic>> icon;
+class _InvoicePreview {
+  final String invoiceNumber;
+  final String issuedOn;
+  final String paidOn;
+  final String paymentMethod;
+  final String paymentReference;
+  final String status;
+  final List<_InvoiceLine> lineItems;
+  final int serviceFeeRwf;
+
+  const _InvoicePreview({
+    required this.invoiceNumber,
+    required this.issuedOn,
+    required this.paidOn,
+    required this.paymentMethod,
+    required this.paymentReference,
+    required this.status,
+    required this.lineItems,
+    required this.serviceFeeRwf,
+  });
+
+  int get subtotalRwf =>
+      lineItems.fold<int>(0, (sum, item) => sum + item.amountRwf);
+
+  int get totalRwf => subtotalRwf + serviceFeeRwf;
+}
+
+class _InvoiceLine {
   final String title;
-  final String description;
+  final String subtitle;
+  final int amountRwf;
 
-  const _LaunchPreview({
-    required this.icon,
+  const _InvoiceLine({
     required this.title,
-    required this.description,
+    required this.subtitle,
+    required this.amountRwf,
   });
 }
 
-class _WeekRevenue {
-  final String label;
-  final int value;
-
-  const _WeekRevenue({required this.label, required this.value});
-}
-
-String _initials(String name) {
-  final parts = name.split(RegExp(r"\s+")).where((part) => part.isNotEmpty);
-  return parts
-      .take(2)
-      .map((part) => part.characters.first)
-      .join()
-      .toUpperCase();
+String _firstName(String value) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return "Traveler";
+  return trimmed.split(RegExp(r"\s+")).first;
 }
