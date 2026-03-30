@@ -1,5 +1,3 @@
-import "dart:math" as math;
-
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
@@ -7,7 +5,6 @@ import "../../../../core/services/auth_session.dart";
 import "../../../../core/utils/rwf_currency.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../widgets/trip_reservations/trip_reservations_documents_section.dart";
 import "../widgets/trip_reservations/trip_reservations_header.dart";
 import "../widgets/trip_reservations/trip_reservations_metrics_row.dart";
 import "../widgets/trip_reservations/trip_reservations_models.dart";
@@ -46,8 +43,6 @@ class TripReservationsPage extends StatelessWidget {
             : width >= 760
             ? 24.0
             : 16.0;
-        final contentWidth = math.max(0.0, width - (horizontalPadding * 2));
-        final showSideDocuments = contentWidth >= 1060;
 
         return DecoratedBox(
           decoration: BoxDecoration(
@@ -138,42 +133,11 @@ class TripReservationsPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 18),
-                      if (showSideDocuments)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 7,
-                              child: TripReservationsSection(
-                                reservations: reservations,
-                                billedName: session.displayName,
-                                billedEmail: email,
-                              ),
-                            ),
-                            const SizedBox(width: 18),
-                            Expanded(
-                              flex: 5,
-                              child: TripReservationsDocumentsSection(
-                                reservations: reservations,
-                                billedName: session.displayName,
-                                billedEmail: email,
-                              ),
-                            ),
-                          ],
-                        )
-                      else ...[
-                        TripReservationsSection(
-                          reservations: reservations,
-                          billedName: session.displayName,
-                          billedEmail: email,
-                        ),
-                        const SizedBox(height: 18),
-                        TripReservationsDocumentsSection(
-                          reservations: reservations,
-                          billedName: session.displayName,
-                          billedEmail: email,
-                        ),
-                      ],
+                      TripReservationsSection(
+                        reservations: reservations,
+                        billedName: session.displayName,
+                        billedEmail: email,
+                      ),
                     ],
                   ),
                 ),
