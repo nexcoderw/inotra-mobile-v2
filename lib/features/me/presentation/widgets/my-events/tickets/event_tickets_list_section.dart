@@ -60,9 +60,6 @@ class _EventTicketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
-    final scheme = Theme.of(context).colorScheme;
-    final eventTone = eventTicketTone(ticket.eventStatusKey, scheme);
-    final ticketTone = eventTicketTone(ticket.ticketStateKey, scheme);
 
     return EventTicketsSurfaceCard(
       padding: EdgeInsets.zero,
@@ -72,35 +69,7 @@ class _EventTicketCard extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final stackedLayout = constraints.maxWidth < 560;
-                final ticketLead = _TicketLead(
-                  ticket: ticket,
-                  eventTone: eventTone,
-                  ticketTone: ticketTone,
-                );
-                final priceStub = _TicketPriceStub(ticket: ticket);
-
-                return stackedLayout
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ticketLead,
-                          const SizedBox(height: 16),
-                          priceStub,
-                        ],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: ticketLead),
-                          const SizedBox(width: 16),
-                          SizedBox(width: 210, child: priceStub),
-                        ],
-                      );
-              },
-            ),
+            child: _TicketLead(ticket: ticket),
           ),
           _TicketDividerBand(accent: ticket.accent),
           Padding(
@@ -108,6 +77,8 @@ class _EventTicketCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _TotalPaidSection(ticket: ticket),
+                const SizedBox(height: 14),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final wideFacts = constraints.maxWidth >= 720;
@@ -140,24 +111,19 @@ class _EventTicketCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: EventTicketsActionButton(
-                        icon: HugeIcons.strokeRoundedTicket02,
-                        label: t(lang, "my_events.tickets.view_pass"),
-                        onTap: () => showEventTicketPassDialog(context, ticket),
-                        color: ticket.accent,
-                        isFilled: true,
-                      ),
-                    ),
+                    Expanded(child: _TicketPriceRow(ticket: ticket)),
                     const SizedBox(width: 12),
-                    Expanded(
+                    SizedBox(
+                      width: 126,
                       child: EventTicketsActionButton(
-                        icon: HugeIcons.strokeRoundedInvoice03,
-                        label: t(lang, "my_events.tickets.payment_details"),
+                        icon: HugeIcons.strokeRoundedView,
+                        label: t(lang, "my_events.tickets.details"),
                         onTap: () =>
-                            showEventTicketPaymentDialog(context, ticket),
-                        color: ticket.accent,
+                            showEventTicketDetailsDialog(context, ticket),
+                        color: Theme.of(context).colorScheme.primary,
+                        isFilled: true,
                       ),
                     ),
                   ],
@@ -172,138 +138,76 @@ class _EventTicketCard extends StatelessWidget {
 }
 
 class _TicketLead extends StatelessWidget {
-  const _TicketLead({
-    required this.ticket,
-    required this.eventTone,
-    required this.ticketTone,
-  });
+  const _TicketLead({required this.ticket});
 
   final EventTicketPreview ticket;
-  final Color eventTone;
-  final Color ticketTone;
 
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
-    final hasConsumable =
-        ticket.consumable &&
-        (ticket.consumableDescription ?? "").trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            EventTicketsMetaPill(
-              icon: HugeIcons.strokeRoundedBookmark01,
-              label: ticket.orderNumber,
-              color: ticket.accent,
+            Expanded(
+              child: Text(
+                ticket.eventTitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                  color: scheme.onSurface.withValues(alpha: 0.95),
+                ),
+              ),
             ),
-            EventTicketsStateBadge(
-              label: t(lang, ticket.eventStatusKey),
-              color: eventTone,
-            ),
-            EventTicketsStateBadge(
-              label: t(lang, ticket.ticketStateKey),
-              color: ticketTone,
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: scheme.primary.withValues(alpha: 0.14),
+                ),
+              ),
+              child: Text(
+                t(lang, ticket.ticketCategoryKey),
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: scheme.primary,
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 14),
-        Text(
-          ticket.eventTitle,
-          style: TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.4,
-            color: scheme.onSurface.withValues(alpha: 0.95),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "${ticket.venue} · ${ticket.city}",
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w600,
-            color: scheme.onSurface.withValues(alpha: 0.62),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        const SizedBox(height: 10),
+        Row(
           children: [
-            EventTicketsMetaPill(
+            Expanded(
+              child: _HeaderMeta(
+                icon: HugeIcons.strokeRoundedLocation01,
+                label: "${ticket.venue} · ${ticket.city}",
+              ),
+            ),
+            const SizedBox(width: 12),
+            _HeaderMeta(
               icon: HugeIcons.strokeRoundedCalendar03,
-              label: formatEventWindow(context, ticket.startAt, ticket.endAt),
-            ),
-            EventTicketsMetaPill(
-              icon: HugeIcons.strokeRoundedTicket01,
-              label: t(lang, ticket.ticketCategoryKey),
-              color: ticket.accent,
-            ),
-            EventTicketsMetaPill(
-              icon: HugeIcons.strokeRoundedUserGroup,
-              label: t(
-                lang,
-                "my_events.tickets.quantity_count",
-              ).replaceAll("{count}", "${ticket.quantity}"),
+              label: formatEventMonthDay(context, ticket.startAt),
             ),
           ],
         ),
-        if (hasConsumable) ...[
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-            decoration: BoxDecoration(
-              color: ticket.accent.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: ticket.accent.withValues(alpha: 0.10)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedSparkles,
-                  size: 15,
-                  color: ticket.accent,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        height: 1.4,
-                        color: scheme.onSurface.withValues(alpha: 0.76),
-                      ),
-                      children: [
-                        TextSpan(
-                          text: "${t(lang, "my_events.tickets.consumables")}: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                        TextSpan(text: ticket.consumableDescription!.trim()),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }
 }
 
-class _TicketPriceStub extends StatelessWidget {
-  const _TicketPriceStub({required this.ticket});
+class _TotalPaidSection extends StatelessWidget {
+  const _TotalPaidSection({required this.ticket});
 
   final EventTicketPreview ticket;
 
@@ -313,6 +217,7 @@ class _TicketPriceStub extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: ticket.accent.withValues(alpha: 0.05),
@@ -341,37 +246,61 @@ class _TicketPriceStub extends StatelessWidget {
               color: scheme.onSurface,
             ),
           ),
-          const SizedBox(height: 14),
-          _PaymentFact(
-            label: t(lang, "my_events.tickets.payment_method"),
-            value: t(lang, ticket.paymentMethodKey),
-          ),
-          const SizedBox(height: 10),
-          _PaymentFact(
-            label: t(lang, "my_events.tickets.order_number"),
-            value: ticket.orderNumber,
-          ),
         ],
       ),
     );
   }
 }
 
-class _PaymentFact extends StatelessWidget {
-  const _PaymentFact({required this.label, required this.value});
+class _HeaderMeta extends StatelessWidget {
+  const _HeaderMeta({required this.icon, required this.label});
 
+  final dynamic icon;
   final String label;
-  final String value;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        HugeIcon(
+          icon: icon,
+          size: 14,
+          color: scheme.onSurface.withValues(alpha: 0.48),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 11.5,
+            fontWeight: FontWeight.w600,
+            color: scheme.onSurface.withValues(alpha: 0.62),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TicketPriceRow extends StatelessWidget {
+  const _TicketPriceRow({required this.ticket});
+
+  final EventTicketPreview ticket;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          t(lang, "my_events.tickets.ticket_price"),
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w600,
@@ -380,11 +309,12 @@ class _PaymentFact extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          value,
+          RwfCurrency.format(ticket.unitPriceRwf),
           style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w800,
-            color: scheme.onSurface.withValues(alpha: 0.92),
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.2,
+            color: scheme.onSurface,
           ),
         ),
       ],
