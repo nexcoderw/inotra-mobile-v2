@@ -62,11 +62,24 @@ class _ReservationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final localizations = MaterialLocalizations.of(context);
     final statusTone = tripReservationTone(reservation.statusKey, scheme);
     final paymentTone = tripReservationTone(
       reservation.paymentStatusKey,
       scheme,
     );
+    final travelWindow = formatTripWindow(
+      context,
+      reservation.startDate,
+      reservation.endDate,
+    );
+    final paymentStatusLabel = t(lang, reservation.paymentStatusKey);
+    final amountPaidLabel = RwfCurrency.format(reservation.amountPaidRwf);
+    final ticketCountLabel = t(
+      lang,
+      "trip_reservations.ticket_count",
+    ).replaceAll("{count}", "${reservation.tickets.length}");
+    final progressLabel = "${(reservation.paymentProgress * 100).round()}%";
     final balanceLabel = reservation.balanceRwf == 0
         ? t(lang, "trip_reservations.balance_cleared")
         : t(
@@ -75,198 +88,538 @@ class _ReservationCard extends StatelessWidget {
           ).replaceAll("{amount}", RwfCurrency.format(reservation.balanceRwf));
 
     return TripReservationsSurfaceCard(
+      padding: const EdgeInsets.all(12),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              reservation.accent.withValues(alpha: 0.10),
+              scheme.surfaceContainerLowest.withValues(alpha: 0.98),
+              scheme.surfaceContainerLowest.withValues(alpha: 0.94),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: reservation.accent.withValues(alpha: 0.10)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 760;
+                  final isMedium = constraints.maxWidth >= 540;
+
+                  final headerContent = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          TripReservationStateBadge(
+                            label: t(lang, reservation.statusKey),
+                            color: statusTone,
+                          ),
+                          TripReservationMetaPill(
+                            icon: HugeIcons.strokeRoundedWallet02,
+                            label: paymentStatusLabel,
+                            color: paymentTone,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        reservation.packageName,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: scheme.onSurface.withValues(alpha: 0.95),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        reservation.destination,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: scheme.onSurface.withValues(alpha: 0.56),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          HugeIcon(
+                            icon: HugeIcons.strokeRoundedCalendar03,
+                            color: reservation.accent,
+                            size: 15,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              travelWindow,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: scheme.onSurface.withValues(alpha: 0.72),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+
+                  final routePanel = SizedBox(
+                    width: isWide ? 148 : 132,
+                    child: _RouteWindowPanel(
+                      accent: reservation.accent,
+                      startLabel: localizations.formatShortMonthDay(
+                        reservation.startDate,
+                      ),
+                      endLabel: localizations.formatShortMonthDay(
+                        reservation.endDate,
+                      ),
+                      durationLabel: t(
+                        lang,
+                        "trip_reservations.nights_count",
+                      ).replaceAll("{count}", "${reservation.nights}"),
+                    ),
+                  );
+
+                  final amountPanel = _AmountSpotlight(
+                    accent: reservation.accent,
+                    label: t(lang, "trip_reservations.amount_paid"),
+                    value: amountPaidLabel,
+                    caption: balanceLabel,
+                  );
+
+                  if (isWide) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        routePanel,
+                        const SizedBox(width: 16),
+                        Expanded(child: headerContent),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 190, child: amountPanel),
+                      ],
+                    );
+                  }
+
+                  if (isMedium) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        routePanel,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              headerContent,
+                              const SizedBox(height: 14),
+                              amountPanel,
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      routePanel,
+                      const SizedBox(height: 14),
+                      headerContent,
+                      const SizedBox(height: 14),
+                      amountPanel,
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: scheme.surface.withValues(alpha: 0.68),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: scheme.outline.withValues(alpha: 0.08),
+                  ),
+                ),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    TripReservationMetaPill(
+                      icon: HugeIcons.strokeRoundedUserGroup,
+                      label: t(
+                        lang,
+                        "trip_reservations.travelers_count",
+                      ).replaceAll("{count}", "${reservation.travelers}"),
+                    ),
+                    TripReservationMetaPill(
+                      icon: HugeIcons.strokeRoundedTicket01,
+                      label: ticketCountLabel,
+                      color: const Color(0xFF1877B8),
+                    ),
+                    TripReservationMetaPill(
+                      icon: HugeIcons.strokeRoundedShield01,
+                      label: reservation.confirmationCode,
+                      color: reservation.accent,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              _PaymentStrip(
+                tone: paymentTone,
+                statusLabel: paymentStatusLabel,
+                amountLabel: amountPaidLabel,
+                progressLabel: progressLabel,
+                balanceLabel: balanceLabel,
+                progress: reservation.paymentProgress,
+              ),
+              const SizedBox(height: 14),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final compactFooter = constraints.maxWidth < 640;
+                  final documentsNote = _DocumentsNote(
+                    accent: reservation.accent,
+                    label:
+                        "$ticketCountLabel • ${reservation.invoice.invoiceNumber}",
+                  );
+
+                  final ticketsButton = TripReservationActionButton(
+                    icon: HugeIcons.strokeRoundedTicket01,
+                    label: t(lang, "trip_reservations.tickets"),
+                    color: const Color(0xFF1877B8),
+                    onTap: () => showTripTicketsDialog(
+                      context,
+                      reservation: reservation,
+                    ),
+                  );
+                  final invoiceButton = TripReservationActionButton(
+                    icon: HugeIcons.strokeRoundedInvoice03,
+                    label: t(lang, "trip_reservations.invoice"),
+                    color: const Color(0xFF0F8F5F),
+                    isFilled: true,
+                    onTap: () => showTripInvoiceDialog(
+                      context,
+                      reservation: reservation,
+                      billedName: billedName ?? "",
+                      billedEmail: billedEmail,
+                    ),
+                  );
+
+                  if (compactFooter) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        documentsNote,
+                        const SizedBox(height: 12),
+                        SizedBox(width: double.infinity, child: ticketsButton),
+                        const SizedBox(height: 10),
+                        SizedBox(width: double.infinity, child: invoiceButton),
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      Expanded(child: documentsNote),
+                      const SizedBox(width: 12),
+                      Expanded(child: ticketsButton),
+                      const SizedBox(width: 10),
+                      Expanded(child: invoiceButton),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RouteWindowPanel extends StatelessWidget {
+  const _RouteWindowPanel({
+    required this.accent,
+    required this.startLabel,
+    required this.endLabel,
+    required this.durationLabel,
+  });
+
+  final Color accent;
+  final String startLabel;
+  final String endLabel;
+  final String durationLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.12)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stackHeader = constraints.maxWidth < 520;
-              final titleBlock = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    reservation.packageName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: scheme.onSurface.withValues(alpha: 0.94),
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    reservation.destination,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface.withValues(alpha: 0.56),
-                    ),
-                  ),
-                ],
-              );
-
-              if (stackHeader) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    titleBlock,
-                    const SizedBox(height: 12),
-                    TripReservationStateBadge(
-                      label: t(lang, reservation.statusKey),
-                      color: statusTone,
-                    ),
-                  ],
-                );
-              }
-
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: titleBlock),
-                  const SizedBox(width: 12),
-                  TripReservationStateBadge(
-                    label: t(lang, reservation.statusKey),
-                    color: statusTone,
-                  ),
-                ],
-              );
-            },
+          _RouteStop(label: startLabel, accent: accent, emphasize: true),
+          Padding(
+            padding: const EdgeInsets.only(left: 5),
+            child: Container(
+              width: 1.5,
+              height: 20,
+              color: accent.withValues(alpha: 0.26),
+            ),
           ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              TripReservationMetaPill(
-                icon: HugeIcons.strokeRoundedCalendar03,
-                label: formatTripWindow(
-                  context,
-                  reservation.startDate,
-                  reservation.endDate,
-                ),
-              ),
-              TripReservationMetaPill(
-                icon: HugeIcons.strokeRoundedUserGroup,
-                label: t(
-                  lang,
-                  "trip_reservations.travelers_count",
-                ).replaceAll("{count}", "${reservation.travelers}"),
-              ),
-              TripReservationMetaPill(
-                icon: HugeIcons.strokeRoundedMoon02,
-                label: t(
-                  lang,
-                  "trip_reservations.nights_count",
-                ).replaceAll("{count}", "${reservation.nights}"),
-              ),
-              TripReservationMetaPill(
-                icon: HugeIcons.strokeRoundedShield01,
-                label: reservation.confirmationCode,
-                color: reservation.accent,
-              ),
-            ],
+          _RouteStop(label: endLabel, accent: accent),
+          const SizedBox(height: 12),
+          Text(
+            durationLabel,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.64),
+            ),
           ),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final showInlineStats = constraints.maxWidth >= 580;
+        ],
+      ),
+    );
+  }
+}
 
-              final amountBlock = _InfoBlock(
-                label: t(lang, "trip_reservations.amount_paid"),
-                value: RwfCurrency.format(reservation.amountPaidRwf),
-              );
-              final paymentBlock = _InfoBlock(
-                label: t(lang, "trip_reservations.payment_status"),
-                value: t(lang, reservation.paymentStatusKey),
-                tone: paymentTone,
-              );
-              final documentBlock = _InfoBlock(
-                label: t(lang, "trip_reservations.ready_documents"),
-                value: t(
-                  lang,
-                  "trip_reservations.ticket_count",
-                ).replaceAll("{count}", "${reservation.tickets.length}"),
-              );
+class _RouteStop extends StatelessWidget {
+  const _RouteStop({
+    required this.label,
+    required this.accent,
+    this.emphasize = false,
+  });
 
-              if (showInlineStats) {
-                return Row(
-                  children: [
-                    Expanded(child: amountBlock),
-                    const SizedBox(width: 12),
-                    Expanded(child: paymentBlock),
-                    const SizedBox(width: 12),
-                    Expanded(child: documentBlock),
-                  ],
-                );
-              }
+  final String label;
+  final Color accent;
+  final bool emphasize;
 
-              return Column(
-                children: [
-                  amountBlock,
-                  const SizedBox(height: 10),
-                  paymentBlock,
-                  const SizedBox(height: 10),
-                  documentBlock,
-                ],
-              );
-            },
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: emphasize ? accent : accent.withValues(alpha: 0.16),
+            shape: BoxShape.circle,
+            border: Border.all(color: accent.withValues(alpha: 0.30)),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: reservation.paymentProgress,
-                    minHeight: 9,
-                    backgroundColor: scheme.surfaceContainerHighest,
-                    valueColor: AlwaysStoppedAnimation<Color>(paymentTone),
-                  ),
-                ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(
+                alpha: emphasize ? 0.90 : 0.62,
               ),
-              const SizedBox(width: 12),
-              Text(
-                "${(reservation.paymentProgress * 100).round()}%",
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w800,
-                  color: paymentTone,
-                ),
-              ),
-            ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AmountSpotlight extends StatelessWidget {
+  const _AmountSpotlight({
+    required this.accent,
+    required this.label,
+    required this.value,
+    required this.caption,
+  });
+
+  final Color accent;
+  final String label;
+  final String value;
+  final String caption;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: accent.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.48),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            balanceLabel,
+            value,
             style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withValues(alpha: 0.50),
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface.withValues(alpha: 0.92),
+              letterSpacing: -0.3,
             ),
           ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          const SizedBox(height: 8),
+          Text(
+            caption,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+              color: scheme.onSurface.withValues(alpha: 0.56),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentStrip extends StatelessWidget {
+  const _PaymentStrip({
+    required this.tone,
+    required this.statusLabel,
+    required this.amountLabel,
+    required this.progressLabel,
+    required this.balanceLabel,
+    required this.progress,
+  });
+
+  final Color tone;
+  final String statusLabel;
+  final String amountLabel;
+  final String progressLabel;
+  final String balanceLabel;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = currentLangSync();
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surface.withValues(alpha: 0.74),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TripReservationActionButton(
-                icon: HugeIcons.strokeRoundedTicket01,
-                label: t(lang, "trip_reservations.tickets"),
-                color: const Color(0xFF1877B8),
-                onTap: () =>
-                    showTripTicketsDialog(context, reservation: reservation),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t(lang, "trip_reservations.payment_status"),
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: scheme.onSurface.withValues(alpha: 0.46),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: tone,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              TripReservationActionButton(
-                icon: HugeIcons.strokeRoundedInvoice03,
-                label: t(lang, "trip_reservations.invoice"),
-                color: const Color(0xFF0F8F5F),
-                isFilled: true,
-                onTap: () => showTripInvoiceDialog(
-                  context,
-                  reservation: reservation,
-                  billedName: billedName ?? "",
-                  billedEmail: billedEmail,
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    t(lang, "trip_reservations.amount_paid"),
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface.withValues(alpha: 0.46),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    amountLabel,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w900,
+                      color: scheme.onSurface.withValues(alpha: 0.92),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 9,
+              backgroundColor: scheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(tone),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  balanceLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface.withValues(alpha: 0.54),
+                  ),
+                ),
+              ),
+              Text(
+                progressLabel,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: tone,
                 ),
               ),
             ],
@@ -277,48 +630,45 @@ class _ReservationCard extends StatelessWidget {
   }
 }
 
-class _InfoBlock extends StatelessWidget {
-  const _InfoBlock({required this.label, required this.value, this.tone});
+class _DocumentsNote extends StatelessWidget {
+  const _DocumentsNote({required this.accent, required this.label});
 
+  final Color accent;
   final String label;
-  final String value;
-  final Color? tone;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = tone ?? scheme.onSurface.withValues(alpha: 0.82);
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedFile01,
+              color: accent,
+              size: 16,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
             label,
             style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(alpha: 0.46),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface.withValues(alpha: 0.58),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: -0.1,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
