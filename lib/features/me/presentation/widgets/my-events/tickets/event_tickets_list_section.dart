@@ -65,95 +65,114 @@ class _EventTicketCard extends StatelessWidget {
     final ticketTone = eventTicketTone(ticket.ticketStateKey, scheme);
 
     return EventTicketsSurfaceCard(
+      padding: EdgeInsets.zero,
       borderColor: ticket.accent.withValues(alpha: 0.28),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final stackedLayout = constraints.maxWidth < 560;
-          final paymentPanel = _PaymentPanel(ticket: ticket);
-          final infoColumn = _InfoColumn(
-            ticket: ticket,
-            eventTone: eventTone,
-            ticketTone: ticketTone,
-          );
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final stackedLayout = constraints.maxWidth < 560;
+                final ticketLead = _TicketLead(
+                  ticket: ticket,
+                  eventTone: eventTone,
+                  ticketTone: ticketTone,
+                );
+                final priceStub = _TicketPriceStub(ticket: ticket);
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (stackedLayout) ...[
-                infoColumn,
+                return stackedLayout
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ticketLead,
+                          const SizedBox(height: 16),
+                          priceStub,
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: ticketLead),
+                          const SizedBox(width: 16),
+                          SizedBox(width: 210, child: priceStub),
+                        ],
+                      );
+              },
+            ),
+          ),
+          _TicketDividerBand(accent: ticket.accent),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wideFacts = constraints.maxWidth >= 720;
+                    final factWidth = wideFacts
+                        ? (constraints.maxWidth - 24) / 3
+                        : (constraints.maxWidth - 10) / 2;
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _TicketFact(
+                          width: factWidth,
+                          label: t(lang, "my_events.tickets.ticket_code"),
+                          value: ticket.ticketCode,
+                        ),
+                        _TicketFact(
+                          width: factWidth,
+                          label: t(lang, "my_events.tickets.purchased_on"),
+                          value: formatIssuedDate(context, ticket.purchasedAt),
+                        ),
+                        _TicketFact(
+                          width: factWidth,
+                          label: t(lang, "my_events.tickets.payment_reference"),
+                          value: ticket.paymentReference,
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
-                paymentPanel,
-              ] else ...[
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: infoColumn),
-                    const SizedBox(width: 16),
-                    SizedBox(width: 220, child: paymentPanel),
+                    Expanded(
+                      child: EventTicketsActionButton(
+                        icon: HugeIcons.strokeRoundedTicket02,
+                        label: t(lang, "my_events.tickets.view_pass"),
+                        onTap: () => showEventTicketPassDialog(context, ticket),
+                        color: ticket.accent,
+                        isFilled: true,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: EventTicketsActionButton(
+                        icon: HugeIcons.strokeRoundedInvoice03,
+                        label: t(lang, "my_events.tickets.payment_details"),
+                        onTap: () =>
+                            showEventTicketPaymentDialog(context, ticket),
+                        color: ticket.accent,
+                      ),
+                    ),
                   ],
                 ),
               ],
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _InlineFact(
-                    icon: HugeIcons.strokeRoundedUser,
-                    label: t(lang, "my_events.tickets.holder"),
-                    value: ticket.holderName,
-                  ),
-                  _InlineFact(
-                    icon: HugeIcons.strokeRoundedQrCode,
-                    label: t(lang, "my_events.tickets.ticket_code"),
-                    value: ticket.ticketCode,
-                  ),
-                  _InlineFact(
-                    icon: HugeIcons.strokeRoundedMapsLocation02,
-                    label: t(lang, "my_events.tickets.section"),
-                    value: ticket.sectionLabel,
-                  ),
-                  _InlineFact(
-                    icon: HugeIcons.strokeRoundedClock01,
-                    label: t(lang, "my_events.tickets.entry_window"),
-                    value: ticket.entryWindow,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: EventTicketsActionButton(
-                      icon: HugeIcons.strokeRoundedTicket02,
-                      label: t(lang, "my_events.tickets.view_pass"),
-                      onTap: () => showEventTicketPassDialog(context, ticket),
-                      color: ticket.accent,
-                      isFilled: true,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: EventTicketsActionButton(
-                      icon: HugeIcons.strokeRoundedInvoice03,
-                      label: t(lang, "my_events.tickets.payment_details"),
-                      onTap: () =>
-                          showEventTicketPaymentDialog(context, ticket),
-                      color: ticket.accent,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _InfoColumn extends StatelessWidget {
-  const _InfoColumn({
+class _TicketLead extends StatelessWidget {
+  const _TicketLead({
     required this.ticket,
     required this.eventTone,
     required this.ticketTone,
@@ -167,6 +186,9 @@ class _InfoColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final hasConsumable =
+        ticket.consumable &&
+        (ticket.consumableDescription ?? "").trim().isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,35 +254,47 @@ class _InfoColumn extends StatelessWidget {
             ),
           ],
         ),
-        if (ticket.perkKeys.isNotEmpty) ...[
+        if (hasConsumable) ...[
           const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final perkKey in ticket.perkKeys)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ticket.accent.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: ticket.accent.withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Text(
-                    t(lang, perkKey),
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: ticket.accent,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+            decoration: BoxDecoration(
+              color: ticket.accent.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: ticket.accent.withValues(alpha: 0.10)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                HugeIcon(
+                  icon: HugeIcons.strokeRoundedSparkles,
+                  size: 15,
+                  color: ticket.accent,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        height: 1.4,
+                        color: scheme.onSurface.withValues(alpha: 0.76),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: "${t(lang, "my_events.tickets.consumables")}: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: scheme.onSurface,
+                          ),
+                        ),
+                        TextSpan(text: ticket.consumableDescription!.trim()),
+                      ],
                     ),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         ],
       ],
@@ -268,8 +302,8 @@ class _InfoColumn extends StatelessWidget {
   }
 }
 
-class _PaymentPanel extends StatelessWidget {
-  const _PaymentPanel({required this.ticket});
+class _TicketPriceStub extends StatelessWidget {
+  const _TicketPriceStub({required this.ticket});
 
   final EventTicketPreview ticket;
 
@@ -314,13 +348,8 @@ class _PaymentPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _PaymentFact(
-            label: t(lang, "my_events.tickets.purchased_on"),
-            value: formatIssuedDate(context, ticket.purchasedAt),
-          ),
-          const SizedBox(height: 10),
-          _PaymentFact(
-            label: t(lang, "my_events.tickets.payment_reference"),
-            value: ticket.paymentReference,
+            label: t(lang, "my_events.tickets.order_number"),
+            value: ticket.orderNumber,
           ),
         ],
       ),
@@ -363,14 +392,14 @@ class _PaymentFact extends StatelessWidget {
   }
 }
 
-class _InlineFact extends StatelessWidget {
-  const _InlineFact({
-    required this.icon,
+class _TicketFact extends StatelessWidget {
+  const _TicketFact({
+    required this.width,
     required this.label,
     required this.value,
   });
 
-  final dynamic icon;
+  final double width;
   final String label;
   final String value;
 
@@ -379,47 +408,109 @@ class _InlineFact extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      constraints: const BoxConstraints(minWidth: 160),
+      width: width,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: scheme.outline.withValues(alpha: 0.08)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HugeIcon(
-            icon: icon,
-            size: 14,
-            color: scheme.onSurface.withValues(alpha: 0.54),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: scheme.onSurface.withValues(alpha: 0.50),
+            ),
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 122,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface.withValues(alpha: 0.50),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface.withValues(alpha: 0.92),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TicketDividerBand extends StatelessWidget {
+  const _TicketDividerBand({required this.accent});
+
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final cutoutColor = Theme.of(context).scaffoldBackgroundColor;
+
+    return SizedBox(
+      height: 26,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final dashCount = (constraints.maxWidth / 14).floor().clamp(
+                8,
+                40,
+              );
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    dashCount,
+                    (index) => Container(
+                      width: 7,
+                      height: 1.5,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.24),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurface.withValues(alpha: 0.92),
-                  ),
+              );
+            },
+          ),
+          Positioned(
+            left: -11,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: cutoutColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: scheme.outline.withValues(alpha: 0.08),
                 ),
-              ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: -11,
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: cutoutColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: scheme.outline.withValues(alpha: 0.08),
+                ),
+              ),
             ),
           ),
         ],
