@@ -79,6 +79,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             _MarkAllReadButton(
                               onTap: svc.markAllRead,
                               scheme: scheme,
+                              lang: lang,
                             ),
                         ],
                       ),
@@ -136,8 +137,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
 class _MarkAllReadButton extends StatelessWidget {
   final VoidCallback onTap;
   final ColorScheme scheme;
+  final String lang;
 
-  const _MarkAllReadButton({required this.onTap, required this.scheme});
+  const _MarkAllReadButton({
+    required this.onTap,
+    required this.scheme,
+    required this.lang,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +159,7 @@ class _MarkAllReadButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          "Mark all read",
+          t(lang, "notifications.mark_all_read"),
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -382,7 +388,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            "No notifications yet",
+            t(currentLangSync(), "notifications.empty_title"),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
@@ -391,7 +397,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            "You'll see new listings, events &\ntrip packages here.",
+            t(currentLangSync(), "notifications.empty_body"),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
