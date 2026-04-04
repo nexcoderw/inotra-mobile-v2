@@ -45,10 +45,10 @@
 		<dict>
 			<key>api.inotra.rw</key>
 			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
 				<true/>
 				<key>NSIncludesSubdomains</key>
-				<true/>
+				<false/>
 			</dict>
 		</dict>
 	</dict>
