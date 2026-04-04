@@ -52,8 +52,14 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Inotra uses your camera to let you take photos for your listings, events, and profile picture.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>Sign in to Inotra</string>
+	<string>Inotra uses Face ID to securely authenticate your login without storing your biometric data.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Inotra uses your location to show nearby places and points of interest on the map.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Inotra needs access to your photo library to let you upload images for your listings, events, and profile picture.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
