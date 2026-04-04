@@ -43,7 +43,7 @@ class SettingsPage extends StatelessWidget {
               _GlassTile(
                 icon: HugeIcons.strokeRoundedMoon02,
                 title: t(lang, "settings.theme"),
-                subtitle: "Light / Dark",
+                subtitle: t(lang, "settings.theme_subtitle"),
                 onTap: () {
                   Navigator.pushNamed(context, AppRoutes.settingsTheme);
                 },
@@ -104,9 +104,9 @@ class SettingsPage extends StatelessWidget {
                 vertical: 6,
               ),
               leading: _IconBadge(icon: HugeIcons.strokeRoundedDiscoverCircle),
-              title: const Text(
-                "App version",
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              title: Text(
+                t(lang, "settings.app_version"),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
               ),
               subtitle: Text(
                 "1.0.0",
