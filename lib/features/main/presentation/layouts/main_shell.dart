@@ -145,8 +145,6 @@ class _MainShellState extends State<MainShell> {
         onMyEventsTap: () => Navigator.pushNamed(context, AppRoutes.myEvents),
         onMyEventSubmissionsTap: () =>
             Navigator.pushNamed(context, AppRoutes.myEventSubmissions),
-        onEventPaymentsTap: () =>
-            Navigator.pushNamed(context, AppRoutes.eventPayments),
         onEventTicketsTap: () =>
             Navigator.pushNamed(context, AppRoutes.eventTickets),
 
@@ -157,8 +155,6 @@ class _MainShellState extends State<MainShell> {
             Navigator.pushNamed(context, AppRoutes.myListingSubmissions),
         onListingReviewsTap: () =>
             Navigator.pushNamed(context, AppRoutes.listingReviews),
-        onListingPaymentsTap: () =>
-            Navigator.pushNamed(context, AppRoutes.listingPayments),
         onListingBookingTap: () =>
             Navigator.pushNamed(context, AppRoutes.listingBooking),
 
