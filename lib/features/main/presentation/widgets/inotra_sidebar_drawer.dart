@@ -16,14 +16,12 @@ class InotraSidebarDrawer extends StatelessWidget {
   // EVENTS
   final VoidCallback onMyEventsTap;
   final VoidCallback onMyEventSubmissionsTap;
-  final VoidCallback onEventPaymentsTap;
   final VoidCallback onEventTicketsTap;
 
   // LISTINGS
   final VoidCallback onMyListingsTap;
   final VoidCallback onMyListingSubmissionsTap;
   final VoidCallback onListingReviewsTap;
-  final VoidCallback onListingPaymentsTap;
   final VoidCallback onListingBookingTap;
 
   final VoidCallback onTripReservationsTap;
@@ -37,12 +35,10 @@ class InotraSidebarDrawer extends StatelessWidget {
     required this.onDashboardTap,
     required this.onMyEventsTap,
     required this.onMyEventSubmissionsTap,
-    required this.onEventPaymentsTap,
     required this.onEventTicketsTap,
     required this.onMyListingsTap,
     required this.onMyListingSubmissionsTap,
     required this.onListingReviewsTap,
-    required this.onListingPaymentsTap,
     required this.onListingBookingTap,
     required this.onTripReservationsTap,
     required this.onSettingsTap,
