@@ -119,8 +119,8 @@ class _EventDetailsPageState extends State<EventDetailsPage> {
                   toastification.show(
                     context: context,
                     type: ToastificationType.info,
-                    title: Text(t(lang, "common.coming_soon")),
-                    autoCloseDuration: const Duration(seconds: 3),
+                    title: Text(t(lang, "events.ticket_integration")),
+                    autoCloseDuration: const Duration(seconds: 5),
                   );
                 },
                 onBack: () => Navigator.maybePop(context),
