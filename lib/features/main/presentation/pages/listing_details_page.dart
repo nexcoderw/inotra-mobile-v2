@@ -238,9 +238,9 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                                   context: context,
                                   type: ToastificationType.info,
                                   style: ToastificationStyle.fillColored,
-                                  title: Text(t(lang, "common.coming_soon")),
+                                  title: Text(t(lang, "listings.reserve_integration")),
                                   alignment: Alignment.topCenter,
-                                  autoCloseDuration: const Duration(seconds: 3),
+                                  autoCloseDuration: const Duration(seconds: 5),
                                 );
 
                                 if (mounted) setState(() => _ctaBusy = false);
