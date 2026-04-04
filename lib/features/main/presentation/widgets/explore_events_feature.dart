@@ -133,7 +133,7 @@ class _ExploreEventsFeatureState extends State<ExploreEventsFeature> {
                   onRetry: () => _load(forceRefresh: true),
                 )
               : _items.isEmpty
-              ? _EmptyState(label: t(lang, "common.coming_soon"))
+              ? _EmptyState(label: t(lang, "explore.no_events"))
               : Column(
                   children: List.generate(_items.length, (i) {
                     final evt = _items[i];
