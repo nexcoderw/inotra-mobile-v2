@@ -25,6 +25,7 @@ class ChatSocketService {
 
   static const int _maxRetries = 6;
   static const Duration _typingClearDelay = Duration(seconds: 3);
+  static const String _wsAuthSubprotocol = "inotra-auth";
 
   WebSocketChannel? _channel;
   StreamSubscription<dynamic>? _sub;
@@ -73,9 +74,11 @@ class ChatSocketService {
     _sub?.cancel();
     _sub = null;
     try {
-      final token = Uri.encodeComponent(accessToken);
-      final url = "${_wsBaseUrl()}/ws/chat/threads/$threadId/?token=$token";
-      _channel = WebSocketChannel.connect(Uri.parse(url));
+      final url = "${_wsBaseUrl()}/ws/chat/threads/$threadId/";
+      _channel = WebSocketChannel.connect(
+        Uri.parse(url),
+        protocols: [_wsAuthSubprotocol, accessToken],
+      );
       _sub = _channel!.stream.listen(
         _onData,
         onError: (_) => _scheduleReconnect(),
