@@ -92,9 +92,9 @@ const translations = {
     "auth.biometric_soon": "Biometric sign-in coming soon",
     "auth.biometric_error": "Biometric sign-in failed",
     "auth.biometric_setup_hint":
-        "Sign in once with your password on this device to enable Face ID next time.",
+        "Sign in once on this device to enable Face ID the next time you return.",
     "auth.biometric_reenable_hint":
-        "Sign in once with your password to re-enable Face ID on this device.",
+        "Sign in again on this device to re-enable Face ID.",
     "auth.sign_in_biometric": "Continue with Face ID / Biometrics",
     "auth.google_soon": "Google login coming soon",
     "ai.assistant_name": "INOTRA AI",
@@ -938,9 +938,9 @@ const translations = {
     "auth.biometric_soon": "Gusinya n'ibikumwe biraje",
     "auth.biometric_error": "Kwinjira binyuze ibikumwe byanze",
     "auth.biometric_setup_hint":
-        "Injira rimwe ukoresheje ijambo ry'ibanga kuri iki gikoresho kugira ngo Face ID izakore ubutaha.",
+        "Injira rimwe kuri iki gikoresho kugira ngo Face ID izakore ubwo uzagaruka ubutaha.",
     "auth.biometric_reenable_hint":
-        "Injira rimwe ukoresheje ijambo ry'ibanga kugira ngo wongere ukoreshe Face ID kuri iki gikoresho.",
+        "Injira nanone kuri iki gikoresho kugira ngo wongere ukoreshe Face ID.",
     "auth.sign_in_biometric": "Komeza na Face ID / Ibikumwe",
     "auth.google_soon": "Kwinjira na Google biraje",
     "ai.open_conversations": "Fungura ibiganiro",
@@ -1256,9 +1256,9 @@ const translations = {
     "auth.biometric_soon": "Connexion biométrique bientôt disponible",
     "auth.biometric_error": "Échec de la connexion biométrique",
     "auth.biometric_setup_hint":
-        "Connectez-vous une fois avec votre mot de passe sur cet appareil pour activer Face ID la prochaine fois.",
+        "Connectez-vous une fois sur cet appareil pour activer Face ID lors de votre prochaine visite.",
     "auth.biometric_reenable_hint":
-        "Connectez-vous une fois avec votre mot de passe pour réactiver Face ID sur cet appareil.",
+        "Reconnectez-vous sur cet appareil pour réactiver Face ID.",
     "auth.sign_in_biometric": "Continuer avec Face ID / Biométrie",
     "auth.google_soon": "Connexion Google bientôt disponible",
     "ai.open_conversations": "Ouvrir les conversations",
@@ -1581,9 +1581,9 @@ const translations = {
     "auth.biometric_soon": "Inicio biométrico próximamente",
     "auth.biometric_error": "Error de autenticación biométrica",
     "auth.biometric_setup_hint":
-        "Inicia sesión una vez con tu contraseña en este dispositivo para activar Face ID la próxima vez.",
+        "Inicia sesión una vez en este dispositivo para activar Face ID la próxima vez que regreses.",
     "auth.biometric_reenable_hint":
-        "Inicia sesión una vez con tu contraseña para volver a activar Face ID en este dispositivo.",
+        "Vuelve a iniciar sesión en este dispositivo para reactivar Face ID.",
     "auth.sign_in_biometric": "Continuar con Face ID / Biometría",
     "auth.google_soon": "Inicio con Google próximamente",
     "ai.open_conversations": "Abrir conversaciones",
@@ -1904,9 +1904,9 @@ const translations = {
     "auth.biometric_soon": "Biometrische Anmeldung bald verfügbar",
     "auth.biometric_error": "Biometrische Anmeldung fehlgeschlagen",
     "auth.biometric_setup_hint":
-        "Melden Sie sich auf diesem Gerät einmal mit Ihrem Passwort an, um Face ID für das nächste Mal zu aktivieren.",
+        "Melden Sie sich einmal auf diesem Gerät an, um Face ID für Ihren nächsten Besuch zu aktivieren.",
     "auth.biometric_reenable_hint":
-        "Melden Sie sich einmal mit Ihrem Passwort an, um Face ID auf diesem Gerät wieder zu aktivieren.",
+        "Melden Sie sich auf diesem Gerät erneut an, um Face ID wieder zu aktivieren.",
     "auth.sign_in_biometric": "Mit Face ID / Biometrie fortfahren",
     "auth.google_soon": "Google-Anmeldung bald verfügbar",
     "ai.open_conversations": "Unterhaltungen öffnen",
