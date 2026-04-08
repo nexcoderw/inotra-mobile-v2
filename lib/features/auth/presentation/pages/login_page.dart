@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _onLogin({bool fromBiometric = false}) async {
+  Future<void> _onLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -131,9 +131,10 @@ class _LoginPageState extends State<LoginPage> {
           theme: "light",
         );
 
-        await BiometricService.instance.saveCredentials(
-          identifier: _identifier.text.trim(),
-          password: _password.text,
+        await BiometricService.instance.saveSession(
+          refreshToken: tokens["refresh"] as String? ?? "",
+          user: user,
+          theme: "light",
         );
 
         if (!mounted) return;
@@ -153,13 +154,6 @@ class _LoginPageState extends State<LoginPage> {
 
       final detail = _extractError(response);
       _error = detail;
-
-      if (fromBiometric &&
-          response.statusCode >= 400 &&
-          response.statusCode < 500) {
-        await _disableBiometricLogin(tr("auth.biometric_reenable_hint"));
-        return;
-      }
 
       if (!mounted) return;
       toastification.show(
@@ -221,19 +215,79 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      final creds = await BiometricService.instance.getCredentials();
-      if (creds == null) {
-        await _disableBiometricLogin(tr("auth.biometric_setup_hint"));
+      final restored = await BiometricService.instance.unlockSession();
+      if (!restored.isSuccess) {
+        if (mounted) setState(() => _isBusy = false);
+        switch (restored.status) {
+          case BiometricUnlockStatus.notConfigured:
+            await _disableBiometricLogin(tr("auth.biometric_setup_hint"));
+            return;
+          case BiometricUnlockStatus.sessionExpired:
+            await _disableBiometricLogin(tr("auth.biometric_reenable_hint"));
+            return;
+          case BiometricUnlockStatus.networkError:
+            if (mounted) {
+              toastification.show(
+                context: context,
+                type: ToastificationType.error,
+                style: ToastificationStyle.fillColored,
+                title: Text(tr("auth.network_error")),
+                description: Text(tr("auth.network_retry")),
+                alignment: Alignment.topCenter,
+                autoCloseDuration: const Duration(seconds: 4),
+              );
+            }
+            return;
+          case BiometricUnlockStatus.unknownError:
+          case BiometricUnlockStatus.success:
+            if (mounted) {
+              toastification.show(
+                context: context,
+                type: ToastificationType.error,
+                style: ToastificationStyle.fillColored,
+                title: Text(tr("auth.biometric_error")),
+                description: Text(tr("auth.network_retry")),
+                alignment: Alignment.topCenter,
+                autoCloseDuration: const Duration(seconds: 4),
+              );
+            }
+            return;
+        }
+      }
+
+      final accessToken = restored.accessToken ?? "";
+      final refreshToken = restored.refreshToken ?? "";
+      final user = restored.user ?? const <String, dynamic>{};
+      final theme = restored.theme ?? "light";
+      if (accessToken.isEmpty || refreshToken.isEmpty || user.isEmpty) {
+        await _disableBiometricLogin(tr("auth.biometric_reenable_hint"));
         if (mounted) setState(() => _isBusy = false);
         return;
       }
 
-      _identifier.text = creds.identifier;
-      _password.text = creds.password;
+      await AuthStorage.saveSession(
+        tokens: {"access": accessToken, "refresh": refreshToken},
+        user: user,
+        theme: theme,
+      );
+      AuthSession.instance.signIn(
+        user: user,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        theme: theme,
+      );
 
-      // Delegate entirely to the existing login method — it owns the busy
-      // state from this point and will set _isBusy = false in its finally.
-      await _onLogin(fromBiometric: true);
+      if (!mounted) return;
+      toastification.show(
+        context: context,
+        type: ToastificationType.success,
+        style: ToastificationStyle.fillColored,
+        title: Text(tr("auth.signed_in")),
+        description: Text(tr("auth.welcome_back")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+      Navigator.pushReplacementNamed(context, AppRoutes.home);
     } catch (e) {
       if (mounted) {
         setState(() => _isBusy = false);
@@ -300,6 +354,11 @@ class _LoginPageState extends State<LoginPage> {
 
         await AuthStorage.saveSession(
           tokens: tokens,
+          user: user,
+          theme: "light",
+        );
+        await BiometricService.instance.saveSession(
+          refreshToken: tokens["refresh"] as String? ?? "",
           user: user,
           theme: "light",
         );
