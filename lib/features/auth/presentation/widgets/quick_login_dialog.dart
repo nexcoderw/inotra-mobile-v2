@@ -71,6 +71,21 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
     }
   }
 
+  Future<void> _disableBiometricLogin(String message) async {
+    await BiometricService.instance.clear();
+    await _checkBiometrics();
+    if (!mounted) return;
+    toastification.show(
+      context: context,
+      type: ToastificationType.info,
+      style: ToastificationStyle.fillColored,
+      title: Text(t(currentLangSync(), "auth.biometric_error")),
+      description: Text(message),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 4),
+    );
+  }
+
   @override
   void dispose() {
     _identifier.dispose();
@@ -78,7 +93,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _login({bool fromBiometric = false}) async {
     if (!_formKey.currentState!.validate()) return;
     final lang = currentLangSync();
 
@@ -101,7 +116,11 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
         final tokens = body["tokens"] as Map<String, dynamic>? ?? {};
         final user = body["user"] as Map<String, dynamic>? ?? {};
 
-        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        await AuthStorage.saveSession(
+          tokens: tokens,
+          user: user,
+          theme: "light",
+        );
         AuthSession.instance.signIn(
           user: user,
           accessToken: tokens["access"] as String? ?? "",
@@ -130,6 +149,10 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
       }
 
       final detail = _extractError(resp.body);
+      if (fromBiometric && resp.statusCode >= 400 && resp.statusCode < 500) {
+        await _disableBiometricLogin(t(lang, "auth.biometric_reenable_hint"));
+        return;
+      }
       if (!mounted) return;
       toastification.show(
         context: context,
@@ -161,14 +184,32 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
     setState(() => _busy = true);
 
     try {
-      final authenticated = await BiometricService.instance.authenticate();
-      if (!authenticated) {
+      if (!_biometricAvailable || !_biometricEnabled) {
+        await _disableBiometricLogin(t(lang, "auth.biometric_setup_hint"));
         if (mounted) setState(() => _busy = false);
+        return;
+      }
+
+      final result = await BiometricService.instance.authenticateWithResult();
+      if (!result.isAuthenticated) {
+        if (mounted) setState(() => _busy = false);
+        if (result.shouldShowMessage && mounted && result.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.info,
+            style: ToastificationStyle.fillColored,
+            title: Text(t(lang, "auth.biometric_error")),
+            description: Text(result.message!),
+            alignment: Alignment.topCenter,
+            autoCloseDuration: const Duration(seconds: 4),
+          );
+        }
         return;
       }
 
       final creds = await BiometricService.instance.getCredentials();
       if (creds == null) {
+        await _disableBiometricLogin(t(lang, "auth.biometric_setup_hint"));
         if (mounted) setState(() => _busy = false);
         return;
       }
@@ -177,7 +218,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
       _password.text = creds.password;
 
       // Delegate to the existing login method — it manages _busy from here.
-      await _login();
+      await _login(fromBiometric: true);
     } catch (e) {
       if (mounted) {
         setState(() => _busy = false);
@@ -221,7 +262,11 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
         final tokens = body["tokens"] as Map<String, dynamic>? ?? {};
         final user = body["user"] as Map<String, dynamic>? ?? {};
 
-        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        await AuthStorage.saveSession(
+          tokens: tokens,
+          user: user,
+          theme: "light",
+        );
         AuthSession.instance.signIn(
           user: user,
           accessToken: tokens["access"] as String? ?? "",
@@ -292,6 +337,7 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final biometricNeedsSetup = _biometricAvailable && !_biometricEnabled;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -324,9 +370,11 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                       ),
                       const Spacer(),
                       IconButton(
-                        onPressed: _busy ? null : () => Navigator.of(context).maybePop(),
+                        onPressed: _busy
+                            ? null
+                            : () => Navigator.of(context).maybePop(),
                         icon: const Icon(Icons.close_rounded, size: 20),
-                      )
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -337,8 +385,9 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                     keyboardType: TextInputType.emailAddress,
                     enabled: !_busy,
                     prefixIcon: HugeIcons.strokeRoundedMail02,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? t(lang, "auth.required_field") : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? t(lang, "auth.required_field")
+                        : null,
                   ),
                   const SizedBox(height: 10),
                   _GlassField(
@@ -348,9 +397,11 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                     enabled: !_busy,
                     obscure: !_showPassword,
                     prefixIcon: HugeIcons.strokeRoundedLockPassword,
-                    onToggleObscure: () => setState(() => _showPassword = !_showPassword),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? t(lang, "auth.required_field") : null,
+                    onToggleObscure: () =>
+                        setState(() => _showPassword = !_showPassword),
+                    validator: (v) => (v == null || v.isEmpty)
+                        ? t(lang, "auth.required_field")
+                        : null,
                   ),
 
                   const SizedBox(height: 14),
@@ -376,6 +427,13 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                     ),
                   ],
 
+                  if (biometricNeedsSetup) ...[
+                    const SizedBox(height: 12),
+                    _BiometricHint(
+                      message: t(lang, "auth.biometric_setup_hint"),
+                    ),
+                  ],
+
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -393,7 +451,10 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
                             ? null
                             : () {
                                 Navigator.of(context).pop();
-                                Navigator.pushNamed(context, AppRoutes.register);
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.register,
+                                );
                               },
                         child: Text(
                           t(lang, "auth.sign_up"),
@@ -497,7 +558,9 @@ class _GlassFieldState extends State<_GlassField> {
                     ? null
                     : IconButton(
                         icon: Icon(
-                          widget.obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          widget.obscure
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
                           size: 18,
                           color: scheme.onSurface.withValues(alpha: 0.65),
                         ),
@@ -555,10 +618,7 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withValues(alpha: 0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withValues(alpha: 0.88)],
             ),
           ),
           child: Center(
@@ -604,7 +664,9 @@ class _GoogleButton extends StatelessWidget {
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.16)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         onPressed: busy ? null : onTap,
         child: AnimatedSwitcher(
@@ -647,14 +709,17 @@ class _DotsLoader extends StatefulWidget {
   State<_DotsLoader> createState() => _DotsLoaderState();
 }
 
-class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderStateMixin {
+class _DotsLoaderState extends State<_DotsLoader>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
-      ..repeat();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat();
   }
 
   @override
@@ -667,14 +732,17 @@ class _DotsLoaderState extends State<_DotsLoader> with SingleTickerProviderState
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) {
+      builder: (context, child) {
         final t = _ctrl.value;
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (i) {
             final phase = i * 0.18;
             final v = (t - phase);
-            final pulse = (0.5 + 0.5 * (1 - math.cos(v * 2 * math.pi))).clamp(0.0, 1.0);
+            final pulse = (0.5 + 0.5 * (1 - math.cos(v * 2 * math.pi))).clamp(
+              0.0,
+              1.0,
+            );
             final size = 6 + 4 * pulse;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
@@ -713,7 +781,9 @@ class _FaceIdButton extends StatelessWidget {
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.16)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         onPressed: busy ? null : onTap,
         child: AnimatedSwitcher(
@@ -749,6 +819,45 @@ class _FaceIdButton extends StatelessWidget {
                   ],
                 ),
         ),
+      ),
+    );
+  }
+}
+
+class _BiometricHint extends StatelessWidget {
+  final String message;
+
+  const _BiometricHint({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, size: 15, color: scheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+                color: scheme.onSurface.withValues(alpha: 0.82),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
