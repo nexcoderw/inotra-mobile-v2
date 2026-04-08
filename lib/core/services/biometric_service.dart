@@ -1,20 +1,26 @@
-import "package:flutter_secure_storage/flutter_secure_storage.dart";
+import "dart:convert";
+
 import "package:flutter/services.dart";
+import "package:flutter_secure_storage/flutter_secure_storage.dart";
+import "package:http/http.dart" as http;
 import "package:local_auth/error_codes.dart" as auth_error;
 import "package:local_auth/local_auth.dart";
 
-/// Manages biometric authentication and secure credential storage.
+import "../config/api.dart";
+import "../constants/api/auth_endpoints.dart";
+import "device_info_service.dart";
+
+/// Manages biometric authentication and secure session storage.
 ///
-/// Credentials are stored in encrypted storage (Android Keystore /
-/// iOS Secure Enclave) and only retrieved after a successful biometric
-/// or device-credential challenge.
+/// Instead of storing a raw password, the app keeps a refreshable session
+/// snapshot in secure storage. A successful biometric prompt unlocks that
+/// snapshot and exchanges the refresh token for a fresh authenticated session.
 class BiometricService {
   BiometricService._();
 
   static final instance = BiometricService._();
 
-  static const _keyIdentifier = "bio_identifier";
-  static const _keyPassword = "bio_password";
+  static const _keySession = "bio.session";
 
   final _auth = LocalAuthentication();
 
@@ -26,8 +32,6 @@ class BiometricService {
   // Availability
   // ---------------------------------------------------------------------------
 
-  /// Returns true when the device hardware supports biometrics (or PIN/pattern
-  /// as fallback) and at least one biometric is enrolled.
   Future<bool> isAvailable() async {
     try {
       if (!await _auth.isDeviceSupported()) return false;
@@ -39,69 +43,191 @@ class BiometricService {
     }
   }
 
-  /// Returns true when valid credentials have previously been saved, meaning
-  /// the user has completed at least one successful normal login.
   Future<bool> isEnabled() async {
-    try {
-      final id = await _storage.read(key: _keyIdentifier);
-      final pw = await _storage.read(key: _keyPassword);
-      return id != null && id.isNotEmpty && pw != null && pw.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
+    final session = await getSession();
+    return session != null;
   }
 
   // ---------------------------------------------------------------------------
-  // Credentials
+  // Secure biometric session
   // ---------------------------------------------------------------------------
 
-  /// Persists [identifier] and [password] to encrypted storage.
-  /// Call this only after a confirmed successful login response (2xx).
-  Future<void> saveCredentials({
-    required String identifier,
-    required String password,
+  Future<void> saveSession({
+    required String refreshToken,
+    required Map<String, dynamic> user,
+    String theme = "light",
   }) async {
-    await _storage.write(key: _keyIdentifier, value: identifier);
-    await _storage.write(key: _keyPassword, value: password);
+    if (refreshToken.trim().isEmpty || user.isEmpty) {
+      await clear();
+      return;
+    }
+
+    final payload = jsonEncode({
+      "refresh": refreshToken,
+      "user": user,
+      "theme": theme,
+    });
+
+    await _storage.write(key: _keySession, value: payload);
   }
 
-  /// Returns the stored credentials, or null if none have been saved yet.
-  Future<({String identifier, String password})?> getCredentials() async {
+  Future<BiometricStoredSession?> getSession() async {
     try {
-      final id = await _storage.read(key: _keyIdentifier);
-      final pw = await _storage.read(key: _keyPassword);
-      if (id == null || id.isEmpty || pw == null || pw.isEmpty) return null;
-      return (identifier: id, password: pw);
+      final raw = await _storage.read(key: _keySession);
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return null;
+
+      final refresh = (decoded["refresh"] ?? "").toString().trim();
+      final user = decoded["user"];
+      if (refresh.isEmpty || user is! Map) return null;
+
+      return BiometricStoredSession(
+        refreshToken: refresh,
+        user: Map<String, dynamic>.from(user),
+        theme: (decoded["theme"] ?? "light").toString(),
+      );
     } catch (_) {
       return null;
     }
   }
 
-  /// Deletes all saved credentials from encrypted storage.
+  Future<void> updateSession({
+    required String refreshToken,
+    Map<String, dynamic>? user,
+    String? theme,
+  }) async {
+    final existing = await getSession();
+    if (existing == null) return;
+
+    await saveSession(
+      refreshToken: refreshToken,
+      user: user ?? existing.user,
+      theme: theme ?? existing.theme,
+    );
+  }
+
   Future<void> clear() async {
-    await _storage.delete(key: _keyIdentifier);
-    await _storage.delete(key: _keyPassword);
+    await _storage.delete(key: _keySession);
+  }
+
+  Future<BiometricUnlockResult> unlockSession() async {
+    final stored = await getSession();
+    if (stored == null) {
+      return const BiometricUnlockResult(
+        status: BiometricUnlockStatus.notConfigured,
+      );
+    }
+
+    try {
+      final refreshResponse = await http
+          .post(
+            Api.url(AuthEndpoints.tokenRefresh),
+            headers: {
+              "Content-Type": "application/json",
+              ...DeviceInfoService.instance.asHeader,
+            },
+            body: jsonEncode({"refresh": stored.refreshToken}),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      if (refreshResponse.statusCode == 401 ||
+          refreshResponse.statusCode == 403 ||
+          refreshResponse.statusCode == 400) {
+        await clear();
+        return const BiometricUnlockResult(
+          status: BiometricUnlockStatus.sessionExpired,
+        );
+      }
+
+      if (refreshResponse.statusCode < 200 ||
+          refreshResponse.statusCode >= 300) {
+        return const BiometricUnlockResult(
+          status: BiometricUnlockStatus.networkError,
+        );
+      }
+
+      final decoded = jsonDecode(refreshResponse.body);
+      if (decoded is! Map<String, dynamic>) {
+        await clear();
+        return const BiometricUnlockResult(
+          status: BiometricUnlockStatus.sessionExpired,
+        );
+      }
+
+      final accessToken = (decoded["access"] ?? "").toString().trim();
+      final refreshToken = (decoded["refresh"] ?? stored.refreshToken)
+          .toString()
+          .trim();
+
+      if (accessToken.isEmpty || refreshToken.isEmpty) {
+        await clear();
+        return const BiometricUnlockResult(
+          status: BiometricUnlockStatus.sessionExpired,
+        );
+      }
+
+      final user = await _fetchCurrentUser(accessToken) ?? stored.user;
+      await saveSession(
+        refreshToken: refreshToken,
+        user: user,
+        theme: stored.theme,
+      );
+
+      return BiometricUnlockResult(
+        status: BiometricUnlockStatus.success,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        user: user,
+        theme: stored.theme,
+      );
+    } on PlatformException {
+      return const BiometricUnlockResult(
+        status: BiometricUnlockStatus.unknownError,
+      );
+    } catch (_) {
+      return const BiometricUnlockResult(
+        status: BiometricUnlockStatus.networkError,
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchCurrentUser(String accessToken) async {
+    try {
+      final response = await http
+          .get(
+            Api.url(AuthEndpoints.me),
+            headers: {
+              "Authorization": "Bearer $accessToken",
+              ...DeviceInfoService.instance.asHeader,
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return null;
+
+      final nestedUser = decoded["user"];
+      if (nestedUser is Map) {
+        return Map<String, dynamic>.from(nestedUser);
+      }
+      return decoded;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
-  // Authentication
+  // Authentication prompt
   // ---------------------------------------------------------------------------
 
-  /// Presents the native biometric / device-credential prompt.
-  ///
-  /// * [stickyAuth] keeps the prompt alive when the app loses focus (e.g.
-  ///   when Face ID shows its system overlay).
-  /// * [biometricOnly] = false allows PIN/pattern fallback so the user is
-  ///   never locked out on devices where face data isn't enrolled.
-  ///
-  /// Returns true if the user was successfully authenticated.
   Future<bool> authenticate() async {
     final result = await authenticateWithResult();
     return result.isAuthenticated;
   }
 
-  /// Returns the biometric prompt outcome together with a user-facing message
-  /// when the failure was actionable.
   Future<BiometricAuthResult> authenticateWithResult() async {
     try {
       final authenticated = await _auth.authenticate(
@@ -167,6 +293,44 @@ class BiometricService {
         );
     }
   }
+}
+
+class BiometricStoredSession {
+  final String refreshToken;
+  final Map<String, dynamic> user;
+  final String theme;
+
+  const BiometricStoredSession({
+    required this.refreshToken,
+    required this.user,
+    required this.theme,
+  });
+}
+
+enum BiometricUnlockStatus {
+  success,
+  notConfigured,
+  sessionExpired,
+  networkError,
+  unknownError,
+}
+
+class BiometricUnlockResult {
+  final BiometricUnlockStatus status;
+  final String? accessToken;
+  final String? refreshToken;
+  final Map<String, dynamic>? user;
+  final String? theme;
+
+  const BiometricUnlockResult({
+    required this.status,
+    this.accessToken,
+    this.refreshToken,
+    this.user,
+    this.theme,
+  });
+
+  bool get isSuccess => status == BiometricUnlockStatus.success;
 }
 
 class BiometricAuthResult {
