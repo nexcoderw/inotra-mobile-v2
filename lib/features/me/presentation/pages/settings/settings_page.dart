@@ -2,15 +2,32 @@ import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "package:toastification/toastification.dart";
 
+import "package:inotra/core/services/biometric_service.dart";
 import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
 import "package:inotra/features/main/presentation/widgets/page_header.dart";
 import "package:inotra/core/config/app_routes.dart";
 import "package:inotra/i18n/translations.dart";
 import "package:inotra/core/services/auth_session.dart";
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+  bool _biometricBusy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
 
   String _lang() {
     final preferred =
@@ -22,6 +39,109 @@ class SettingsPage extends StatelessWidget {
     if (lower.startsWith('es')) return 'es';
     if (lower.startsWith('de')) return 'de';
     return 'en';
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await BiometricService.instance.isAvailable();
+    final enabled = available && await BiometricService.instance.isEnabled();
+    if (!mounted) return;
+    setState(() {
+      _biometricAvailable = available;
+      _biometricEnabled = enabled;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool nextValue) async {
+    if (_biometricBusy) return;
+    final lang = _lang();
+
+    if (!nextValue) {
+      setState(() => _biometricBusy = true);
+      await BiometricService.instance.clear();
+      if (!mounted) return;
+      setState(() {
+        _biometricEnabled = false;
+        _biometricBusy = false;
+      });
+      toastification.show(
+        context: context,
+        type: ToastificationType.info,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(lang, "settings.biometric_title")),
+        description: Text(t(lang, "settings.biometric_disabled_toast")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    if (!_biometricAvailable) {
+      toastification.show(
+        context: context,
+        type: ToastificationType.info,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(lang, "settings.biometric_title")),
+        description: Text(t(lang, "settings.biometric_unavailable")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+      return;
+    }
+
+    final session = AuthSession.instance.value;
+    final refreshToken = session.refreshToken?.trim() ?? "";
+    final user = session.user ?? const <String, dynamic>{};
+    if (refreshToken.isEmpty || user.isEmpty) {
+      toastification.show(
+        context: context,
+        type: ToastificationType.info,
+        style: ToastificationStyle.fillColored,
+        title: Text(t(lang, "settings.biometric_title")),
+        description: Text(t(lang, "settings.biometric_sign_in_first")),
+        alignment: Alignment.topCenter,
+        autoCloseDuration: const Duration(seconds: 4),
+      );
+      return;
+    }
+
+    setState(() => _biometricBusy = true);
+    final result = await BiometricService.instance.authenticateWithResult();
+    if (!result.isAuthenticated) {
+      if (!mounted) return;
+      setState(() => _biometricBusy = false);
+      if (result.shouldShowMessage && result.message != null) {
+        toastification.show(
+          context: context,
+          type: ToastificationType.info,
+          style: ToastificationStyle.fillColored,
+          title: Text(t(lang, "auth.biometric_error")),
+          description: Text(result.message!),
+          alignment: Alignment.topCenter,
+          autoCloseDuration: const Duration(seconds: 4),
+        );
+      }
+      return;
+    }
+
+    await BiometricService.instance.saveSession(
+      refreshToken: refreshToken,
+      user: user,
+      theme: session.theme,
+    );
+    if (!mounted) return;
+    setState(() {
+      _biometricEnabled = true;
+      _biometricBusy = false;
+    });
+    toastification.show(
+      context: context,
+      type: ToastificationType.success,
+      style: ToastificationStyle.fillColored,
+      title: Text(t(lang, "settings.biometric_title")),
+      description: Text(t(lang, "settings.biometric_enabled_toast")),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 3),
+    );
   }
 
   @override
@@ -82,6 +202,25 @@ class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           _GlassSection(
+            title: t(lang, "settings.security"),
+            children: [
+              _GlassSwitchTile(
+                icon: HugeIcons.strokeRoundedFaceId,
+                title: t(lang, "settings.biometric_title"),
+                subtitle: _biometricAvailable
+                    ? (_biometricEnabled
+                          ? t(lang, "settings.biometric_enabled_subtitle")
+                          : t(lang, "settings.biometric_disabled_subtitle"))
+                    : t(lang, "settings.biometric_unavailable"),
+                value: _biometricEnabled,
+                enabled: _biometricAvailable,
+                busy: _biometricBusy,
+                onChanged: _toggleBiometric,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _GlassSection(
             title: t(lang, "settings.support"),
             children: [
               _GlassTile(
@@ -106,7 +245,10 @@ class SettingsPage extends StatelessWidget {
               leading: _IconBadge(icon: HugeIcons.strokeRoundedDiscoverCircle),
               title: Text(
                 t(lang, "settings.app_version"),
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
               ),
               subtitle: Text(
                 "1.0.0",
@@ -288,6 +430,82 @@ class _GlassTileState extends State<_GlassTile> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GlassSwitchTile extends StatelessWidget {
+  final dynamic icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final bool enabled;
+  final bool busy;
+  final ValueChanged<bool> onChanged;
+
+  const _GlassSwitchTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.enabled,
+    required this.busy,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Row(
+        children: [
+          _IconBadge(icon: icon),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.25,
+                    color: scheme.onSurface.withValues(alpha: 0.68),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (busy)
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: scheme.primary,
+              ),
+            )
+          else
+            Switch.adaptive(
+              value: value,
+              onChanged: enabled ? onChanged : null,
+              activeThumbColor: scheme.primary,
+              activeTrackColor: scheme.primary.withValues(alpha: 0.35),
+            ),
+        ],
       ),
     );
   }
