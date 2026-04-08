@@ -18,14 +18,30 @@ class SettingsPage extends StatefulWidget {
   State<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends State<SettingsPage>
+    with WidgetsBindingObserver {
   bool _biometricAvailable = false;
   bool _biometricEnabled = false;
   bool _biometricBusy = false;
+  BiometricPresentationKind _biometricPresentation =
+      BiometricPresentationKind.biometrics;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    BiometricService.instance.changes.addListener(_handleBiometricStateChanged);
+    _loadBiometricState();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadBiometricState();
+    }
+  }
+
+  void _handleBiometricStateChanged() {
     _loadBiometricState();
   }
 
@@ -42,13 +58,31 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadBiometricState() async {
-    final available = await BiometricService.instance.isAvailable();
-    final enabled = available && await BiometricService.instance.isEnabled();
+    final status = await BiometricService.instance.getStatus();
     if (!mounted) return;
     setState(() {
-      _biometricAvailable = available;
-      _biometricEnabled = enabled;
+      _biometricAvailable = status.available;
+      _biometricEnabled = status.enabled;
+      _biometricPresentation = status.presentation;
     });
+  }
+
+  String _biometricTitle(String lang) {
+    return switch (_biometricPresentation) {
+      BiometricPresentationKind.faceId => t(lang, "biometric.face_id"),
+      BiometricPresentationKind.touchId => t(lang, "biometric.touch_id"),
+      BiometricPresentationKind.fingerprint => t(lang, "biometric.fingerprint"),
+      BiometricPresentationKind.biometrics => t(lang, "biometric.generic"),
+    };
+  }
+
+  dynamic _biometricIcon() {
+    return switch (_biometricPresentation) {
+      BiometricPresentationKind.faceId => HugeIcons.strokeRoundedFaceId,
+      BiometricPresentationKind.touchId ||
+      BiometricPresentationKind.fingerprint => Icons.fingerprint_rounded,
+      BiometricPresentationKind.biometrics => Icons.lock_open_rounded,
+    };
   }
 
   Future<void> _toggleBiometric(bool nextValue) async {
@@ -67,7 +101,7 @@ class _SettingsPageState extends State<SettingsPage> {
         context: context,
         type: ToastificationType.info,
         style: ToastificationStyle.fillColored,
-        title: Text(t(lang, "settings.biometric_title")),
+        title: Text(_biometricTitle(lang)),
         description: Text(t(lang, "settings.biometric_disabled_toast")),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 3),
@@ -80,7 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
         context: context,
         type: ToastificationType.info,
         style: ToastificationStyle.fillColored,
-        title: Text(t(lang, "settings.biometric_title")),
+        title: Text(_biometricTitle(lang)),
         description: Text(t(lang, "settings.biometric_unavailable")),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -96,7 +130,7 @@ class _SettingsPageState extends State<SettingsPage> {
         context: context,
         type: ToastificationType.info,
         style: ToastificationStyle.fillColored,
-        title: Text(t(lang, "settings.biometric_title")),
+        title: Text(_biometricTitle(lang)),
         description: Text(t(lang, "settings.biometric_sign_in_first")),
         alignment: Alignment.topCenter,
         autoCloseDuration: const Duration(seconds: 4),
@@ -137,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       type: ToastificationType.success,
       style: ToastificationStyle.fillColored,
-      title: Text(t(lang, "settings.biometric_title")),
+      title: Text(_biometricTitle(lang)),
       description: Text(t(lang, "settings.biometric_enabled_toast")),
       alignment: Alignment.topCenter,
       autoCloseDuration: const Duration(seconds: 3),
@@ -205,8 +239,8 @@ class _SettingsPageState extends State<SettingsPage> {
             title: t(lang, "settings.security"),
             children: [
               _GlassSwitchTile(
-                icon: HugeIcons.strokeRoundedFaceId,
-                title: t(lang, "settings.biometric_title"),
+                icon: _biometricIcon(),
+                title: _biometricTitle(lang),
                 subtitle: _biometricAvailable
                     ? (_biometricEnabled
                           ? t(lang, "settings.biometric_enabled_subtitle")
@@ -262,6 +296,15 @@ class _SettingsPageState extends State<SettingsPage> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    BiometricService.instance.changes.removeListener(
+      _handleBiometricStateChanged,
+    );
+    super.dispose();
   }
 }
 
