@@ -10,6 +10,7 @@ import "package:toastification/toastification.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/auth_endpoints.dart";
+import "../../../../core/services/biometric_service.dart";
 import "../../../../core/services/reset_password_cache.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -78,6 +79,7 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        await BiometricService.instance.clear();
         ResetPasswordCache.instance.clear();
 
         if (!mounted) return;
@@ -223,12 +225,12 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
   }
 
   String _passwordLabel(int score) => switch (score) {
-        0 => "Too weak",
-        1 => "Weak",
-        2 => "Okay",
-        3 => "Strong",
-        _ => "Very strong",
-      };
+    0 => "Too weak",
+    1 => "Weak",
+    2 => "Okay",
+    3 => "Strong",
+    _ => "Very strong",
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +238,8 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
     final onSurface = scheme.onSurface;
 
     final score = _passwordScore(_newPassword.text);
-    final match = _confirmPassword.text.isNotEmpty &&
+    final match =
+        _confirmPassword.text.isNotEmpty &&
         _confirmPassword.text == _newPassword.text;
 
     return AuthScaffold(
@@ -268,20 +271,20 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
 
               InfoPill(
                 icon: HugeIcons.strokeRoundedMail01,
-                text: t(currentLangSync(), "auth.reset_for")
-                    .replaceFirst("{email}", _maskEmail(_email)),
+                text: t(
+                  currentLangSync(),
+                  "auth.reset_for",
+                ).replaceFirst("{email}", _maskEmail(_email)),
               ),
 
               const SizedBox(height: 14),
 
-              _StrengthRow(
-                score: score,
-                label: _passwordLabel(score),
-              ),
+              _StrengthRow(score: score, label: _passwordLabel(score)),
 
               const SizedBox(height: 14),
 
-              AuthUI.label(tr("auth.new_password"), 
+              AuthUI.label(
+                tr("auth.new_password"),
                 color: onSurface.withOpacity(0.96),
               ),
               const SizedBox(height: 10),
@@ -291,13 +294,17 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                 obscure: _obscure1,
                 enabled: !_isBusy,
                 onToggle: () => setState(() => _obscure1 = !_obscure1),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? tr("auth.password_required") : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? tr("auth.password_required")
+                    : null,
               ),
 
               const SizedBox(height: 16),
 
-              AuthUI.label(tr("auth.confirm_new_password"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.confirm_new_password"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassPasswordField(
                 controller: _confirmPassword,
@@ -313,7 +320,8 @@ class _ConfirmPasswordResetPageState extends State<ConfirmPasswordResetPage> {
                   if (v == null || v.isEmpty) {
                     return tr("auth.confirm_password_required");
                   }
-                  if (v != _newPassword.text) return tr("auth.passwords_mismatch");
+                  if (v != _newPassword.text)
+                    return tr("auth.passwords_mismatch");
                   return null;
                 },
               ),
@@ -351,10 +359,7 @@ class _StrengthRow extends StatelessWidget {
   final int score; // 0..4
   final String label;
 
-  const _StrengthRow({
-    required this.score,
-    required this.label,
-  });
+  const _StrengthRow({required this.score, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -610,10 +615,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withOpacity(0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
             ),
             boxShadow: const [], // ✅ no shadow
           ),
@@ -688,14 +690,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
