@@ -36,19 +36,25 @@ class QuickLoginDialog extends StatefulWidget {
   State<QuickLoginDialog> createState() => _QuickLoginDialogState();
 }
 
-class _QuickLoginDialogState extends State<QuickLoginDialog> {
+class _QuickLoginDialogState extends State<QuickLoginDialog>
+    with WidgetsBindingObserver {
   final _identifier = TextEditingController();
   final _password = TextEditingController();
   bool _busy = false;
   final _formKey = GlobalKey<FormState>();
   bool _showPassword = false;
+  bool _biometricChecked = false;
   bool _biometricAvailable = false;
   bool _biometricEnabled = false;
+  BiometricPresentationKind _biometricPresentation =
+      BiometricPresentationKind.biometrics;
   late final GoogleSignIn _googleSignIn;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    BiometricService.instance.changes.addListener(_handleBiometricStateChanged);
     final iosClient = (!kIsWeb && Platform.isIOS)
         ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
         : null;
@@ -60,15 +66,52 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
     _checkBiometrics();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkBiometrics();
+    }
+  }
+
+  void _handleBiometricStateChanged() {
+    _checkBiometrics();
+  }
+
   Future<void> _checkBiometrics() async {
-    final available = await BiometricService.instance.isAvailable();
-    final enabled = available && await BiometricService.instance.isEnabled();
+    final status = await BiometricService.instance.getStatus();
     if (mounted) {
       setState(() {
-        _biometricAvailable = available;
-        _biometricEnabled = enabled;
+        _biometricChecked = true;
+        _biometricAvailable = status.available;
+        _biometricEnabled = status.enabled;
+        _biometricPresentation = status.presentation;
       });
     }
+  }
+
+  String _biometricTitle(String lang) {
+    return switch (_biometricPresentation) {
+      BiometricPresentationKind.faceId => t(lang, "biometric.face_id"),
+      BiometricPresentationKind.touchId => t(lang, "biometric.touch_id"),
+      BiometricPresentationKind.fingerprint => t(lang, "biometric.fingerprint"),
+      BiometricPresentationKind.biometrics => t(lang, "biometric.generic"),
+    };
+  }
+
+  String _biometricActionLabel(String lang) {
+    return t(
+      lang,
+      "auth.sign_in_biometric",
+    ).replaceAll("{biometric}", _biometricTitle(lang));
+  }
+
+  dynamic _biometricIcon() {
+    return switch (_biometricPresentation) {
+      BiometricPresentationKind.faceId => HugeIcons.strokeRoundedFaceId,
+      BiometricPresentationKind.touchId ||
+      BiometricPresentationKind.fingerprint => Icons.fingerprint_rounded,
+      BiometricPresentationKind.biometrics => Icons.lock_open_rounded,
+    };
   }
 
   Future<void> _disableBiometricLogin(String message) async {
@@ -88,6 +131,10 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    BiometricService.instance.changes.removeListener(
+      _handleBiometricStateChanged,
+    );
     _identifier.dispose();
     _password.dispose();
     super.dispose();
@@ -401,7 +448,8 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
-    final biometricNeedsSetup = _biometricAvailable && !_biometricEnabled;
+    final biometricNeedsSetup =
+        _biometricChecked && _biometricAvailable && !_biometricEnabled;
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -485,15 +533,18 @@ class _QuickLoginDialogState extends State<QuickLoginDialog> {
 
                   if (_biometricAvailable && _biometricEnabled) ...[
                     const SizedBox(height: 12),
-                    _FaceIdButton(
+                    _BiometricButton(
                       busy: _busy,
                       onTap: _busy ? null : _onBiometricLogin,
+                      icon: _biometricIcon(),
+                      label: _biometricActionLabel(lang),
                     ),
                   ],
 
                   if (biometricNeedsSetup) ...[
                     const SizedBox(height: 12),
                     _BiometricHint(
+                      title: _biometricTitle(lang),
                       message: t(lang, "auth.biometric_setup_hint"),
                     ),
                   ],
@@ -828,16 +879,22 @@ class _DotsLoaderState extends State<_DotsLoader>
 
 /* -------------------------------- Face ID Button -------------------------------- */
 
-class _FaceIdButton extends StatelessWidget {
+class _BiometricButton extends StatelessWidget {
   final bool busy;
   final VoidCallback? onTap;
+  final dynamic icon;
+  final String label;
 
-  const _FaceIdButton({required this.busy, required this.onTap});
+  const _BiometricButton({
+    required this.busy,
+    required this.onTap,
+    required this.icon,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final lang = currentLangSync();
 
     return SizedBox(
       width: double.infinity,
@@ -866,15 +923,21 @@ class _FaceIdButton extends StatelessWidget {
                   key: const ValueKey("label"),
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedFaceId,
-                      size: 20,
-                      strokeWidth: 2,
-                      color: scheme.primary,
-                    ),
+                    icon is IconData
+                        ? Icon(
+                            icon as IconData,
+                            size: 20,
+                            color: scheme.primary,
+                          )
+                        : HugeIcon(
+                            icon: icon,
+                            size: 20,
+                            strokeWidth: 2,
+                            color: scheme.primary,
+                          ),
                     const SizedBox(width: 10),
                     Text(
-                      t(lang, "auth.sign_in_biometric"),
+                      label,
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         color: scheme.onSurface.withValues(alpha: 0.85),
@@ -889,9 +952,10 @@ class _FaceIdButton extends StatelessWidget {
 }
 
 class _BiometricHint extends StatelessWidget {
+  final String title;
   final String message;
 
-  const _BiometricHint({required this.message});
+  const _BiometricHint({required this.title, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -912,11 +976,11 @@ class _BiometricHint extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              message,
+              "$title\n$message",
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                height: 1.3,
+                height: 1.35,
                 color: scheme.onSurface.withValues(alpha: 0.82),
               ),
             ),
