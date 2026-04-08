@@ -5,6 +5,7 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/biometric_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
@@ -44,20 +45,23 @@ class ProfilePage extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: scheme.onSurface.withOpacity(0.08),
+                          color: scheme.onSurface.withValues(alpha: 0.08),
                           width: 1,
                         ),
                       ),
                       child: CircleAvatar(
                         radius: 40,
-                        backgroundColor: scheme.primary.withOpacity(0.12),
-                        backgroundImage: (imageUrl != null &&
-                                imageUrl.isNotEmpty)
+                        backgroundColor: scheme.primary.withValues(alpha: 0.12),
+                        backgroundImage:
+                            (imageUrl != null && imageUrl.isNotEmpty)
                             ? NetworkImage(imageUrl)
                             : null,
                         child: (imageUrl == null || imageUrl.isEmpty)
-                            ? Icon(Icons.person,
-                                size: 40, color: scheme.primary)
+                            ? Icon(
+                                Icons.person,
+                                size: 40,
+                                color: scheme.primary,
+                              )
                             : null,
                       ),
                     ),
@@ -89,7 +93,7 @@ class ProfilePage extends StatelessWidget {
                   user["email"] ?? "",
                   style: TextStyle(
                     fontSize: 12,
-                    color: scheme.onSurface.withOpacity(0.65),
+                    color: scheme.onSurface.withValues(alpha: 0.65),
                   ),
                 ),
               ],
@@ -98,48 +102,52 @@ class ProfilePage extends StatelessWidget {
 
           const SizedBox(height: 18),
 
+          const _BiometricProfileCard(),
+
+          const SizedBox(height: 18),
+
           // 🔥 Glass navigation group
           _GlassCard(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             child: Column(
-              children: _withDividers(
-                context,
-                [
-                  _ProfileNavTile(
-                    icon: HugeIcons.strokeRoundedUser,
-                    title: t(lang, "profile.account_details"),
-                    subtitle: t(lang, "profile.account_details_sub"),
-                    onTap: () => Navigator.pushNamed(
-                        context, AppRoutes.profileAccount),
-                  ),
-                  _ProfileNavTile(
-                    icon: HugeIcons.strokeRoundedLockPassword,
-                    title: t(lang, "profile.change_password"),
-                    subtitle: t(lang, "profile.change_password_sub"),
-                    onTap: () => Navigator.pushNamed(
-                        context, AppRoutes.profilePassword),
-                  ),
-                  _ProfileNavTile(
-                    icon: Icons.warning_amber_rounded,
-                    color: scheme.error,
-                    title: t(lang, "profile.danger_zone"),
-                    subtitle: t(lang, "profile.danger_zone_sub"),
-                    onTap: () => Navigator.pushNamed(
-                        context, AppRoutes.profileDanger),
-                  ),
-                  _ProfileNavTile(
-                    icon: HugeIcons.strokeRoundedLogout02,
-                    color: scheme.error,
-                    title: t(lang, "nav.logout"),
-                    subtitle: t(lang, "nav.logout_sub"),
-                    onTap: () {
-                      AuthSession.instance.signOut();
-                      Navigator.pushNamedAndRemoveUntil(
-                          context, AppRoutes.login, (_) => false);
-                    },
-                  ),
-                ],
-              ),
+              children: _withDividers(context, [
+                _ProfileNavTile(
+                  icon: HugeIcons.strokeRoundedUser,
+                  title: t(lang, "profile.account_details"),
+                  subtitle: t(lang, "profile.account_details_sub"),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.profileAccount),
+                ),
+                _ProfileNavTile(
+                  icon: HugeIcons.strokeRoundedLockPassword,
+                  title: t(lang, "profile.change_password"),
+                  subtitle: t(lang, "profile.change_password_sub"),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.profilePassword),
+                ),
+                _ProfileNavTile(
+                  icon: Icons.warning_amber_rounded,
+                  color: scheme.error,
+                  title: t(lang, "profile.danger_zone"),
+                  subtitle: t(lang, "profile.danger_zone_sub"),
+                  onTap: () =>
+                      Navigator.pushNamed(context, AppRoutes.profileDanger),
+                ),
+                _ProfileNavTile(
+                  icon: HugeIcons.strokeRoundedLogout02,
+                  color: scheme.error,
+                  title: t(lang, "nav.logout"),
+                  subtitle: t(lang, "nav.logout_sub"),
+                  onTap: () {
+                    AuthSession.instance.signOut();
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.login,
+                      (_) => false,
+                    );
+                  },
+                ),
+              ]),
             ),
           ),
         ],
@@ -159,13 +167,115 @@ class ProfilePage extends StatelessWidget {
             child: Divider(
               height: 14,
               thickness: 1,
-              color: scheme.onSurface.withOpacity(0.06),
+              color: scheme.onSurface.withValues(alpha: 0.06),
             ),
           ),
         );
       }
     }
     return out;
+  }
+}
+
+class _BiometricProfileCard extends StatefulWidget {
+  const _BiometricProfileCard();
+
+  @override
+  State<_BiometricProfileCard> createState() => _BiometricProfileCardState();
+}
+
+class _BiometricProfileCardState extends State<_BiometricProfileCard> {
+  bool _checked = false;
+  bool _available = false;
+  bool _enabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final available = await BiometricService.instance.isAvailable();
+    final enabled = available && await BiometricService.instance.isEnabled();
+    if (!mounted) return;
+    setState(() {
+      _checked = true;
+      _available = available;
+      _enabled = enabled;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = currentLangSync();
+    final scheme = Theme.of(context).colorScheme;
+
+    final label = !_available
+        ? t(lang, "settings.biometric_unavailable_label")
+        : (_enabled
+              ? t(lang, "settings.biometric_active_label")
+              : t(lang, "settings.biometric_inactive_label"));
+    final message = !_available
+        ? t(lang, "settings.biometric_unavailable")
+        : (_enabled
+              ? t(lang, "settings.biometric_enabled_subtitle")
+              : t(lang, "auth.biometric_setup_hint"));
+    final accent = !_available
+        ? scheme.outline
+        : (_enabled ? scheme.primary : scheme.secondary);
+
+    return _GlassCard(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _IconBadge(icon: HugeIcons.strokeRoundedFaceId, color: accent),
+          const SizedBox(width: 10),
+          Expanded(
+            child: !_checked
+                ? Text(
+                    t(lang, "auth.wait"),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurface.withValues(alpha: 0.75),
+                    ),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t(lang, "settings.biometric_title"),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: accent,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        message,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.3,
+                          color: scheme.onSurface.withValues(alpha: 0.68),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -216,23 +326,21 @@ class _ProfileNavTileState extends State<_ProfileNavTile> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: isActive
-                ? scheme.onSurface.withOpacity(0.06)
+                ? scheme.onSurface.withValues(alpha: 0.06)
                 : Colors.transparent,
           ),
           child: AnimatedScale(
             duration: const Duration(milliseconds: 140),
             scale: _pressed ? 0.985 : 1,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: Row(
                 children: [
                   _IconBadge(icon: widget.icon, color: tone),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           widget.title,
@@ -246,8 +354,7 @@ class _ProfileNavTileState extends State<_ProfileNavTile> {
                           widget.subtitle,
                           style: TextStyle(
                             fontSize: 12, // ✅ subtitle 12
-                            color: scheme.onSurface
-                                .withOpacity(0.65),
+                            color: scheme.onSurface.withValues(alpha: 0.65),
                           ),
                         ),
                       ],
@@ -255,16 +362,12 @@ class _ProfileNavTileState extends State<_ProfileNavTile> {
                   ),
                   const SizedBox(width: 8),
                   AnimatedSlide(
-                    duration:
-                        const Duration(milliseconds: 160),
-                    offset: isActive
-                        ? const Offset(0.06, 0)
-                        : Offset.zero,
+                    duration: const Duration(milliseconds: 160),
+                    offset: isActive ? const Offset(0.06, 0) : Offset.zero,
                     child: Icon(
                       Icons.chevron_right_rounded,
                       size: 18,
-                      color: scheme.onSurface
-                          .withOpacity(0.55),
+                      color: scheme.onSurface.withValues(alpha: 0.55),
                     ),
                   ),
                 ],
@@ -281,10 +384,7 @@ class _IconBadge extends StatelessWidget {
   final dynamic icon;
   final Color color;
 
-  const _IconBadge({
-    required this.icon,
-    required this.color,
-  });
+  const _IconBadge({required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -299,18 +399,15 @@ class _IconBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.25),
-            color.withOpacity(0.12),
+            color.withValues(alpha: 0.25),
+            color.withValues(alpha: 0.12),
           ],
         ),
-        border: Border.all(
-          color: scheme.onSurface.withOpacity(0.10),
-        ),
+        border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
       ),
       child: Center(
         child: icon is IconData
-            ? Icon(icon as IconData,
-                size: 14, color: color) // ✅ icon size 14
+            ? Icon(icon as IconData, size: 14, color: color) // ✅ icon size 14
             : HugeIcon(
                 icon: icon,
                 size: 14, // ✅ icon size 14
@@ -343,14 +440,14 @@ class _GlassCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            color: scheme.surface.withOpacity(0.55),
+            color: scheme.surface.withValues(alpha: 0.55),
             border: Border.all(
-              color: scheme.onSurface.withOpacity(0.10),
+              color: scheme.onSurface.withValues(alpha: 0.10),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
               ),
