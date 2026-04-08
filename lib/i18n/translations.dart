@@ -15,6 +15,9 @@ const translations = {
     "settings.theme_subtitle": "Light / Dark",
     "settings.app_version": "App version",
     "settings.biometric_title": "Face ID / Biometrics",
+    "settings.biometric_active_label": "Active on this device",
+    "settings.biometric_inactive_label": "Not active on this device",
+    "settings.biometric_unavailable_label": "Not available on this device",
     "settings.biometric_enabled_subtitle":
         "Quick sign-in is enabled on this device.",
     "settings.biometric_disabled_subtitle":
@@ -879,6 +882,9 @@ const translations = {
     "settings.theme_subtitle": "Urumuri / Umwijima",
     "settings.app_version": "Verisiyo ya porogaramu",
     "settings.biometric_title": "Face ID / Ibimenyetso by'umubiri",
+    "settings.biometric_active_label": "Birakora kuri iki gikoresho",
+    "settings.biometric_inactive_label": "Ntibirakora kuri iki gikoresho",
+    "settings.biometric_unavailable_label": "Ntibiboneka kuri iki gikoresho",
     "settings.biometric_enabled_subtitle":
         "Kwinjira vuba kuri iki gikoresho byarakoreshejwe.",
     "settings.biometric_disabled_subtitle":
@@ -1209,6 +1215,9 @@ const translations = {
     "settings.theme_subtitle": "Clair / Sombre",
     "settings.app_version": "Version de l'application",
     "settings.biometric_title": "Face ID / Biométrie",
+    "settings.biometric_active_label": "Actif sur cet appareil",
+    "settings.biometric_inactive_label": "Inactif sur cet appareil",
+    "settings.biometric_unavailable_label": "Indisponible sur cet appareil",
     "settings.biometric_enabled_subtitle":
         "La connexion rapide est activée sur cet appareil.",
     "settings.biometric_disabled_subtitle":
@@ -1549,6 +1558,10 @@ const translations = {
     "settings.theme_subtitle": "Claro / Oscuro",
     "settings.app_version": "Versión de la aplicación",
     "settings.biometric_title": "Face ID / Biometría",
+    "settings.biometric_active_label": "Activo en este dispositivo",
+    "settings.biometric_inactive_label": "No está activo en este dispositivo",
+    "settings.biometric_unavailable_label":
+        "No está disponible en este dispositivo",
     "settings.biometric_enabled_subtitle":
         "El acceso rápido está activado en este dispositivo.",
     "settings.biometric_disabled_subtitle":
@@ -1885,6 +1898,9 @@ const translations = {
     "settings.theme_subtitle": "Hell / Dunkel",
     "settings.app_version": "App-Version",
     "settings.biometric_title": "Face ID / Biometrie",
+    "settings.biometric_active_label": "Auf diesem Gerät aktiv",
+    "settings.biometric_inactive_label": "Auf diesem Gerät nicht aktiv",
+    "settings.biometric_unavailable_label": "Auf diesem Gerät nicht verfügbar",
     "settings.biometric_enabled_subtitle":
         "Die Schnellanmeldung ist auf diesem Gerät aktiviert.",
     "settings.biometric_disabled_subtitle":
