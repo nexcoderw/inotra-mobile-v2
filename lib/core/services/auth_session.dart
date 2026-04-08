@@ -6,6 +6,7 @@ import "package:http/http.dart" as http;
 import "../config/api.dart";
 import "../constants/api/auth_endpoints.dart";
 import "auth_storage.dart";
+import "biometric_service.dart";
 import "session_heartbeat_service.dart";
 
 /// Lightweight auth session tracker used by the mobile app header.
@@ -51,7 +52,12 @@ class AuthSessionState {
 
 class AuthSession extends ValueNotifier<AuthSessionState> {
   AuthSession._()
-      : super(const AuthSessionState(status: AuthStatus.checking, displayName: "Guest"));
+    : super(
+        const AuthSessionState(
+          status: AuthStatus.checking,
+          displayName: "Guest",
+        ),
+      );
 
   static final AuthSession instance = AuthSession._();
 
@@ -59,7 +65,10 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
   Future<void> restore() async {
     final saved = await AuthStorage.loadSession();
     if (saved == null) {
-      value = const AuthSessionState(status: AuthStatus.signedOut, displayName: "Guest");
+      value = const AuthSessionState(
+        status: AuthStatus.signedOut,
+        displayName: "Guest",
+      );
       return;
     }
 
@@ -83,7 +92,9 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
 
     value = AuthSessionState(
       status: AuthStatus.signedIn,
-      displayName: (safeName?.isNotEmpty ?? false) ? safeName! : (user["email"] ?? "User"),
+      displayName: (safeName?.isNotEmpty ?? false)
+          ? safeName!
+          : (user["email"] ?? "User"),
       user: user,
       accessToken: accessToken,
       refreshToken: refreshToken,
@@ -97,12 +108,16 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
   Future<void> signOut() async {
     SessionHeartbeatService.instance.stop();
     await AuthStorage.clearSession();
-    value = const AuthSessionState(status: AuthStatus.signedOut, displayName: "Guest");
+    value = const AuthSessionState(
+      status: AuthStatus.signedOut,
+      displayName: "Guest",
+    );
   }
 
   /// Returns true when the current session is authenticated and has a non-empty access token.
   bool get hasValidToken =>
-      value.isAuthenticated && (value.accessToken != null && value.accessToken!.isNotEmpty);
+      value.isAuthenticated &&
+      (value.accessToken != null && value.accessToken!.isNotEmpty);
 
   /// If the token is missing/empty, clears the session and returns false.
   Future<bool> ensureValid() async {
@@ -143,10 +158,18 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
         final newRefresh = (json["refresh"] as String?) ?? refresh;
 
         if (newAccess != null && newAccess.isNotEmpty) {
-          value = value.copyWith(accessToken: newAccess, refreshToken: newRefresh);
+          value = value.copyWith(
+            accessToken: newAccess,
+            refreshToken: newRefresh,
+          );
           await AuthStorage.updateTokens(
             accessToken: newAccess,
             refreshToken: newRefresh,
+          );
+          await BiometricService.instance.updateSession(
+            refreshToken: newRefresh,
+            user: value.user,
+            theme: value.theme,
           );
           return true;
         }
