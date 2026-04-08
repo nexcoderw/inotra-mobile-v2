@@ -11,6 +11,7 @@ import "package:inotra/core/config/api.dart";
 import "package:inotra/core/config/app_routes.dart";
 import "package:inotra/core/constants/api/auth_endpoints.dart";
 import "package:inotra/core/services/auth_session.dart";
+import "package:inotra/core/services/biometric_service.dart";
 import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
 import "package:inotra/features/main/presentation/widgets/page_header.dart";
 import "package:inotra/i18n/lang.dart";
@@ -66,12 +67,12 @@ class _ProfileChangePasswordPageState extends State<ProfileChangePasswordPage> {
   }
 
   String _passwordLabel(int score) => switch (score) {
-        0 => "Too weak",
-        1 => "Weak",
-        2 => "Okay",
-        3 => "Strong",
-        _ => "Very strong",
-      };
+    0 => "Too weak",
+    1 => "Weak",
+    2 => "Okay",
+    3 => "Strong",
+    _ => "Very strong",
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +157,8 @@ class _ProfileChangePasswordPageState extends State<ProfileChangePasswordPage> {
                       if (v == null || v.isEmpty) {
                         return t(lang, "auth.required_field");
                       }
-                      if (v != _new.text) return t(lang, "auth.passwords_mismatch");
+                      if (v != _new.text)
+                        return t(lang, "auth.passwords_mismatch");
                       return null;
                     },
                   ),
@@ -186,7 +188,11 @@ class _ProfileChangePasswordPageState extends State<ProfileChangePasswordPage> {
     if (token.isEmpty) {
       await AuthSession.instance.signOut();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (_) => false,
+        );
       }
       return;
     }
@@ -209,12 +215,17 @@ class _ProfileChangePasswordPageState extends State<ProfileChangePasswordPage> {
       if (resp.statusCode == 401) {
         await AuthSession.instance.signOut();
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (_) => false,
+          );
         }
         return;
       }
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        await BiometricService.instance.clear();
         await AuthSession.instance.signOut();
         if (!mounted) return;
 
@@ -228,7 +239,11 @@ class _ProfileChangePasswordPageState extends State<ProfileChangePasswordPage> {
           autoCloseDuration: const Duration(seconds: 3),
         );
 
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (_) => false,
+        );
         return;
       }
 
@@ -241,7 +256,9 @@ class _ProfileChangePasswordPageState extends State<ProfileChangePasswordPage> {
   }
 
   void _showError(http.Response? resp, {String? fallback}) {
-    final detail = resp != null ? _extractError(resp) : (fallback ?? "Update failed");
+    final detail = resp != null
+        ? _extractError(resp)
+        : (fallback ?? "Update failed");
     if (!mounted) return;
 
     toastification.show(
@@ -307,7 +324,9 @@ class _StrengthRow extends StatelessWidget {
                         width: c.maxWidth * pct,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(999),
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.85),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withOpacity(0.85),
                         ),
                       ),
                     );
@@ -487,7 +506,8 @@ class _GlassPasswordFieldState extends State<_GlassPasswordField> {
                             ),
                           ),
                         ),
-                        validator: widget.validator ??
+                        validator:
+                            widget.validator ??
                             (v) => (v == null || v.trim().isEmpty)
                                 ? widget.requiredMessage
                                 : null,
@@ -560,10 +580,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withOpacity(0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
             ),
             boxShadow: const [], // ✅ no shadow on hover/click
           ),
@@ -639,14 +656,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
