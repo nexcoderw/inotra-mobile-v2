@@ -11,8 +11,22 @@ const translations = {
     "settings.terms": "Terms of Service",
     "settings.help": "Help Center",
     "settings.support": "Contact Support",
+    "settings.security": "Security",
     "settings.theme_subtitle": "Light / Dark",
     "settings.app_version": "App version",
+    "settings.biometric_title": "Face ID / Biometrics",
+    "settings.biometric_enabled_subtitle":
+        "Quick sign-in is enabled on this device.",
+    "settings.biometric_disabled_subtitle":
+        "Turn this on to unlock your saved session with Face ID.",
+    "settings.biometric_unavailable":
+        "This device does not currently have Face ID or biometrics ready.",
+    "settings.biometric_enabled_toast":
+        "Face ID is now enabled for quick sign-in on this device.",
+    "settings.biometric_disabled_toast":
+        "Face ID has been disabled for this device.",
+    "settings.biometric_sign_in_first":
+        "Sign in again before enabling Face ID on this device.",
     "theme.light": "Light",
     "theme.dark": "Dark",
     "theme.system": "System",
@@ -861,8 +875,22 @@ const translations = {
     "settings.terms": "Amasezerano ya serivisi",
     "settings.help": "Ikigo cy'Ubufasha",
     "settings.support": "Vugana natwe",
+    "settings.security": "Umutekano",
     "settings.theme_subtitle": "Urumuri / Umwijima",
     "settings.app_version": "Verisiyo ya porogaramu",
+    "settings.biometric_title": "Face ID / Ibimenyetso by'umubiri",
+    "settings.biometric_enabled_subtitle":
+        "Kwinjira vuba kuri iki gikoresho byarakoreshejwe.",
+    "settings.biometric_disabled_subtitle":
+        "Bifungure kugira ngo ufunguze session yawe wabitse ukoresheje Face ID.",
+    "settings.biometric_unavailable":
+        "Iki gikoresho ntikirategurirwaho Face ID cyangwa ibimenyetso by'umubiri.",
+    "settings.biometric_enabled_toast":
+        "Face ID yemerewe kwinjira vuba kuri iki gikoresho.",
+    "settings.biometric_disabled_toast":
+        "Face ID yahagaritswe kuri iki gikoresho.",
+    "settings.biometric_sign_in_first":
+        "Injira nanone mbere yo gukoresha Face ID kuri iki gikoresho.",
     "theme.light": "Urumuri",
     "theme.dark": "Umwijima",
     "theme.system": "By'igikoresho",
@@ -1177,8 +1205,22 @@ const translations = {
     "settings.terms": "Conditions d'utilisation",
     "settings.help": "Centre d'aide",
     "settings.support": "Contacter le support",
+    "settings.security": "Sécurité",
     "settings.theme_subtitle": "Clair / Sombre",
     "settings.app_version": "Version de l'application",
+    "settings.biometric_title": "Face ID / Biométrie",
+    "settings.biometric_enabled_subtitle":
+        "La connexion rapide est activée sur cet appareil.",
+    "settings.biometric_disabled_subtitle":
+        "Activez cette option pour déverrouiller votre session enregistrée avec Face ID.",
+    "settings.biometric_unavailable":
+        "Face ID ou la biométrie n'est pas disponible sur cet appareil pour le moment.",
+    "settings.biometric_enabled_toast":
+        "Face ID est désormais activé pour la connexion rapide sur cet appareil.",
+    "settings.biometric_disabled_toast":
+        "Face ID a été désactivé sur cet appareil.",
+    "settings.biometric_sign_in_first":
+        "Reconnectez-vous avant d'activer Face ID sur cet appareil.",
     "theme.light": "Clair",
     "theme.dark": "Sombre",
     "theme.system": "Système",
@@ -1503,8 +1545,22 @@ const translations = {
     "settings.terms": "Términos de servicio",
     "settings.help": "Centro de ayuda",
     "settings.support": "Contactar soporte",
+    "settings.security": "Seguridad",
     "settings.theme_subtitle": "Claro / Oscuro",
     "settings.app_version": "Versión de la aplicación",
+    "settings.biometric_title": "Face ID / Biometría",
+    "settings.biometric_enabled_subtitle":
+        "El acceso rápido está activado en este dispositivo.",
+    "settings.biometric_disabled_subtitle":
+        "Actívalo para desbloquear tu sesión guardada con Face ID.",
+    "settings.biometric_unavailable":
+        "Este dispositivo no tiene Face ID o biometría disponible en este momento.",
+    "settings.biometric_enabled_toast":
+        "Face ID ya está activado para el acceso rápido en este dispositivo.",
+    "settings.biometric_disabled_toast":
+        "Face ID se ha desactivado en este dispositivo.",
+    "settings.biometric_sign_in_first":
+        "Vuelve a iniciar sesión antes de activar Face ID en este dispositivo.",
     "theme.light": "Claro",
     "theme.dark": "Oscuro",
     "theme.system": "Sistema",
@@ -1825,8 +1881,22 @@ const translations = {
     "settings.terms": "Nutzungsbedingungen",
     "settings.help": "Hilfecenter",
     "settings.support": "Support kontaktieren",
+    "settings.security": "Sicherheit",
     "settings.theme_subtitle": "Hell / Dunkel",
     "settings.app_version": "App-Version",
+    "settings.biometric_title": "Face ID / Biometrie",
+    "settings.biometric_enabled_subtitle":
+        "Die Schnellanmeldung ist auf diesem Gerät aktiviert.",
+    "settings.biometric_disabled_subtitle":
+        "Aktivieren Sie dies, um Ihre gespeicherte Sitzung mit Face ID zu entsperren.",
+    "settings.biometric_unavailable":
+        "Face ID oder Biometrie ist auf diesem Gerät derzeit nicht verfügbar.",
+    "settings.biometric_enabled_toast":
+        "Face ID ist jetzt für die Schnellanmeldung auf diesem Gerät aktiviert.",
+    "settings.biometric_disabled_toast":
+        "Face ID wurde auf diesem Gerät deaktiviert.",
+    "settings.biometric_sign_in_first":
+        "Melden Sie sich erneut an, bevor Sie Face ID auf diesem Gerät aktivieren.",
     "theme.light": "Hell",
     "theme.dark": "Dunkel",
     "theme.system": "System",
