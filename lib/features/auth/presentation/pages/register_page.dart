@@ -18,6 +18,7 @@ import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/registration_cache.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/biometric_service.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
@@ -211,7 +212,16 @@ class _RegisterPageState extends State<RegisterPage> {
         final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
         final user = body?["user"] as Map<String, dynamic>? ?? {};
 
-        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        await AuthStorage.saveSession(
+          tokens: tokens,
+          user: user,
+          theme: "light",
+        );
+        await BiometricService.instance.saveSession(
+          refreshToken: tokens["refresh"] as String? ?? "",
+          user: user,
+          theme: "light",
+        );
         AuthSession.instance.signIn(
           user: user,
           accessToken: tokens["access"] as String? ?? "",
@@ -281,12 +291,17 @@ class _RegisterPageState extends State<RegisterPage> {
                   decoration: BoxDecoration(
                     color: scheme.surface.withOpacity(0.70),
                     borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: scheme.onSurface.withOpacity(0.10)),
+                    border: Border.all(
+                      color: scheme.onSurface.withOpacity(0.10),
+                    ),
                   ),
                   child: CountryPicker(
                     onSelect: (country) => Navigator.pop(context, country),
                     showSearchBar: true,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -318,7 +333,10 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AuthUI.heading(tr("auth.sign_up"), color: onSurface.withOpacity(0.96)),
+              AuthUI.heading(
+                tr("auth.sign_up"),
+                color: onSurface.withOpacity(0.96),
+              ),
               const SizedBox(height: 6),
               Text(
                 tr("auth.sign_up_title"),
@@ -339,14 +357,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 hint: tr("auth.name_hint"),
                 enabled: !_isBusy,
                 prefixIcon: HugeIcons.strokeRoundedUser,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? tr("auth.name_required") : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? tr("auth.name_required")
+                    : null,
               ),
 
               const SizedBox(height: 14),
 
               // Email
-              AuthUI.label(tr("auth.email"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.email"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _email,
@@ -354,14 +376,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 enabled: !_isBusy,
                 keyboardType: TextInputType.emailAddress,
                 prefixIcon: HugeIcons.strokeRoundedMail01,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? tr("auth.email_required") : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? tr("auth.email_required")
+                    : null,
               ),
 
               const SizedBox(height: 14),
 
               // Phone (simple input; ask for country code in placeholder)
-              AuthUI.label(tr("auth.phone"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.phone"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassWrap(
                 child: TextFormField(
@@ -372,25 +398,36 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: scheme.onSurface.withOpacity(0.92),
                   ),
                   keyboardType: TextInputType.phone,
-                  decoration: _glassInputDecoration(
-                    context,
-                    hint: "${tr("auth.phone_hint")} (+ country code)",
-                  ).copyWith(
-                    prefixIconConstraints: const BoxConstraints(minWidth: 0, maxWidth: 120),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                  ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? tr("auth.phone_required") : null,
+                  decoration:
+                      _glassInputDecoration(
+                        context,
+                        hint: "${tr("auth.phone_hint")} (+ country code)",
+                      ).copyWith(
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                          maxWidth: 120,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                      ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? tr("auth.phone_required")
+                      : null,
                 ),
               ),
 
               const SizedBox(height: 14),
 
               // Nationality (picker unchanged)
-              AuthUI.label(tr("auth.nationality"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.nationality"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _nationality,
@@ -412,48 +449,62 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 14),
 
               // Preferred language (same logic)
-              AuthUI.label(tr("auth.preferred_language"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.preferred_language"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassWrap(
                 child: DropdownButtonFormField<String>(
                   initialValue: _preferredLanguage,
                   icon: const SizedBox.shrink(),
                   dropdownColor: scheme.surface,
-                  decoration: _glassInputDecoration(
-                    context,
-                    hint: tr("auth.preferred_language_hint"),
-                    prefixIcon: HugeIcons.strokeRoundedMic01,
-                    suffix: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 18,
-                      color: onSurface.withOpacity(0.60),
-                    ),
-                  ).copyWith(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  ),
+                  decoration:
+                      _glassInputDecoration(
+                        context,
+                        hint: tr("auth.preferred_language_hint"),
+                        prefixIcon: HugeIcons.strokeRoundedMic01,
+                        suffix: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 18,
+                          color: onSurface.withOpacity(0.60),
+                        ),
+                      ).copyWith(
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                      ),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: scheme.onSurface.withOpacity(0.92),
                   ),
                   items: const [
-                    DropdownMenuItem(value: "Kinyarwanda", child: Text("Kinyarwanda")),
+                    DropdownMenuItem(
+                      value: "Kinyarwanda",
+                      child: Text("Kinyarwanda"),
+                    ),
                     DropdownMenuItem(value: "English", child: Text("English")),
                     DropdownMenuItem(value: "French", child: Text("French")),
                     DropdownMenuItem(value: "German", child: Text("German")),
                     DropdownMenuItem(value: "Spanish", child: Text("Spanish")),
                   ],
-                  onChanged: (v) => setState(() => _preferredLanguage = v ?? "English"),
+                  onChanged: (v) =>
+                      setState(() => _preferredLanguage = v ?? "English"),
                 ),
               ),
 
               const SizedBox(height: 14),
 
               // Password
-              AuthUI.label(tr("auth.password"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.password"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _password,
@@ -462,7 +513,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscure: _obscure1,
                 prefixIcon: HugeIcons.strokeRoundedLockPassword,
                 suffix: IconButton(
-                  onPressed: _isBusy ? null : () => setState(() => _obscure1 = !_obscure1),
+                  onPressed: _isBusy
+                      ? null
+                      : () => setState(() => _obscure1 = !_obscure1),
                   icon: HugeIcon(
                     icon: _obscure1
                         ? HugeIcons.strokeRoundedViewOff
@@ -472,14 +525,18 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: onSurface.withOpacity(0.65),
                   ),
                 ),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? tr("auth.password_required") : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? tr("auth.password_required")
+                    : null,
               ),
 
               const SizedBox(height: 14),
 
               // Confirm password
-              AuthUI.label(tr("auth.confirm_password"), color: onSurface.withOpacity(0.92)),
+              AuthUI.label(
+                tr("auth.confirm_password"),
+                color: onSurface.withOpacity(0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _confirmPassword,
@@ -488,7 +545,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 obscure: _obscure2,
                 prefixIcon: HugeIcons.strokeRoundedLockPassword,
                 suffix: IconButton(
-                  onPressed: _isBusy ? null : () => setState(() => _obscure2 = !_obscure2),
+                  onPressed: _isBusy
+                      ? null
+                      : () => setState(() => _obscure2 = !_obscure2),
                   icon: HugeIcon(
                     icon: _obscure2
                         ? HugeIcons.strokeRoundedViewOff
@@ -499,7 +558,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return tr("auth.confirm_password_required");
+                  if (v == null || v.isEmpty)
+                    return tr("auth.confirm_password_required");
                   if (v != _password.text) return tr("auth.passwords_mismatch");
                   return null;
                 },
@@ -511,7 +571,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 children: [
                   InkWell(
                     borderRadius: BorderRadius.circular(999),
-                    onTap: _isBusy ? null : () => setState(() => _acceptedTerms = !_acceptedTerms),
+                    onTap: _isBusy
+                        ? null
+                        : () =>
+                              setState(() => _acceptedTerms = !_acceptedTerms),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: AnimatedContainer(
@@ -525,10 +588,16 @@ class _RegisterPageState extends State<RegisterPage> {
                             color: onSurface.withValues(alpha: 0.28),
                             width: 1.4,
                           ),
-                          color: _acceptedTerms ? scheme.primary : Colors.transparent,
+                          color: _acceptedTerms
+                              ? scheme.primary
+                              : Colors.transparent,
                         ),
                         child: _acceptedTerms
-                            ? const Icon(Icons.check, size: 10, color: Colors.white)
+                            ? const Icon(
+                                Icons.check,
+                                size: 10,
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                     ),
@@ -549,11 +618,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               onTap: _isBusy
                                   ? null
                                   : () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const TermsConditionsPage(),
-                                        ),
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const TermsConditionsPage(),
                                       ),
+                                    ),
                               child: Text(
                                 tr("auth.terms_link"),
                                 style: TextStyle(
@@ -571,11 +641,12 @@ class _RegisterPageState extends State<RegisterPage> {
                               onTap: _isBusy
                                   ? null
                                   : () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const PrivacyPolicyPage(),
-                                        ),
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const PrivacyPolicyPage(),
                                       ),
+                                    ),
                               child: Text(
                                 tr("auth.privacy_link"),
                                 style: TextStyle(
@@ -631,7 +702,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   InkWell(
                     onTap: _isBusy
                         ? null
-                        : () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+                        : () => Navigator.pushReplacementNamed(
+                            context,
+                            AppRoutes.login,
+                          ),
                     child: Text(
                       tr("auth.sign_in"),
                       style: TextStyle(
@@ -696,10 +770,7 @@ class _GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
 
-  const _GlassCard({
-    required this.child,
-    required this.padding,
-  });
+  const _GlassCard({required this.child, required this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -882,10 +953,7 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withOpacity(0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
             ),
             boxShadow: const [],
           ),
@@ -960,14 +1028,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -1006,7 +1074,9 @@ class _GoogleButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: scheme.surface.withValues(alpha: 0.45),
           side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.10)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 180),
