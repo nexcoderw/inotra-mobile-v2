@@ -91,6 +91,10 @@ const translations = {
     "auth.continue": "Continue",
     "auth.biometric_soon": "Biometric sign-in coming soon",
     "auth.biometric_error": "Biometric sign-in failed",
+    "auth.biometric_setup_hint":
+        "Sign in once with your password on this device to enable Face ID next time.",
+    "auth.biometric_reenable_hint":
+        "Sign in once with your password to re-enable Face ID on this device.",
     "auth.sign_in_biometric": "Continue with Face ID / Biometrics",
     "auth.google_soon": "Google login coming soon",
     "ai.assistant_name": "INOTRA AI",
@@ -180,8 +184,10 @@ const translations = {
         "Sign in or create an account to access {feature} and keep your experience in sync across devices.",
     "common.coming_soon": "Coming soon",
     "payments.integration_badge": "Payment integration in progress",
-    "payments.event_description": "Event payment tracking and payout management are being integrated. You will be able to view revenue, download invoices, and manage payouts directly from this screen.",
-    "payments.listing_description": "Listing payment tracking and payout management are being integrated. You will be able to view revenue, download invoices, and manage payouts directly from this screen.",
+    "payments.event_description":
+        "Event payment tracking and payout management are being integrated. You will be able to view revenue, download invoices, and manage payouts directly from this screen.",
+    "payments.listing_description":
+        "Listing payment tracking and payout management are being integrated. You will be able to view revenue, download invoices, and manage payouts directly from this screen.",
     "payments.whats_included": "What this section will include",
     "payments.feature_revenue": "Revenue overview and earnings breakdown",
     "payments.feature_invoices": "Downloadable invoices and receipts",
@@ -520,7 +526,8 @@ const translations = {
         "No events match this filter yet. Try another selection.",
     "events.tickets": "Tickets",
     "events.buy_ticket": "Buy ticket",
-    "events.ticket_integration": "Ticket booking will be available soon. Contact the event organizer directly to reserve your spot.",
+    "events.ticket_integration":
+        "Ticket booking will be available soon. Contact the event organizer directly to reserve your spot.",
     "chat.type_message": "Type a message…",
     "chat.send": "Send",
     "terms.title": "Terms & Conditions",
@@ -543,10 +550,12 @@ const translations = {
     "listings.address": "Address",
     "listings.no_data": "Not available",
     "listings.map_placeholder": "No location data available for this listing.",
-    "listings.reviews_empty": "No reviews yet. Be the first to share your experience!",
+    "listings.reviews_empty":
+        "No reviews yet. Be the first to share your experience!",
     "listings.transport_title": "How to reach us",
     "listings.reserve_cta": "Reserve your spot",
-    "listings.reserve_integration": "Online reservations are being finalized. Contact the listing directly to book your spot.",
+    "listings.reserve_integration":
+        "Online reservations are being finalized. Contact the listing directly to book your spot.",
     "listings.login_to_proceed": "Login to proceed",
     "listings.open_in_maps": "Open in maps",
     "listings.reviews_title": "Reviews",
@@ -571,7 +580,8 @@ const translations = {
     "notifications.title": "Notifications",
     "notifications.mark_all_read": "Mark all read",
     "notifications.empty_title": "No notifications yet",
-    "notifications.empty_body": "New listings, events & trip packages will appear here.",
+    "notifications.empty_body":
+        "New listings, events & trip packages will appear here.",
     "notifications.item_prefix": "Notification",
     "home.welcome": "Welcome to INOTRA",
     "home.trip_packages": "Trip Packages",
@@ -927,6 +937,10 @@ const translations = {
     "auth.continue": "Komeza",
     "auth.biometric_soon": "Gusinya n'ibikumwe biraje",
     "auth.biometric_error": "Kwinjira binyuze ibikumwe byanze",
+    "auth.biometric_setup_hint":
+        "Injira rimwe ukoresheje ijambo ry'ibanga kuri iki gikoresho kugira ngo Face ID izakore ubutaha.",
+    "auth.biometric_reenable_hint":
+        "Injira rimwe ukoresheje ijambo ry'ibanga kugira ngo wongere ukoreshe Face ID kuri iki gikoresho.",
     "auth.sign_in_biometric": "Komeza na Face ID / Ibikumwe",
     "auth.google_soon": "Kwinjira na Google biraje",
     "ai.open_conversations": "Fungura ibiganiro",
@@ -1002,13 +1016,17 @@ const translations = {
         "Injira cyangwa kora konti kugira ngo ubone {feature} no kubika uburambe bwawe.",
     "common.coming_soon": "Biraje",
     "payments.integration_badge": "Guhuza ubwishyu birimo gukorwa",
-    "payments.event_description": "Gukurikirana ubwishyu bw'ibikorwa no gucunga amafaranga birateguragwa. Uzaba ushoboye kureba inyungu, gukurura fagitire, no gucunga amafaranga ahembwa.",
-    "payments.listing_description": "Gukurikirana ubwishyu bw'itumanaho no gucunga amafaranga birateguragwa. Uzaba ushoboye kureba inyungu, gukurura fagitire, no gucunga amafaranga ahembwa.",
+    "payments.event_description":
+        "Gukurikirana ubwishyu bw'ibikorwa no gucunga amafaranga birateguragwa. Uzaba ushoboye kureba inyungu, gukurura fagitire, no gucunga amafaranga ahembwa.",
+    "payments.listing_description":
+        "Gukurikirana ubwishyu bw'itumanaho no gucunga amafaranga birateguragwa. Uzaba ushoboye kureba inyungu, gukurura fagitire, no gucunga amafaranga ahembwa.",
     "payments.whats_included": "Ibi bazaba birimo",
     "payments.feature_revenue": "Incamake y'inyungu n'isesengura ry'inyungu",
     "payments.feature_invoices": "Fagitire n'ibyemezo bya kopi",
-    "payments.feature_mobile_money": "Gukurikirana ubwishyu bwa Mobile Money no karito",
-    "payments.feature_payout": "Gushyira mu mugango no mateka y'ihembwa ry'ibanki",
+    "payments.feature_mobile_money":
+        "Gukurikirana ubwishyu bwa Mobile Money no karito",
+    "payments.feature_payout":
+        "Gushyira mu mugango no mateka y'ihembwa ry'ibanki",
     "common.tap_details": "Kanda urebe ibisobanuro",
     "common.all": "Byose",
     "common.empty": "Nta na kimwe",
@@ -1042,7 +1060,8 @@ const translations = {
     "events.filter_empty": "Nta bikorwa bihuye n'iyi filitre. Gerageza indi.",
     "events.tickets": "Amatike",
     "events.buy_ticket": "Gura itike",
-    "events.ticket_integration": "Kugura itike bizashoboka vuba. Bihanuye na organizateri w'igikorwa kugira ngo ubike umwanya wawe.",
+    "events.ticket_integration":
+        "Kugura itike bizashoboka vuba. Bihanuye na organizateri w'igikorwa kugira ngo ubike umwanya wawe.",
     "chat.type_message": "Andika ubutumwa…",
     "chat.send": "Ohereza",
     "terms.title": "Amategeko n'amabwiriza",
@@ -1061,11 +1080,14 @@ const translations = {
     "listings.hours": "Amasaha yo gufungura",
     "listings.address": "Aderesi",
     "listings.no_data": "Ntacyo tubonye",
-    "listings.map_placeholder": "Nta makuru y'aho hantu aboneka kuri uyu mwanya.",
-    "listings.reviews_empty": "Nta bisubizo bihari. Banza washyiraho igitekerezo cyawe!",
+    "listings.map_placeholder":
+        "Nta makuru y'aho hantu aboneka kuri uyu mwanya.",
+    "listings.reviews_empty":
+        "Nta bisubizo bihari. Banza washyiraho igitekerezo cyawe!",
     "listings.transport_title": "Uko wahagera",
     "listings.reserve_cta": "Bika umwanya wawe",
-    "listings.reserve_integration": "Kubika umwanya kuri interineti birategurwa. Bihanuye n'umuturage w'aho hantu kugira ngo ubike umwanya wawe.",
+    "listings.reserve_integration":
+        "Kubika umwanya kuri interineti birategurwa. Bihanuye n'umuturage w'aho hantu kugira ngo ubike umwanya wawe.",
     "listings.login_to_proceed": "Injira ukomeze",
     "listings.open_in_maps": "Fungura kuri karita",
     "listings.reviews_title": "Ibisubizo",
@@ -1090,7 +1112,8 @@ const translations = {
     "notifications.title": "Amatangazo",
     "notifications.mark_all_read": "Shyira zose ko zasomwe",
     "notifications.empty_title": "Nta matangazo ubu",
-    "notifications.empty_body": "Ibyamamazwa bishya, ibikorwa n'ingendo bizagaragara hano.",
+    "notifications.empty_body":
+        "Ibyamamazwa bishya, ibikorwa n'ingendo bizagaragara hano.",
     "notifications.item_prefix": "Itangazo",
     "home.welcome": "Murakaza neza muri INOTRA",
     "home.trip_packages": "Pake za urugendo",
@@ -1232,6 +1255,10 @@ const translations = {
     "auth.continue": "Continuer",
     "auth.biometric_soon": "Connexion biométrique bientôt disponible",
     "auth.biometric_error": "Échec de la connexion biométrique",
+    "auth.biometric_setup_hint":
+        "Connectez-vous une fois avec votre mot de passe sur cet appareil pour activer Face ID la prochaine fois.",
+    "auth.biometric_reenable_hint":
+        "Connectez-vous une fois avec votre mot de passe pour réactiver Face ID sur cet appareil.",
     "auth.sign_in_biometric": "Continuer avec Face ID / Biométrie",
     "auth.google_soon": "Connexion Google bientôt disponible",
     "ai.open_conversations": "Ouvrir les conversations",
@@ -1313,13 +1340,17 @@ const translations = {
         "Connectez-vous ou créez un compte pour accéder à {feature} et garder votre expérience synchronisée.",
     "common.coming_soon": "Bientôt disponible",
     "payments.integration_badge": "Intégration des paiements en cours",
-    "payments.event_description": "Le suivi des paiements d'événements et la gestion des versements sont en cours d'intégration. Vous pourrez consulter les revenus, télécharger les factures et gérer les versements depuis cet écran.",
-    "payments.listing_description": "Le suivi des paiements d'annonces et la gestion des versements sont en cours d'intégration. Vous pourrez consulter les revenus, télécharger les factures et gérer les versements depuis cet écran.",
+    "payments.event_description":
+        "Le suivi des paiements d'événements et la gestion des versements sont en cours d'intégration. Vous pourrez consulter les revenus, télécharger les factures et gérer les versements depuis cet écran.",
+    "payments.listing_description":
+        "Le suivi des paiements d'annonces et la gestion des versements sont en cours d'intégration. Vous pourrez consulter les revenus, télécharger les factures et gérer les versements depuis cet écran.",
     "payments.whats_included": "Ce que cette section inclura",
     "payments.feature_revenue": "Aperçu des revenus et ventilation des gains",
     "payments.feature_invoices": "Factures et reçus téléchargeables",
-    "payments.feature_mobile_money": "Suivi des paiements Mobile Money et carte",
-    "payments.feature_payout": "Planification et historique des virements bancaires",
+    "payments.feature_mobile_money":
+        "Suivi des paiements Mobile Money et carte",
+    "payments.feature_payout":
+        "Planification et historique des virements bancaires",
     "common.tap_details": "Touchez pour voir les détails",
     "common.all": "Tout",
     "common.empty": "Rien ici pour l'instant",
@@ -1354,7 +1385,8 @@ const translations = {
         "Aucun événement ne correspond à ce filtre. Essayez une autre sélection.",
     "events.tickets": "Billets",
     "events.buy_ticket": "Acheter un billet",
-    "events.ticket_integration": "L'achat de billets sera disponible bientôt. Contactez l'organisateur directement pour réserver votre place.",
+    "events.ticket_integration":
+        "L'achat de billets sera disponible bientôt. Contactez l'organisateur directement pour réserver votre place.",
     "chat.type_message": "Écrire un message…",
     "chat.send": "Envoyer",
     "terms.title": "Conditions générales",
@@ -1373,11 +1405,14 @@ const translations = {
     "listings.hours": "Horaires d'ouverture",
     "listings.address": "Adresse",
     "listings.no_data": "Non disponible",
-    "listings.map_placeholder": "Aucune donnée de localisation disponible pour cet établissement.",
-    "listings.reviews_empty": "Aucun avis pour l'instant. Soyez le premier à partager votre expérience !",
+    "listings.map_placeholder":
+        "Aucune donnée de localisation disponible pour cet établissement.",
+    "listings.reviews_empty":
+        "Aucun avis pour l'instant. Soyez le premier à partager votre expérience !",
     "listings.transport_title": "Comment nous rejoindre",
     "listings.reserve_cta": "Réserver votre place",
-    "listings.reserve_integration": "Les réservations en ligne sont en cours de finalisation. Contactez l'établissement directement pour réserver votre place.",
+    "listings.reserve_integration":
+        "Les réservations en ligne sont en cours de finalisation. Contactez l'établissement directement pour réserver votre place.",
     "listings.login_to_proceed": "Connectez-vous pour continuer",
     "listings.open_in_maps": "Ouvrir dans les cartes",
     "listings.reviews_title": "Avis",
@@ -1402,7 +1437,8 @@ const translations = {
     "notifications.title": "Notifications",
     "notifications.mark_all_read": "Tout marquer comme lu",
     "notifications.empty_title": "Aucune notification pour l'instant",
-    "notifications.empty_body": "Les nouvelles annonces, événements et forfaits voyage apparaîtront ici.",
+    "notifications.empty_body":
+        "Les nouvelles annonces, événements et forfaits voyage apparaîtront ici.",
     "notifications.item_prefix": "Notification",
     "home.welcome": "Bienvenue chez INOTRA",
     "home.trip_packages": "Forfaits de voyage",
@@ -1544,6 +1580,10 @@ const translations = {
     "auth.continue": "Continuar",
     "auth.biometric_soon": "Inicio biométrico próximamente",
     "auth.biometric_error": "Error de autenticación biométrica",
+    "auth.biometric_setup_hint":
+        "Inicia sesión una vez con tu contraseña en este dispositivo para activar Face ID la próxima vez.",
+    "auth.biometric_reenable_hint":
+        "Inicia sesión una vez con tu contraseña para volver a activar Face ID en este dispositivo.",
     "auth.sign_in_biometric": "Continuar con Face ID / Biometría",
     "auth.google_soon": "Inicio con Google próximamente",
     "ai.open_conversations": "Abrir conversaciones",
@@ -1623,13 +1663,17 @@ const translations = {
         "Inicia sesión o crea una cuenta para acceder a {feature} y mantener tu experiencia sincronizada.",
     "common.coming_soon": "Próximamente",
     "payments.integration_badge": "Integración de pagos en progreso",
-    "payments.event_description": "El seguimiento de pagos de eventos y la gestión de desembolsos se están integrando. Podrás ver ingresos, descargar facturas y gestionar pagos directamente desde esta pantalla.",
-    "payments.listing_description": "El seguimiento de pagos de anuncios y la gestión de desembolsos se están integrando. Podrás ver ingresos, descargar facturas y gestionar pagos directamente desde esta pantalla.",
+    "payments.event_description":
+        "El seguimiento de pagos de eventos y la gestión de desembolsos se están integrando. Podrás ver ingresos, descargar facturas y gestionar pagos directamente desde esta pantalla.",
+    "payments.listing_description":
+        "El seguimiento de pagos de anuncios y la gestión de desembolsos se están integrando. Podrás ver ingresos, descargar facturas y gestionar pagos directamente desde esta pantalla.",
     "payments.whats_included": "Lo que incluirá esta sección",
     "payments.feature_revenue": "Resumen de ingresos y desglose de ganancias",
     "payments.feature_invoices": "Facturas y recibos descargables",
-    "payments.feature_mobile_money": "Seguimiento de pagos con Mobile Money y tarjeta",
-    "payments.feature_payout": "Programación e historial de transferencias bancarias",
+    "payments.feature_mobile_money":
+        "Seguimiento de pagos con Mobile Money y tarjeta",
+    "payments.feature_payout":
+        "Programación e historial de transferencias bancarias",
     "common.tap_details": "Toca para ver detalles",
     "common.all": "Todo",
     "common.empty": "Nada aquí todavía",
@@ -1664,7 +1708,8 @@ const translations = {
         "Ningún evento coincide con este filtro. Prueba otra opción.",
     "events.tickets": "Entradas",
     "events.buy_ticket": "Comprar entrada",
-    "events.ticket_integration": "La compra de entradas estará disponible pronto. Contacta al organizador directamente para reservar tu lugar.",
+    "events.ticket_integration":
+        "La compra de entradas estará disponible pronto. Contacta al organizador directamente para reservar tu lugar.",
     "chat.type_message": "Escribe un mensaje…",
     "chat.send": "Enviar",
     "terms.title": "Términos y Condiciones",
@@ -1683,11 +1728,14 @@ const translations = {
     "listings.hours": "Horario",
     "listings.address": "Dirección",
     "listings.no_data": "No disponible",
-    "listings.map_placeholder": "No hay datos de ubicación disponibles para este lugar.",
-    "listings.reviews_empty": "Sin reseñas todavía. ¡Sé el primero en compartir tu experiencia!",
+    "listings.map_placeholder":
+        "No hay datos de ubicación disponibles para este lugar.",
+    "listings.reviews_empty":
+        "Sin reseñas todavía. ¡Sé el primero en compartir tu experiencia!",
     "listings.transport_title": "Cómo llegar",
     "listings.reserve_cta": "Reserva tu lugar",
-    "listings.reserve_integration": "Las reservas en línea se están finalizando. Contacta al establecimiento directamente para reservar tu lugar.",
+    "listings.reserve_integration":
+        "Las reservas en línea se están finalizando. Contacta al establecimiento directamente para reservar tu lugar.",
     "listings.login_to_proceed": "Inicia sesión para continuar",
     "listings.open_in_maps": "Abrir en mapas",
     "listings.reviews_title": "Reseñas",
@@ -1712,7 +1760,8 @@ const translations = {
     "notifications.title": "Notificaciones",
     "notifications.mark_all_read": "Marcar todo como leído",
     "notifications.empty_title": "Sin notificaciones aún",
-    "notifications.empty_body": "Los nuevos listados, eventos y paquetes de viaje aparecerán aquí.",
+    "notifications.empty_body":
+        "Los nuevos listados, eventos y paquetes de viaje aparecerán aquí.",
     "notifications.item_prefix": "Notificación",
     "home.welcome": "Bienvenido a INOTRA",
     "home.trip_packages": "Paquetes de viaje",
@@ -1854,6 +1903,10 @@ const translations = {
     "auth.continue": "Weiter",
     "auth.biometric_soon": "Biometrische Anmeldung bald verfügbar",
     "auth.biometric_error": "Biometrische Anmeldung fehlgeschlagen",
+    "auth.biometric_setup_hint":
+        "Melden Sie sich auf diesem Gerät einmal mit Ihrem Passwort an, um Face ID für das nächste Mal zu aktivieren.",
+    "auth.biometric_reenable_hint":
+        "Melden Sie sich einmal mit Ihrem Passwort an, um Face ID auf diesem Gerät wieder zu aktivieren.",
     "auth.sign_in_biometric": "Mit Face ID / Biometrie fortfahren",
     "auth.google_soon": "Google-Anmeldung bald verfügbar",
     "ai.open_conversations": "Unterhaltungen öffnen",
@@ -1933,12 +1986,16 @@ const translations = {
         "Melde dich an oder erstelle ein Konto, um auf {feature} zuzugreifen und dein Erlebnis zu synchronisieren.",
     "common.coming_soon": "Bald verfügbar",
     "payments.integration_badge": "Zahlungsintegration in Arbeit",
-    "payments.event_description": "Die Zahlungsverfolgung für Veranstaltungen und die Auszahlungsverwaltung werden gerade integriert. Du kannst Einnahmen einsehen, Rechnungen herunterladen und Auszahlungen direkt von diesem Bildschirm aus verwalten.",
-    "payments.listing_description": "Die Zahlungsverfolgung für Anzeigen und die Auszahlungsverwaltung werden gerade integriert. Du kannst Einnahmen einsehen, Rechnungen herunterladen und Auszahlungen direkt von diesem Bildschirm aus verwalten.",
+    "payments.event_description":
+        "Die Zahlungsverfolgung für Veranstaltungen und die Auszahlungsverwaltung werden gerade integriert. Du kannst Einnahmen einsehen, Rechnungen herunterladen und Auszahlungen direkt von diesem Bildschirm aus verwalten.",
+    "payments.listing_description":
+        "Die Zahlungsverfolgung für Anzeigen und die Auszahlungsverwaltung werden gerade integriert. Du kannst Einnahmen einsehen, Rechnungen herunterladen und Auszahlungen direkt von diesem Bildschirm aus verwalten.",
     "payments.whats_included": "Was dieser Bereich enthalten wird",
-    "payments.feature_revenue": "Einnahmenübersicht und Aufschlüsselung der Erträge",
+    "payments.feature_revenue":
+        "Einnahmenübersicht und Aufschlüsselung der Erträge",
     "payments.feature_invoices": "Herunterladbare Rechnungen und Quittungen",
-    "payments.feature_mobile_money": "Mobile Money- und Kartenzahlungsverfolgung",
+    "payments.feature_mobile_money":
+        "Mobile Money- und Kartenzahlungsverfolgung",
     "payments.feature_payout": "Banküberweisung planen und Verlauf anzeigen",
     "common.tap_details": "Tippe für Details",
     "common.all": "Alle",
@@ -1971,7 +2028,8 @@ const translations = {
         "Keine Events entsprechen diesem Filter. Wähle eine andere Option.",
     "events.tickets": "Tickets",
     "events.buy_ticket": "Ticket kaufen",
-    "events.ticket_integration": "Der Ticketkauf wird bald verfügbar sein. Wende dich direkt an den Veranstalter, um deinen Platz zu reservieren.",
+    "events.ticket_integration":
+        "Der Ticketkauf wird bald verfügbar sein. Wende dich direkt an den Veranstalter, um deinen Platz zu reservieren.",
     "chat.type_message": "Nachricht eingeben…",
     "chat.send": "Senden",
     "terms.title": "Allgemeine Geschäftsbedingungen",
@@ -1994,10 +2052,12 @@ const translations = {
     "listings.address": "Adresse",
     "listings.no_data": "Nicht verfügbar",
     "listings.map_placeholder": "Keine Standortdaten für diesen Ort verfügbar.",
-    "listings.reviews_empty": "Noch keine Bewertungen. Teile als Erster deine Erfahrung!",
+    "listings.reviews_empty":
+        "Noch keine Bewertungen. Teile als Erster deine Erfahrung!",
     "listings.transport_title": "So erreichst du uns",
     "listings.reserve_cta": "Reserviere deinen Platz",
-    "listings.reserve_integration": "Online-Reservierungen werden gerade finalisiert. Wende dich direkt an das Inserat, um deinen Platz zu buchen.",
+    "listings.reserve_integration":
+        "Online-Reservierungen werden gerade finalisiert. Wende dich direkt an das Inserat, um deinen Platz zu buchen.",
     "listings.login_to_proceed": "Zum Fortfahren anmelden",
     "listings.open_in_maps": "In Karten öffnen",
     "listings.reviews_title": "Bewertungen",
@@ -2022,7 +2082,8 @@ const translations = {
     "notifications.title": "Benachrichtigungen",
     "notifications.mark_all_read": "Alle als gelesen markieren",
     "notifications.empty_title": "Noch keine Benachrichtigungen",
-    "notifications.empty_body": "Neue Angebote, Veranstaltungen und Reisepakete werden hier angezeigt.",
+    "notifications.empty_body":
+        "Neue Angebote, Veranstaltungen und Reisepakete werden hier angezeigt.",
     "notifications.item_prefix": "Benachrichtigung",
     "home.welcome": "Willkommen bei INOTRA",
     "home.trip_packages": "Reisepakete",
