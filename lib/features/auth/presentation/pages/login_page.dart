@@ -30,7 +30,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _identifier = TextEditingController();
   final _password = TextEditingController();
@@ -42,11 +42,15 @@ class _LoginPageState extends State<LoginPage> {
   bool _biometricChecked = false;
   bool _biometricAvailable = false;
   bool _biometricEnabled = false;
+  BiometricPresentationKind _biometricPresentation =
+      BiometricPresentationKind.biometrics;
   late final GoogleSignIn _googleSignIn;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    BiometricService.instance.changes.addListener(_handleBiometricStateChanged);
     final iosClient = (!kIsWeb && Platform.isIOS)
         ? "859455003917-g57ugmgdbdbch1kur95ssq3ma0i9dvgo.apps.googleusercontent.com"
         : null;
@@ -58,16 +62,36 @@ class _LoginPageState extends State<LoginPage> {
     _checkBiometrics();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkBiometrics();
+    }
+  }
+
+  void _handleBiometricStateChanged() {
+    _checkBiometrics();
+  }
+
   Future<void> _checkBiometrics() async {
-    final available = await BiometricService.instance.isAvailable();
-    final enabled = available && await BiometricService.instance.isEnabled();
+    final status = await BiometricService.instance.getStatus();
     if (mounted) {
       setState(() {
         _biometricChecked = true;
-        _biometricAvailable = available;
-        _biometricEnabled = enabled;
+        _biometricAvailable = status.available;
+        _biometricEnabled = status.enabled;
+        _biometricPresentation = status.presentation;
       });
     }
+  }
+
+  String _biometricTitle() {
+    return switch (_biometricPresentation) {
+      BiometricPresentationKind.faceId => tr("biometric.face_id"),
+      BiometricPresentationKind.touchId => tr("biometric.touch_id"),
+      BiometricPresentationKind.fingerprint => tr("biometric.fingerprint"),
+      BiometricPresentationKind.biometrics => tr("biometric.generic"),
+    };
   }
 
   Future<void> _disableBiometricLogin(String message) async {
@@ -87,6 +111,10 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    BiometricService.instance.changes.removeListener(
+      _handleBiometricStateChanged,
+    );
     _identifier.dispose();
     _password.dispose();
     super.dispose();
@@ -416,11 +444,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onSurface = scheme.onSurface;
-    final biometricStatusLabel = !_biometricAvailable
-        ? tr("settings.biometric_unavailable_label")
-        : (_biometricEnabled
-              ? tr("settings.biometric_active_label")
-              : tr("settings.biometric_inactive_label"));
+    final biometricStatusLabel =
+        "${_biometricTitle()} • ${!_biometricAvailable ? tr("settings.biometric_unavailable_label") : (_biometricEnabled ? tr("settings.biometric_active_label") : tr("settings.biometric_inactive_label"))}";
     final biometricStatusMessage = !_biometricAvailable
         ? tr("settings.biometric_unavailable")
         : (_biometricEnabled
