@@ -12,6 +12,10 @@ const translations = {
     "settings.help": "Help Center",
     "settings.support": "Contact Support",
     "settings.security": "Security",
+    "biometric.face_id": "Face ID",
+    "biometric.touch_id": "Touch ID",
+    "biometric.fingerprint": "Fingerprint",
+    "biometric.generic": "Biometrics",
     "settings.theme_subtitle": "Light / Dark",
     "settings.app_version": "App version",
     "settings.biometric_title": "Face ID / Biometrics",
@@ -21,15 +25,15 @@ const translations = {
     "settings.biometric_enabled_subtitle":
         "Quick sign-in is enabled on this device.",
     "settings.biometric_disabled_subtitle":
-        "Turn this on to unlock your saved session with Face ID.",
+        "Turn this on to unlock your saved session with biometrics.",
     "settings.biometric_unavailable":
-        "This device does not currently have Face ID or biometrics ready.",
+        "This device does not currently have biometric sign-in ready.",
     "settings.biometric_enabled_toast":
-        "Face ID is now enabled for quick sign-in on this device.",
+        "Biometric quick sign-in is now enabled on this device.",
     "settings.biometric_disabled_toast":
-        "Face ID has been disabled for this device.",
+        "Biometric quick sign-in has been disabled on this device.",
     "settings.biometric_sign_in_first":
-        "Sign in again before enabling Face ID on this device.",
+        "Sign in again before enabling biometric quick sign-in on this device.",
     "theme.light": "Light",
     "theme.dark": "Dark",
     "theme.system": "System",
@@ -109,10 +113,10 @@ const translations = {
     "auth.biometric_soon": "Biometric sign-in coming soon",
     "auth.biometric_error": "Biometric sign-in failed",
     "auth.biometric_setup_hint":
-        "Sign in once on this device to enable Face ID the next time you return.",
+        "Sign in once on this device to enable biometric quick sign-in the next time you return.",
     "auth.biometric_reenable_hint":
-        "Sign in again on this device to re-enable Face ID.",
-    "auth.sign_in_biometric": "Continue with Face ID / Biometrics",
+        "Sign in again on this device to re-enable biometric quick sign-in.",
+    "auth.sign_in_biometric": "Continue with {biometric}",
     "auth.google_soon": "Google login coming soon",
     "ai.assistant_name": "INOTRA AI",
     "ai.assistant_status": "Smart trip planning assistant",
@@ -879,6 +883,10 @@ const translations = {
     "settings.help": "Ikigo cy'Ubufasha",
     "settings.support": "Vugana natwe",
     "settings.security": "Umutekano",
+    "biometric.face_id": "Face ID",
+    "biometric.touch_id": "Touch ID",
+    "biometric.fingerprint": "Igikumwe",
+    "biometric.generic": "Ibimenyetso by'umubiri",
     "settings.theme_subtitle": "Urumuri / Umwijima",
     "settings.app_version": "Verisiyo ya porogaramu",
     "settings.biometric_title": "Face ID / Ibimenyetso by'umubiri",
@@ -888,15 +896,15 @@ const translations = {
     "settings.biometric_enabled_subtitle":
         "Kwinjira vuba kuri iki gikoresho byarakoreshejwe.",
     "settings.biometric_disabled_subtitle":
-        "Bifungure kugira ngo ufunguze session yawe wabitse ukoresheje Face ID.",
+        "Bifungure kugira ngo ufunguze session yawe wabitse ukoresheje ibimenyetso by'umubiri.",
     "settings.biometric_unavailable":
-        "Iki gikoresho ntikirategurirwaho Face ID cyangwa ibimenyetso by'umubiri.",
+        "Iki gikoresho ntikirategurirwaho kwinjira ukoresheje ibimenyetso by'umubiri.",
     "settings.biometric_enabled_toast":
-        "Face ID yemerewe kwinjira vuba kuri iki gikoresho.",
+        "Kwinjira vuba ukoresheje ibimenyetso by'umubiri byemerewe kuri iki gikoresho.",
     "settings.biometric_disabled_toast":
-        "Face ID yahagaritswe kuri iki gikoresho.",
+        "Kwinjira vuba ukoresheje ibimenyetso by'umubiri byahagaritswe kuri iki gikoresho.",
     "settings.biometric_sign_in_first":
-        "Injira nanone mbere yo gukoresha Face ID kuri iki gikoresho.",
+        "Injira nanone mbere yo gukoresha kwinjira vuba ukoresheje ibimenyetso by'umubiri kuri iki gikoresho.",
     "theme.light": "Urumuri",
     "theme.dark": "Umwijima",
     "theme.system": "By'igikoresho",
@@ -972,10 +980,10 @@ const translations = {
     "auth.biometric_soon": "Gusinya n'ibikumwe biraje",
     "auth.biometric_error": "Kwinjira binyuze ibikumwe byanze",
     "auth.biometric_setup_hint":
-        "Injira rimwe kuri iki gikoresho kugira ngo Face ID izakore ubwo uzagaruka ubutaha.",
+        "Injira rimwe kuri iki gikoresho kugira ngo kwinjira vuba ukoresheje ibimenyetso by'umubiri bizakore ubwo uzagaruka ubutaha.",
     "auth.biometric_reenable_hint":
-        "Injira nanone kuri iki gikoresho kugira ngo wongere ukoreshe Face ID.",
-    "auth.sign_in_biometric": "Komeza na Face ID / Ibikumwe",
+        "Injira nanone kuri iki gikoresho kugira ngo wongere ukoreshe kwinjira vuba ukoresheje ibimenyetso by'umubiri.",
+    "auth.sign_in_biometric": "Komeza ukoresheje {biometric}",
     "auth.google_soon": "Kwinjira na Google biraje",
     "ai.open_conversations": "Fungura ibiganiro",
     "ai.rep_typing": "Umuhagarariye wawe ariyandikira...",
@@ -1212,6 +1220,10 @@ const translations = {
     "settings.help": "Centre d'aide",
     "settings.support": "Contacter le support",
     "settings.security": "Sécurité",
+    "biometric.face_id": "Face ID",
+    "biometric.touch_id": "Touch ID",
+    "biometric.fingerprint": "Empreinte digitale",
+    "biometric.generic": "Biométrie",
     "settings.theme_subtitle": "Clair / Sombre",
     "settings.app_version": "Version de l'application",
     "settings.biometric_title": "Face ID / Biométrie",
@@ -1221,15 +1233,15 @@ const translations = {
     "settings.biometric_enabled_subtitle":
         "La connexion rapide est activée sur cet appareil.",
     "settings.biometric_disabled_subtitle":
-        "Activez cette option pour déverrouiller votre session enregistrée avec Face ID.",
+        "Activez cette option pour déverrouiller votre session enregistrée avec la biométrie.",
     "settings.biometric_unavailable":
-        "Face ID ou la biométrie n'est pas disponible sur cet appareil pour le moment.",
+        "La connexion biométrique n'est pas disponible sur cet appareil pour le moment.",
     "settings.biometric_enabled_toast":
-        "Face ID est désormais activé pour la connexion rapide sur cet appareil.",
+        "La connexion biométrique rapide est désormais activée sur cet appareil.",
     "settings.biometric_disabled_toast":
-        "Face ID a été désactivé sur cet appareil.",
+        "La connexion biométrique rapide a été désactivée sur cet appareil.",
     "settings.biometric_sign_in_first":
-        "Reconnectez-vous avant d'activer Face ID sur cet appareil.",
+        "Reconnectez-vous avant d'activer la connexion biométrique rapide sur cet appareil.",
     "theme.light": "Clair",
     "theme.dark": "Sombre",
     "theme.system": "Système",
@@ -1307,10 +1319,10 @@ const translations = {
     "auth.biometric_soon": "Connexion biométrique bientôt disponible",
     "auth.biometric_error": "Échec de la connexion biométrique",
     "auth.biometric_setup_hint":
-        "Connectez-vous une fois sur cet appareil pour activer Face ID lors de votre prochaine visite.",
+        "Connectez-vous une fois sur cet appareil pour activer la connexion biométrique rapide lors de votre prochaine visite.",
     "auth.biometric_reenable_hint":
-        "Reconnectez-vous sur cet appareil pour réactiver Face ID.",
-    "auth.sign_in_biometric": "Continuer avec Face ID / Biométrie",
+        "Reconnectez-vous sur cet appareil pour réactiver la connexion biométrique rapide.",
+    "auth.sign_in_biometric": "Continuer avec {biometric}",
     "auth.google_soon": "Connexion Google bientôt disponible",
     "ai.open_conversations": "Ouvrir les conversations",
     "ai.rep_typing": "Votre représentant est en train d'écrire...",
@@ -1555,6 +1567,10 @@ const translations = {
     "settings.help": "Centro de ayuda",
     "settings.support": "Contactar soporte",
     "settings.security": "Seguridad",
+    "biometric.face_id": "Face ID",
+    "biometric.touch_id": "Touch ID",
+    "biometric.fingerprint": "Huella digital",
+    "biometric.generic": "Biometría",
     "settings.theme_subtitle": "Claro / Oscuro",
     "settings.app_version": "Versión de la aplicación",
     "settings.biometric_title": "Face ID / Biometría",
@@ -1565,15 +1581,15 @@ const translations = {
     "settings.biometric_enabled_subtitle":
         "El acceso rápido está activado en este dispositivo.",
     "settings.biometric_disabled_subtitle":
-        "Actívalo para desbloquear tu sesión guardada con Face ID.",
+        "Actívalo para desbloquear tu sesión guardada con biometría.",
     "settings.biometric_unavailable":
-        "Este dispositivo no tiene Face ID o biometría disponible en este momento.",
+        "El acceso biométrico no está disponible en este dispositivo en este momento.",
     "settings.biometric_enabled_toast":
-        "Face ID ya está activado para el acceso rápido en este dispositivo.",
+        "El acceso biométrico rápido ya está activado en este dispositivo.",
     "settings.biometric_disabled_toast":
-        "Face ID se ha desactivado en este dispositivo.",
+        "El acceso biométrico rápido se ha desactivado en este dispositivo.",
     "settings.biometric_sign_in_first":
-        "Vuelve a iniciar sesión antes de activar Face ID en este dispositivo.",
+        "Vuelve a iniciar sesión antes de activar el acceso biométrico rápido en este dispositivo.",
     "theme.light": "Claro",
     "theme.dark": "Oscuro",
     "theme.system": "Sistema",
@@ -1650,10 +1666,10 @@ const translations = {
     "auth.biometric_soon": "Inicio biométrico próximamente",
     "auth.biometric_error": "Error de autenticación biométrica",
     "auth.biometric_setup_hint":
-        "Inicia sesión una vez en este dispositivo para activar Face ID la próxima vez que regreses.",
+        "Inicia sesión una vez en este dispositivo para activar el acceso biométrico rápido la próxima vez que regreses.",
     "auth.biometric_reenable_hint":
-        "Vuelve a iniciar sesión en este dispositivo para reactivar Face ID.",
-    "auth.sign_in_biometric": "Continuar con Face ID / Biometría",
+        "Vuelve a iniciar sesión en este dispositivo para reactivar el acceso biométrico rápido.",
+    "auth.sign_in_biometric": "Continuar con {biometric}",
     "auth.google_soon": "Inicio con Google próximamente",
     "ai.open_conversations": "Abrir conversaciones",
     "ai.rep_typing": "Tu representante está escribiendo...",
@@ -1895,6 +1911,10 @@ const translations = {
     "settings.help": "Hilfecenter",
     "settings.support": "Support kontaktieren",
     "settings.security": "Sicherheit",
+    "biometric.face_id": "Face ID",
+    "biometric.touch_id": "Touch ID",
+    "biometric.fingerprint": "Fingerabdruck",
+    "biometric.generic": "Biometrie",
     "settings.theme_subtitle": "Hell / Dunkel",
     "settings.app_version": "App-Version",
     "settings.biometric_title": "Face ID / Biometrie",
@@ -1904,15 +1924,15 @@ const translations = {
     "settings.biometric_enabled_subtitle":
         "Die Schnellanmeldung ist auf diesem Gerät aktiviert.",
     "settings.biometric_disabled_subtitle":
-        "Aktivieren Sie dies, um Ihre gespeicherte Sitzung mit Face ID zu entsperren.",
+        "Aktivieren Sie dies, um Ihre gespeicherte Sitzung mit Biometrie zu entsperren.",
     "settings.biometric_unavailable":
-        "Face ID oder Biometrie ist auf diesem Gerät derzeit nicht verfügbar.",
+        "Die biometrische Anmeldung ist auf diesem Gerät derzeit nicht verfügbar.",
     "settings.biometric_enabled_toast":
-        "Face ID ist jetzt für die Schnellanmeldung auf diesem Gerät aktiviert.",
+        "Die biometrische Schnellanmeldung ist auf diesem Gerät jetzt aktiviert.",
     "settings.biometric_disabled_toast":
-        "Face ID wurde auf diesem Gerät deaktiviert.",
+        "Die biometrische Schnellanmeldung wurde auf diesem Gerät deaktiviert.",
     "settings.biometric_sign_in_first":
-        "Melden Sie sich erneut an, bevor Sie Face ID auf diesem Gerät aktivieren.",
+        "Melden Sie sich erneut an, bevor Sie die biometrische Schnellanmeldung auf diesem Gerät aktivieren.",
     "theme.light": "Hell",
     "theme.dark": "Dunkel",
     "theme.system": "System",
@@ -1990,10 +2010,10 @@ const translations = {
     "auth.biometric_soon": "Biometrische Anmeldung bald verfügbar",
     "auth.biometric_error": "Biometrische Anmeldung fehlgeschlagen",
     "auth.biometric_setup_hint":
-        "Melden Sie sich einmal auf diesem Gerät an, um Face ID für Ihren nächsten Besuch zu aktivieren.",
+        "Melden Sie sich einmal auf diesem Gerät an, um die biometrische Schnellanmeldung für Ihren nächsten Besuch zu aktivieren.",
     "auth.biometric_reenable_hint":
-        "Melden Sie sich auf diesem Gerät erneut an, um Face ID wieder zu aktivieren.",
-    "auth.sign_in_biometric": "Mit Face ID / Biometrie fortfahren",
+        "Melden Sie sich auf diesem Gerät erneut an, um die biometrische Schnellanmeldung wieder zu aktivieren.",
+    "auth.sign_in_biometric": "Mit {biometric} fortfahren",
     "auth.google_soon": "Google-Anmeldung bald verfügbar",
     "ai.open_conversations": "Unterhaltungen öffnen",
     "ai.rep_typing": "Ihr Ansprechpartner schreibt gerade...",
