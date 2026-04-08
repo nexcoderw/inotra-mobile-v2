@@ -184,26 +184,69 @@ class _BiometricProfileCard extends StatefulWidget {
   State<_BiometricProfileCard> createState() => _BiometricProfileCardState();
 }
 
-class _BiometricProfileCardState extends State<_BiometricProfileCard> {
+class _BiometricProfileCardState extends State<_BiometricProfileCard>
+    with WidgetsBindingObserver {
   bool _checked = false;
   bool _available = false;
   bool _enabled = false;
+  BiometricPresentationKind _presentation =
+      BiometricPresentationKind.biometrics;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    BiometricService.instance.changes.addListener(_handleBiometricStateChanged);
+    _load();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _load();
+    }
+  }
+
+  void _handleBiometricStateChanged() {
     _load();
   }
 
   Future<void> _load() async {
-    final available = await BiometricService.instance.isAvailable();
-    final enabled = available && await BiometricService.instance.isEnabled();
+    final status = await BiometricService.instance.getStatus();
     if (!mounted) return;
     setState(() {
       _checked = true;
-      _available = available;
-      _enabled = enabled;
+      _available = status.available;
+      _enabled = status.enabled;
+      _presentation = status.presentation;
     });
+  }
+
+  String _biometricTitle(String lang) {
+    return switch (_presentation) {
+      BiometricPresentationKind.faceId => t(lang, "biometric.face_id"),
+      BiometricPresentationKind.touchId => t(lang, "biometric.touch_id"),
+      BiometricPresentationKind.fingerprint => t(lang, "biometric.fingerprint"),
+      BiometricPresentationKind.biometrics => t(lang, "biometric.generic"),
+    };
+  }
+
+  dynamic _biometricIcon() {
+    return switch (_presentation) {
+      BiometricPresentationKind.faceId => HugeIcons.strokeRoundedFaceId,
+      BiometricPresentationKind.touchId ||
+      BiometricPresentationKind.fingerprint => Icons.fingerprint_rounded,
+      BiometricPresentationKind.biometrics => Icons.lock_open_rounded,
+    };
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    BiometricService.instance.changes.removeListener(
+      _handleBiometricStateChanged,
+    );
+    super.dispose();
   }
 
   @override
@@ -230,7 +273,7 @@ class _BiometricProfileCardState extends State<_BiometricProfileCard> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _IconBadge(icon: HugeIcons.strokeRoundedFaceId, color: accent),
+          _IconBadge(icon: _biometricIcon(), color: accent),
           const SizedBox(width: 10),
           Expanded(
             child: !_checked
@@ -246,7 +289,7 @@ class _BiometricProfileCardState extends State<_BiometricProfileCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        t(lang, "settings.biometric_title"),
+                        _biometricTitle(lang),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
