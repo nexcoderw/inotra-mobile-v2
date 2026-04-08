@@ -1,4 +1,6 @@
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
+import "package:flutter/services.dart";
+import "package:local_auth/error_codes.dart" as auth_error;
 import "package:local_auth/local_auth.dart";
 
 /// Manages biometric authentication and secure credential storage.
@@ -94,16 +96,87 @@ class BiometricService {
   ///
   /// Returns true if the user was successfully authenticated.
   Future<bool> authenticate() async {
+    final result = await authenticateWithResult();
+    return result.isAuthenticated;
+  }
+
+  /// Returns the biometric prompt outcome together with a user-facing message
+  /// when the failure was actionable.
+  Future<BiometricAuthResult> authenticateWithResult() async {
     try {
-      return await _auth.authenticate(
+      final authenticated = await _auth.authenticate(
         localizedReason: "Sign in to Inotra",
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false,
         ),
       );
+      return BiometricAuthResult(
+        isAuthenticated: authenticated,
+        message: authenticated ? null : "Biometric sign-in was cancelled.",
+        shouldShowMessage: false,
+      );
+    } on PlatformException catch (error) {
+      return _mapPlatformException(error);
     } catch (_) {
-      return false;
+      return const BiometricAuthResult(
+        isAuthenticated: false,
+        message:
+            "Face ID is currently unavailable. Please use your password and try again later.",
+      );
     }
   }
+
+  BiometricAuthResult _mapPlatformException(PlatformException error) {
+    switch (error.code) {
+      case auth_error.notAvailable:
+        return const BiometricAuthResult(
+          isAuthenticated: false,
+          message: "This device does not support Face ID or biometric sign-in.",
+        );
+      case auth_error.notEnrolled:
+        return const BiometricAuthResult(
+          isAuthenticated: false,
+          message:
+              "No Face ID or biometric profile is enrolled on this device yet.",
+        );
+      case auth_error.passcodeNotSet:
+        return const BiometricAuthResult(
+          isAuthenticated: false,
+          message:
+              "Set a device passcode first, then enable Face ID and try again.",
+        );
+      case auth_error.lockedOut:
+        return const BiometricAuthResult(
+          isAuthenticated: false,
+          message:
+              "Face ID is temporarily locked. Unlock your device, then try again.",
+        );
+      case auth_error.permanentlyLockedOut:
+        return const BiometricAuthResult(
+          isAuthenticated: false,
+          message:
+              "Face ID is locked. Unlock your device with your passcode, then try again.",
+        );
+      default:
+        return BiometricAuthResult(
+          isAuthenticated: false,
+          message: error.message?.trim().isNotEmpty == true
+              ? error.message!.trim()
+              : "Face ID is currently unavailable. Please use your password and try again.",
+        );
+    }
+  }
+}
+
+class BiometricAuthResult {
+  final bool isAuthenticated;
+  final String? message;
+  final bool shouldShowMessage;
+
+  const BiometricAuthResult({
+    required this.isAuthenticated,
+    this.message,
+    this.shouldShowMessage = true,
+  });
 }
