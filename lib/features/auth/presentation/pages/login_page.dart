@@ -39,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscure = true;
   bool _isBusy = false;
   String? _error;
+  bool _biometricChecked = false;
   bool _biometricAvailable = false;
   bool _biometricEnabled = false;
   late final GoogleSignIn _googleSignIn;
@@ -62,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
     final enabled = available && await BiometricService.instance.isEnabled();
     if (mounted) {
       setState(() {
+        _biometricChecked = true;
         _biometricAvailable = available;
         _biometricEnabled = enabled;
       });
@@ -414,7 +416,16 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onSurface = scheme.onSurface;
-    final biometricNeedsSetup = _biometricAvailable && !_biometricEnabled;
+    final biometricStatusLabel = !_biometricAvailable
+        ? tr("settings.biometric_unavailable_label")
+        : (_biometricEnabled
+              ? tr("settings.biometric_active_label")
+              : tr("settings.biometric_inactive_label"));
+    final biometricStatusMessage = !_biometricAvailable
+        ? tr("settings.biometric_unavailable")
+        : (_biometricEnabled
+              ? tr("settings.biometric_enabled_subtitle")
+              : tr("auth.biometric_setup_hint"));
 
     return AuthScaffold(
       child: Form(
@@ -555,9 +566,17 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
 
-              if (biometricNeedsSetup) ...[
+              if (_biometricChecked) ...[
                 const SizedBox(height: 10),
-                _BiometricHint(message: tr("auth.biometric_setup_hint")),
+                _BiometricHint(
+                  label: biometricStatusLabel,
+                  message: biometricStatusMessage,
+                  tone: !_biometricAvailable
+                      ? _BiometricHintTone.unavailable
+                      : (_biometricEnabled
+                            ? _BiometricHintTone.active
+                            : _BiometricHintTone.inactive),
+                ),
               ],
 
               const SizedBox(height: 18),
@@ -914,34 +933,47 @@ class _IconCircleButton extends StatelessWidget {
   }
 }
 
-class _BiometricHint extends StatelessWidget {
-  final String message;
+enum _BiometricHintTone { active, inactive, unavailable }
 
-  const _BiometricHint({required this.message});
+class _BiometricHint extends StatelessWidget {
+  final String label;
+  final String message;
+  final _BiometricHintTone tone;
+
+  const _BiometricHint({
+    required this.label,
+    required this.message,
+    required this.tone,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final accent = switch (tone) {
+      _BiometricHintTone.active => scheme.primary,
+      _BiometricHintTone.inactive => scheme.secondary,
+      _BiometricHintTone.unavailable => scheme.outline,
+    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.08),
+        color: accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
+        border: Border.all(color: accent.withValues(alpha: 0.14)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, size: 15, color: scheme.primary),
+          Icon(Icons.info_outline_rounded, size: 15, color: accent),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              message,
+              "$label\n$message",
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
-                height: 1.3,
+                height: 1.35,
                 color: scheme.onSurface.withValues(alpha: 0.82),
               ),
             ),
