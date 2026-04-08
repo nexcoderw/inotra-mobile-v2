@@ -1,5 +1,7 @@
 import "dart:convert";
+import "dart:io" show Platform;
 
+import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:http/http.dart" as http;
@@ -23,10 +25,13 @@ class BiometricService {
   static const _keySession = "bio.session";
 
   final _auth = LocalAuthentication();
+  final ValueNotifier<int> _revision = ValueNotifier(0);
 
   final _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
+
+  ValueListenable<int> get changes => _revision;
 
   // ---------------------------------------------------------------------------
   // Availability
@@ -46,6 +51,40 @@ class BiometricService {
   Future<bool> isEnabled() async {
     final session = await getSession();
     return session != null;
+  }
+
+  Future<BiometricPresentationKind> getPresentationKind() async {
+    try {
+      final enrolled = await _auth.getAvailableBiometrics();
+      if (enrolled.contains(BiometricType.face)) {
+        return BiometricPresentationKind.faceId;
+      }
+      if (enrolled.contains(BiometricType.fingerprint)) {
+        if (!kIsWeb && Platform.isIOS) {
+          return BiometricPresentationKind.touchId;
+        }
+        return BiometricPresentationKind.fingerprint;
+      }
+      if (enrolled.isNotEmpty) {
+        return BiometricPresentationKind.biometrics;
+      }
+    } catch (_) {}
+
+    if (!kIsWeb && Platform.isIOS) {
+      return BiometricPresentationKind.faceId;
+    }
+    return BiometricPresentationKind.biometrics;
+  }
+
+  Future<BiometricStatusSnapshot> getStatus() async {
+    final available = await isAvailable();
+    final enabled = available && await isEnabled();
+    final presentation = await getPresentationKind();
+    return BiometricStatusSnapshot(
+      available: available,
+      enabled: enabled,
+      presentation: presentation,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -69,6 +108,7 @@ class BiometricService {
     });
 
     await _storage.write(key: _keySession, value: payload);
+    _notifyChanged();
   }
 
   Future<BiometricStoredSession?> getSession() async {
@@ -109,6 +149,7 @@ class BiometricService {
 
   Future<void> clear() async {
     await _storage.delete(key: _keySession);
+    _notifyChanged();
   }
 
   Future<BiometricUnlockResult> unlockSession() async {
@@ -192,6 +233,10 @@ class BiometricService {
     }
   }
 
+  void _notifyChanged() {
+    _revision.value++;
+  }
+
   Future<Map<String, dynamic>?> _fetchCurrentUser(String accessToken) async {
     try {
       final response = await http
@@ -248,7 +293,7 @@ class BiometricService {
       return const BiometricAuthResult(
         isAuthenticated: false,
         message:
-            "Face ID is currently unavailable. Please use your password and try again later.",
+            "Biometric sign-in is currently unavailable. Please use your password and try again later.",
       );
     }
   }
@@ -258,38 +303,37 @@ class BiometricService {
       case auth_error.notAvailable:
         return const BiometricAuthResult(
           isAuthenticated: false,
-          message: "This device does not support Face ID or biometric sign-in.",
+          message: "This device does not support biometric sign-in.",
         );
       case auth_error.notEnrolled:
         return const BiometricAuthResult(
           isAuthenticated: false,
-          message:
-              "No Face ID or biometric profile is enrolled on this device yet.",
+          message: "No biometric profile is enrolled on this device yet.",
         );
       case auth_error.passcodeNotSet:
         return const BiometricAuthResult(
           isAuthenticated: false,
           message:
-              "Set a device passcode first, then enable Face ID and try again.",
+              "Set a device passcode first, then enable biometrics and try again.",
         );
       case auth_error.lockedOut:
         return const BiometricAuthResult(
           isAuthenticated: false,
           message:
-              "Face ID is temporarily locked. Unlock your device, then try again.",
+              "Biometric sign-in is temporarily locked. Unlock your device, then try again.",
         );
       case auth_error.permanentlyLockedOut:
         return const BiometricAuthResult(
           isAuthenticated: false,
           message:
-              "Face ID is locked. Unlock your device with your passcode, then try again.",
+              "Biometric sign-in is locked. Unlock your device with your passcode, then try again.",
         );
       default:
         return BiometricAuthResult(
           isAuthenticated: false,
           message: error.message?.trim().isNotEmpty == true
               ? error.message!.trim()
-              : "Face ID is currently unavailable. Please use your password and try again.",
+              : "Biometric sign-in is currently unavailable. Please use your password and try again.",
         );
     }
   }
@@ -306,6 +350,20 @@ class BiometricStoredSession {
     required this.theme,
   });
 }
+
+class BiometricStatusSnapshot {
+  final bool available;
+  final bool enabled;
+  final BiometricPresentationKind presentation;
+
+  const BiometricStatusSnapshot({
+    required this.available,
+    required this.enabled,
+    required this.presentation,
+  });
+}
+
+enum BiometricPresentationKind { faceId, touchId, fingerprint, biometrics }
 
 enum BiometricUnlockStatus {
   success,
