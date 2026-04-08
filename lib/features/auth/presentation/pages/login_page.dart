@@ -68,6 +68,21 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _disableBiometricLogin(String message) async {
+    await BiometricService.instance.clear();
+    await _checkBiometrics();
+    if (!mounted) return;
+    toastification.show(
+      context: context,
+      type: ToastificationType.info,
+      style: ToastificationStyle.fillColored,
+      title: Text(tr("auth.biometric_error")),
+      description: Text(message),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 4),
+    );
+  }
+
   @override
   void dispose() {
     _identifier.dispose();
@@ -75,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _onLogin() async {
+  Future<void> _onLogin({bool fromBiometric = false}) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -104,7 +119,11 @@ class _LoginPageState extends State<LoginPage> {
         final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
         final user = body?["user"] as Map<String, dynamic>? ?? {};
 
-        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        await AuthStorage.saveSession(
+          tokens: tokens,
+          user: user,
+          theme: "light",
+        );
         AuthSession.instance.signIn(
           user: user,
           accessToken: tokens["access"] as String? ?? "",
@@ -134,6 +153,13 @@ class _LoginPageState extends State<LoginPage> {
 
       final detail = _extractError(response);
       _error = detail;
+
+      if (fromBiometric &&
+          response.statusCode >= 400 &&
+          response.statusCode < 500) {
+        await _disableBiometricLogin(tr("auth.biometric_reenable_hint"));
+        return;
+      }
 
       if (!mounted) return;
       toastification.show(
@@ -172,14 +198,32 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final authenticated = await BiometricService.instance.authenticate();
-      if (!authenticated) {
+      if (!_biometricAvailable || !_biometricEnabled) {
+        await _disableBiometricLogin(tr("auth.biometric_setup_hint"));
         if (mounted) setState(() => _isBusy = false);
+        return;
+      }
+
+      final result = await BiometricService.instance.authenticateWithResult();
+      if (!result.isAuthenticated) {
+        if (mounted) setState(() => _isBusy = false);
+        if (result.shouldShowMessage && mounted && result.message != null) {
+          toastification.show(
+            context: context,
+            type: ToastificationType.info,
+            style: ToastificationStyle.fillColored,
+            title: Text(tr("auth.biometric_error")),
+            description: Text(result.message!),
+            alignment: Alignment.topCenter,
+            autoCloseDuration: const Duration(seconds: 4),
+          );
+        }
         return;
       }
 
       final creds = await BiometricService.instance.getCredentials();
       if (creds == null) {
+        await _disableBiometricLogin(tr("auth.biometric_setup_hint"));
         if (mounted) setState(() => _isBusy = false);
         return;
       }
@@ -189,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
 
       // Delegate entirely to the existing login method — it owns the busy
       // state from this point and will set _isBusy = false in its finally.
-      await _onLogin();
+      await _onLogin(fromBiometric: true);
     } catch (e) {
       if (mounted) {
         setState(() => _isBusy = false);
@@ -254,7 +298,11 @@ class _LoginPageState extends State<LoginPage> {
         final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
         final user = body?["user"] as Map<String, dynamic>? ?? {};
 
-        await AuthStorage.saveSession(tokens: tokens, user: user, theme: "light");
+        await AuthStorage.saveSession(
+          tokens: tokens,
+          user: user,
+          theme: "light",
+        );
         AuthSession.instance.signIn(
           user: user,
           accessToken: tokens["access"] as String? ?? "",
@@ -307,6 +355,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final onSurface = scheme.onSurface;
+    final biometricNeedsSetup = _biometricAvailable && !_biometricEnabled;
 
     return AuthScaffold(
       child: Form(
@@ -343,7 +392,10 @@ class _LoginPageState extends State<LoginPage> {
               ],
 
               // Identifier
-              AuthUI.label(tr("auth.identifier"), color: onSurface.withValues(alpha: 0.92)),
+              AuthUI.label(
+                tr("auth.identifier"),
+                color: onSurface.withValues(alpha: 0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _identifier,
@@ -359,7 +411,10 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 14),
 
               // Password
-              AuthUI.label(tr("auth.password"), color: onSurface.withValues(alpha: 0.92)),
+              AuthUI.label(
+                tr("auth.password"),
+                color: onSurface.withValues(alpha: 0.92),
+              ),
               const SizedBox(height: 10),
               _GlassField(
                 controller: _password,
@@ -368,7 +423,9 @@ class _LoginPageState extends State<LoginPage> {
                 enabled: !_isBusy,
                 prefixIcon: HugeIcons.strokeRoundedLockPassword,
                 suffix: IconButton(
-                  onPressed: _isBusy ? null : () => setState(() => _obscure = !_obscure),
+                  onPressed: _isBusy
+                      ? null
+                      : () => setState(() => _obscure = !_obscure),
                   icon: HugeIcon(
                     icon: _obscure
                         ? HugeIcons.strokeRoundedViewOff
@@ -397,7 +454,10 @@ class _LoginPageState extends State<LoginPage> {
                   TextButton(
                     onPressed: _isBusy
                         ? null
-                        : () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                        : () => Navigator.pushNamed(
+                            context,
+                            AppRoutes.forgotPassword,
+                          ),
                     child: Text(
                       tr("auth.forgot_password"),
                       style: TextStyle(
@@ -428,12 +488,18 @@ class _LoginPageState extends State<LoginPage> {
                   _IconCircleButton(
                     icon: HugeIcons.strokeRoundedFaceId,
                     busy: _isBusy,
-                    onTap: (!_biometricAvailable || _isBusy)
+                    onTap:
+                        (!_biometricAvailable || !_biometricEnabled || _isBusy)
                         ? null
                         : _onBiometricLogin,
                   ),
                 ],
               ),
+
+              if (biometricNeedsSetup) ...[
+                const SizedBox(height: 10),
+                _BiometricHint(message: tr("auth.biometric_setup_hint")),
+              ],
 
               const SizedBox(height: 18),
 
@@ -463,7 +529,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   InkWell(
-                    onTap: _isBusy ? null : () => Navigator.pushNamed(context, AppRoutes.register),
+                    onTap: _isBusy
+                        ? null
+                        : () =>
+                              Navigator.pushNamed(context, AppRoutes.register),
                     child: Text(
                       tr("auth.sign_up"),
                       style: TextStyle(
@@ -493,10 +562,7 @@ class _GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
 
-  const _GlassCard({
-    required this.child,
-    required this.padding,
-  });
+  const _GlassCard({required this.child, required this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -586,7 +652,10 @@ class _GlassFieldState extends State<_GlassField> {
                   fontWeight: FontWeight.w600,
                   color: scheme.onSurface.withValues(alpha: 0.45),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 border: InputBorder.none,
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 12, right: 8),
@@ -707,10 +776,7 @@ class _PrimaryPillButtonState extends State<_PrimaryPillButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withValues(alpha: 0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withValues(alpha: 0.88)],
             ),
             boxShadow: const [],
           ),
@@ -768,7 +834,9 @@ class _IconCircleButton extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: scheme.surface.withValues(alpha: 0.55),
-                border: Border.all(color: scheme.onSurface.withValues(alpha: 0.10)),
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.10),
+                ),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -782,6 +850,44 @@ class _IconCircleButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BiometricHint extends StatelessWidget {
+  final String message;
+
+  const _BiometricHint({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, size: 15, color: scheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+                color: scheme.onSurface.withValues(alpha: 0.82),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -809,7 +915,9 @@ class _GoogleButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: scheme.surface.withValues(alpha: 0.45),
           side: BorderSide(color: scheme.onSurface.withValues(alpha: 0.10)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 180),
@@ -929,14 +1037,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
