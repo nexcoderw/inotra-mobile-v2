@@ -208,6 +208,8 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
+  - sign_in_with_apple (0.0.1):
+    - Flutter
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
@@ -232,6 +234,7 @@ DEPENDENCIES:
   - map_launcher (from `.symlinks/plugins/map_launcher/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
+  - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - video_player_avfoundation (from `.symlinks/plugins/video_player_avfoundation/darwin`)
 
@@ -289,6 +292,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
+  sign_in_with_apple:
+    :path: ".symlinks/plugins/sign_in_with_apple/ios"
   sqflite_darwin:
     :path: ".symlinks/plugins/sqflite_darwin/darwin"
   video_player_avfoundation:
@@ -314,7 +319,7 @@ SPEC CHECKSUMS:
   flutter_local_notifications: 4cde75091f6327eb8517fa068a0a5950212d2086
   flutter_secure_storage: d33dac7ae2ea08509be337e775f6b59f1ff45f12
   Google-Maps-iOS-Utils: 66d6de12be1ce6d3742a54661e7a79cb317a9321
-  google_maps_flutter_ios: 11687ec5d93f8e025e12daab0a5636fa9f71d53e
+  google_maps_flutter_ios: 5f2ee3f5cc4fc2398574367f893e3f97bbbcea39
   google_sign_in_ios: 7411fab6948df90490dc4620ecbcabdc3ca04017
   GoogleAppMeasurement: 7225e5d0cdd2687b5cefaa0d1a052fe51c448903
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
@@ -330,6 +335,7 @@ SPEC CHECKSUMS:
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   share_plus: c3fef564749587fc939ef86ffb283ceac0baf9f5
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+  sign_in_with_apple: f3bf75217ea4c2c8b91823f225d70230119b8440
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
   video_player_avfoundation: 7993f492ae0bd77edaea24d9dc051d8bb2cd7c86
