@@ -14,6 +14,7 @@ import "package:inotra/core/config/app_routes.dart";
 import "package:inotra/core/constants/api/auth_endpoints.dart";
 import "package:inotra/core/services/auth_session.dart";
 import "package:inotra/core/services/auth_storage.dart";
+import "package:inotra/core/widgets/app_cached_image.dart";
 import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
 import "package:inotra/features/main/presentation/widgets/page_header.dart";
 import "package:inotra/i18n/lang.dart";
@@ -146,8 +147,7 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
                     icon: HugeIcons.strokeRoundedCall,
                     enabled: !_busy,
                     badge: _FieldBadge.required,
-                    hint:
-                        "${t(lang, 'auth.phone_hint')} (+ country code)",
+                    hint: "${t(lang, 'auth.phone_hint')} (+ country code)",
                   ),
                   const SizedBox(height: 12),
                   _Input(
@@ -178,8 +178,10 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   }
 
   Future<void> _pickAvatar() async {
-    final result = await FilePicker.platform
-        .pickFiles(type: FileType.image, withData: true);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
     if (file.bytes == null) return;
@@ -199,7 +201,11 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
     if (token.isEmpty) {
       await AuthSession.instance.signOut();
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (_) => false,
+        );
       }
       return;
     }
@@ -210,7 +216,10 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
       req.headers["Authorization"] = "Bearer $token";
       req.fields["name"] = _name.text.trim();
       req.fields["username"] = _username.text.trim();
-      req.fields["phone_number"] = _normalizePhone(_phone.text.trim(), _currentPhoneIso);
+      req.fields["phone_number"] = _normalizePhone(
+        _phone.text.trim(),
+        _currentPhoneIso,
+      );
 
       if (_avatarBytes != null && _avatarName != null) {
         req.files.add(
@@ -228,17 +237,24 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
       if (resp.statusCode == 401) {
         await AuthSession.instance.signOut();
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (_) => false,
+          );
         }
         return;
       }
 
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final body = _safeJson(resp.body) ?? {};
-        final updatedUser = body["user"] as Map<String, dynamic>? ??
+        final updatedUser =
+            body["user"] as Map<String, dynamic>? ??
             body as Map<String, dynamic>? ??
             {};
-        final nextUser = updatedUser.isNotEmpty ? updatedUser : (session.user ?? {});
+        final nextUser = updatedUser.isNotEmpty
+            ? updatedUser
+            : (session.user ?? {});
 
         await AuthStorage.saveSession(
           tokens: {
@@ -279,7 +295,9 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   }
 
   void _showError(http.Response? resp, {String? fallback}) {
-    final detail = resp != null ? _extractError(resp) : (fallback ?? "Update failed");
+    final detail = resp != null
+        ? _extractError(resp)
+        : (fallback ?? "Update failed");
     if (!mounted) return;
 
     toastification.show(
@@ -365,14 +383,14 @@ class _ProfileAccountDetailsPageState extends State<ProfileAccountDetailsPage> {
   }
 
   String _isoToDial(String iso) => switch (iso.toUpperCase()) {
-        "RW" => "250",
-        "FR" => "33",
-        "DE" => "49",
-        "ES" => "34",
-        "GB" => "44",
-        "US" => "1",
-        _ => "250",
-      };
+    "RW" => "250",
+    "FR" => "33",
+    "DE" => "49",
+    "ES" => "34",
+    "GB" => "44",
+    "US" => "1",
+    _ => "250",
+  };
 }
 
 class _AvatarPicker extends StatefulWidget {
@@ -403,13 +421,9 @@ class _AvatarPickerState extends State<_AvatarPicker> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    final ImageProvider<Object>? image = widget.bytes != null
-        ? MemoryImage(widget.bytes!)
-        : (widget.imageUrl != null && widget.imageUrl!.isNotEmpty
-            ? NetworkImage(widget.imageUrl!)
-            : null);
-
     final isActive = _pressed || _hovered;
+    final hasRemoteImage =
+        widget.imageUrl != null && widget.imageUrl!.trim().isNotEmpty;
 
     return MouseRegion(
       onEnter: (_) => _setHovered(true),
@@ -437,13 +451,27 @@ class _AvatarPickerState extends State<_AvatarPicker> {
                     ),
                   ],
                 ),
-                child: CircleAvatar(
-                  radius: 44,
-                  backgroundColor: scheme.primary.withOpacity(0.12),
-                  backgroundImage: image,
-                  child: image == null
-                      ? Icon(Icons.person, size: 40, color: scheme.primary)
-                      : null,
+                child: ClipOval(
+                  child: SizedBox(
+                    width: 88,
+                    height: 88,
+                    child: widget.bytes != null
+                        ? Image.memory(widget.bytes!, fit: BoxFit.cover)
+                        : hasRemoteImage
+                        ? AppCachedImage(
+                            imageUrl: widget.imageUrl!.trim(),
+                            fit: BoxFit.cover,
+                            memCacheWidth: 260,
+                            memCacheHeight: 260,
+                            maxWidthDiskCache: 360,
+                            maxHeightDiskCache: 360,
+                            errorBuilder: (_) =>
+                                _AvatarFallback(scheme: scheme),
+                            placeholderBuilder: (_) =>
+                                _AvatarFallback(scheme: scheme),
+                          )
+                        : _AvatarFallback(scheme: scheme),
+                  ),
                 ),
               ),
               AnimatedContainer(
@@ -463,8 +491,11 @@ class _AvatarPickerState extends State<_AvatarPicker> {
                   ],
                 ),
                 padding: const EdgeInsets.all(6),
-                child: const Icon(Icons.camera_alt_rounded,
-                    size: 14, color: Colors.white),
+                child: const Icon(
+                  Icons.camera_alt_rounded,
+                  size: 14,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
@@ -501,8 +532,6 @@ class _Input extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -518,8 +547,8 @@ class _Input extends StatelessWidget {
           validator: (v) => readOnly
               ? null
               : (v == null || v.trim().isEmpty)
-                  ? requiredMessage
-                  : null,
+              ? requiredMessage
+              : null,
         ),
       ],
     );
@@ -669,8 +698,10 @@ class _GlassTextFieldState extends State<_GlassTextField> {
                   fontSize: 12,
                   color: scheme.onSurface.withOpacity(0.45),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 border: InputBorder.none,
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 12, right: 8),
@@ -743,10 +774,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                scheme.primary,
-                scheme.primary.withOpacity(0.88),
-              ],
+              colors: [scheme.primary, scheme.primary.withOpacity(0.88)],
             ),
             boxShadow: const [], // ✅ no shadow on hover/click
           ),
@@ -822,14 +850,14 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
         final b3 = bump(0.36);
 
         Widget dot(double b) => AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              height: 6 + (b * 4),
-              width: 6 + (b * 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.75 + b * 0.25),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
+          duration: const Duration(milliseconds: 90),
+          height: 6 + (b * 4),
+          width: 6 + (b * 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.75 + b * 0.25),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -883,6 +911,20 @@ class _GlassCard extends StatelessWidget {
           child: child,
         ),
       ),
+    );
+  }
+}
+
+class _AvatarFallback extends StatelessWidget {
+  final ColorScheme scheme;
+
+  const _AvatarFallback({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: scheme.primary.withOpacity(0.12),
+      child: Center(child: Icon(Icons.person, size: 40, color: scheme.primary)),
     );
   }
 }
