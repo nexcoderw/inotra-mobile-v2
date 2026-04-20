@@ -6,6 +6,7 @@ import "package:hugeicons/hugeicons.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/biometric_service.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "package:inotra/features/main/presentation/widgets/main_scaffold.dart";
@@ -49,20 +50,25 @@ class ProfilePage extends StatelessWidget {
                           width: 1,
                         ),
                       ),
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundColor: scheme.primary.withValues(alpha: 0.12),
-                        backgroundImage:
-                            (imageUrl != null && imageUrl.isNotEmpty)
-                            ? NetworkImage(imageUrl)
-                            : null,
-                        child: (imageUrl == null || imageUrl.isEmpty)
-                            ? Icon(
-                                Icons.person,
-                                size: 40,
-                                color: scheme.primary,
-                              )
-                            : null,
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: (imageUrl != null && imageUrl.isNotEmpty)
+                              ? AppCachedImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  memCacheWidth: 240,
+                                  memCacheHeight: 240,
+                                  maxWidthDiskCache: 320,
+                                  maxHeightDiskCache: 320,
+                                  errorBuilder: (_) =>
+                                      _ProfileAvatarFallback(scheme: scheme),
+                                  placeholderBuilder: (_) =>
+                                      _ProfileAvatarFallback(scheme: scheme),
+                                )
+                              : _ProfileAvatarFallback(scheme: scheme),
+                        ),
                       ),
                     ),
                     Container(
@@ -174,6 +180,20 @@ class ProfilePage extends StatelessWidget {
       }
     }
     return out;
+  }
+}
+
+class _ProfileAvatarFallback extends StatelessWidget {
+  final ColorScheme scheme;
+
+  const _ProfileAvatarFallback({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: scheme.primary.withValues(alpha: 0.12),
+      child: Center(child: Icon(Icons.person, size: 40, color: scheme.primary)),
+    );
   }
 }
 
