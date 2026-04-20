@@ -9,6 +9,7 @@ import "package:http/http.dart" as http;
 import "../../../../../core/config/api.dart";
 import "../../../../../core/constants/api/my_listing_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
 import "../../../../main/presentation/widgets/listing_details_map_tab.dart";
@@ -594,17 +595,15 @@ class _HeroPagerState extends State<_HeroPager> {
                 itemBuilder: (_, index) {
                   final url = images[index].trim();
                   if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
-                  return Image.network(
-                    url,
+                  return AppCachedImage(
+                    imageUrl: url,
                     fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
-                    isAntiAlias: true,
-                    errorBuilder: (_, __, ___) =>
-                        _HeroPlaceholder(scheme: scheme),
-                    loadingBuilder: (_, child, progress) {
-                      if (progress == null) return child;
-                      return _HeroPlaceholder(scheme: scheme);
-                    },
+                    memCacheWidth: 1400,
+                    memCacheHeight: 1000,
+                    maxWidthDiskCache: 1800,
+                    maxHeightDiskCache: 1300,
+                    errorBuilder: (_) => _HeroPlaceholder(scheme: scheme),
+                    placeholderBuilder: (_) => _HeroPlaceholder(scheme: scheme),
                   );
                 },
               ),
@@ -756,10 +755,15 @@ class _ThumbRow extends StatelessWidget {
                 width: 54,
                 height: 54,
                 color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                child: Image.network(
-                  url,
+                child: AppCachedImage(
+                  imageUrl: url,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _thumbFallback(scheme),
+                  memCacheWidth: 180,
+                  memCacheHeight: 180,
+                  maxWidthDiskCache: 240,
+                  maxHeightDiskCache: 240,
+                  errorBuilder: (_) => _thumbFallback(scheme),
+                  placeholderBuilder: (_) => _thumbFallback(scheme),
                 ),
               ),
             ),
@@ -778,12 +782,19 @@ class _ThumbRow extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (shown.isNotEmpty)
-                    Image.network(
-                      shown.last,
+                    AppCachedImage(
+                      imageUrl: shown.last,
                       fit: BoxFit.cover,
-                      color: Colors.black.withValues(alpha: 0.35),
-                      colorBlendMode: BlendMode.darken,
-                      errorBuilder: (_, __, ___) => _thumbFallback(scheme),
+                      colorFilter: ColorFilter.mode(
+                        Colors.black.withValues(alpha: 0.35),
+                        BlendMode.darken,
+                      ),
+                      memCacheWidth: 180,
+                      memCacheHeight: 180,
+                      maxWidthDiskCache: 240,
+                      maxHeightDiskCache: 240,
+                      errorBuilder: (_) => _thumbFallback(scheme),
+                      placeholderBuilder: (_) => _thumbFallback(scheme),
                     )
                   else
                     _thumbFallback(scheme),
