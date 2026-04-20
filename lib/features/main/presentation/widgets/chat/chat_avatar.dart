@@ -1,5 +1,7 @@
 import "package:flutter/material.dart";
 
+import "../../../../../core/widgets/app_cached_image.dart";
+
 /// Circular avatar: shows network image when available, falls back to
 /// a coloured gradient with initials derived from [name].
 class ChatAvatar extends StatelessWidget {
@@ -32,7 +34,11 @@ class ChatAvatar extends StatelessWidget {
   }
 
   String _initials() {
-    final words = name.trim().split(RegExp(r"\s+")).where((w) => w.isNotEmpty).toList();
+    final words = name
+        .trim()
+        .split(RegExp(r"\s+"))
+        .where((w) => w.isNotEmpty)
+        .toList();
     if (words.isEmpty) return "?";
     if (words.length == 1) return words[0][0].toUpperCase();
     return (words.first[0] + words.last[0]).toUpperCase();
@@ -46,12 +52,19 @@ class ChatAvatar extends StatelessWidget {
       height: size,
       child: ClipOval(
         child: avatarUrl != null && avatarUrl!.isNotEmpty
-            ? Image.network(
-                avatarUrl!,
-                width: size,
-                height: size,
+            ? AppCachedImage(
+                imageUrl: avatarUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _InitialsAvatar(
+                memCacheWidth: (size * 3).roundToDouble(),
+                memCacheHeight: (size * 3).roundToDouble(),
+                maxWidthDiskCache: (size * 4).roundToDouble(),
+                maxHeightDiskCache: (size * 4).roundToDouble(),
+                errorBuilder: (_) => _InitialsAvatar(
+                  initials: _initials(),
+                  gradient: gradient,
+                  size: size,
+                ),
+                placeholderBuilder: (_) => _InitialsAvatar(
                   initials: _initials(),
                   gradient: gradient,
                   size: size,
