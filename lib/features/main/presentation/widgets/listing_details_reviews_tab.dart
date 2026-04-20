@@ -9,6 +9,7 @@ import "package:hugeicons/hugeicons.dart";
 import "../../../../core/config/api.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
@@ -203,8 +204,8 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
                           _loading
                               ? t(lang, "auth.processing")
                               : _reviews.isEmpty
-                                  ? t(lang, "listings.reviews_empty")
-                                  : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
+                              ? t(lang, "listings.reviews_empty")
+                              : "${_reviews.length} ${t(lang, "listings.reviews_title")}",
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -234,8 +235,9 @@ class _ListingReviewsTabState extends State<ListingReviewsTab>
                         height: 34,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: scheme.surfaceContainerHighest
-                              .withValues(alpha: 0.30),
+                          color: scheme.surfaceContainerHighest.withValues(
+                            alpha: 0.30,
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: HugeIcon(
@@ -348,14 +350,14 @@ class _ReviewsListCard extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         itemCount: reviews.length,
-        separatorBuilder: (_, __) => Padding(
+        separatorBuilder: (context, index) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Divider(
             height: 1,
             color: scheme.onSurface.withValues(alpha: 0.08),
           ),
         ),
-        itemBuilder: (_, i) => _ReviewTile(review: reviews[i]),
+        itemBuilder: (context, index) => _ReviewTile(review: reviews[index]),
       ),
     );
   }
@@ -519,7 +521,9 @@ class _ReviewComposer extends StatelessWidget {
                         onTap: submitting ? null : () => onRatingChanged(v),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 3, vertical: 2),
+                            horizontal: 3,
+                            vertical: 2,
+                          ),
                           child: Icon(
                             Icons.star_rounded,
                             size: 20,
@@ -553,7 +557,8 @@ class _ReviewComposer extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.20),
               border: Border.all(
-                  color: scheme.onSurface.withValues(alpha: 0.08)),
+                color: scheme.onSurface.withValues(alpha: 0.08),
+              ),
             ),
             child: TextField(
               controller: controller,
@@ -698,12 +703,15 @@ class _Avatar extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: hasImage
-            ? Image.network(
-                imageUrl!.trim(),
+            ? AppCachedImage(
+                imageUrl: imageUrl!.trim(),
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _Initials(initials: initials),
-                loadingBuilder: (_, child, evt) =>
-                    evt == null ? child : _Initials(initials: initials),
+                memCacheWidth: 120,
+                memCacheHeight: 120,
+                maxWidthDiskCache: 180,
+                maxHeightDiskCache: 180,
+                errorBuilder: (_) => _Initials(initials: initials),
+                placeholderBuilder: (_) => _Initials(initials: initials),
               )
             : _Initials(initials: initials),
       ),
@@ -835,8 +843,7 @@ class _ErrorBanner extends StatelessWidget {
           GestureDetector(
             onTap: onRetry,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: scheme.primary,
@@ -968,13 +975,13 @@ class _SkeletonReviewTile extends StatelessWidget {
   const _SkeletonReviewTile({required this.color});
 
   Widget _bar(double w, double h) => Container(
-        width: w,
-        height: h,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(999),
-        ),
-      );
+    width: w,
+    height: h,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(999),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1083,11 +1090,12 @@ class _Review {
 
     return _Review(
       id: (json["id"] ?? "").toString(),
-      author: (json["author"] ??
-              json["user_name"] ??
-              json["username"] ??
-              "Anonymous")
-          .toString(),
+      author:
+          (json["author"] ??
+                  json["user_name"] ??
+                  json["username"] ??
+                  "Anonymous")
+              .toString(),
       comment: (json["comment"] ?? json["text"] ?? "").toString(),
       createdAt: parseDate(json["created_at"]?.toString()),
       rating: _toNullableInt(json["rating"]),
