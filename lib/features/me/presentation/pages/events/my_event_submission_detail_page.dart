@@ -9,6 +9,7 @@ import "package:hugeicons/hugeicons.dart";
 import "../../../../../core/config/api.dart";
 import "../../../../../core/constants/api/my_event_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
 import "../../../../main/presentation/widgets/page_header.dart";
@@ -922,12 +923,15 @@ class _BannerImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (url != null && url!.trim().isNotEmpty) {
-      return Image.network(
-        url!,
+      return AppCachedImage(
+        imageUrl: url!,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _BannerPlaceholder(scheme: scheme),
-        loadingBuilder: (_, child, event) =>
-            event == null ? child : _BannerPlaceholder(scheme: scheme),
+        memCacheWidth: 1200,
+        memCacheHeight: 900,
+        maxWidthDiskCache: 1600,
+        maxHeightDiskCache: 1200,
+        errorBuilder: (_) => _BannerPlaceholder(scheme: scheme),
+        placeholderBuilder: (_) => _BannerPlaceholder(scheme: scheme),
       );
     }
     return _BannerPlaceholder(scheme: scheme);
