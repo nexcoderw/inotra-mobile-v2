@@ -1,4 +1,5 @@
 import "package:cached_network_image/cached_network_image.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
 
 class AppCachedImage extends StatelessWidget {
@@ -39,8 +40,30 @@ class AppCachedImage extends StatelessWidget {
       return error;
     }
 
+    final trimmedUrl = imageUrl!.trim();
+
+    if (kIsWeb) {
+      final image = Image.network(
+        trimmedUrl,
+        fit: fit,
+        alignment: alignment,
+        cacheWidth: memCacheWidth?.round(),
+        cacheHeight: memCacheHeight?.round(),
+        webHtmlElementStrategy: WebHtmlElementStrategy.prefer,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return placeholder;
+        },
+        errorBuilder: (context, errorObject, stackTrace) => error,
+      );
+
+      if (colorFilter == null) return image;
+
+      return ColorFiltered(colorFilter: colorFilter!, child: image);
+    }
+
     return CachedNetworkImage(
-      imageUrl: imageUrl!.trim(),
+      imageUrl: trimmedUrl,
       fit: fit,
       alignment: alignment,
       fadeInDuration: Duration.zero,
@@ -60,8 +83,8 @@ class AppCachedImage extends StatelessWidget {
                 alignment: alignment,
               ),
             ),
-      placeholder: (_, __) => placeholder,
-      errorWidget: (_, __, ___) => error,
+      placeholder: (context, url) => placeholder,
+      errorWidget: (context, url, errorObject) => error,
     );
   }
 }
