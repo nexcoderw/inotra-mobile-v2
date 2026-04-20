@@ -1,5 +1,4 @@
 import "dart:convert";
-import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -157,70 +156,80 @@ class _PackageBodyState extends State<_PackageBody>
     final pkg = widget.pkg;
     final lang = widget.lang;
     final scheme = widget.scheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final isWide = width >= 700;
+    final sidePad = isWide ? 24.0 : 16.0;
+    final heroHeight = width <= 360
+        ? 356.0
+        : width <= 430
+        ? 392.0
+        : 430.0;
 
-    return Stack(
-      children: [
-        if (pkg.allImages.isNotEmpty)
-          Positioned.fill(
-            child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-              child: AppCachedImage(
-                imageUrl: pkg.allImages.first,
-                fit: BoxFit.cover,
-                memCacheWidth: 1800,
-                memCacheHeight: 1400,
-                maxWidthDiskCache: 2400,
-                maxHeightDiskCache: 1800,
-                errorBuilder: (_) => const SizedBox.shrink(),
-                placeholderBuilder: (_) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
-        Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: scheme.surface.withValues(alpha: 0.72),
-            ),
-          ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            scheme.surface,
+            scheme.surfaceContainerLowest,
+            scheme.surface,
+          ],
         ),
-
-        NestedScrollView(
-          headerSliverBuilder: (context, _) => [
-            SliverToBoxAdapter(
+      ),
+      child: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(sidePad, 12, sidePad, 0),
               child: _HeroSection(
                 pkg: pkg,
                 lang: lang,
                 scheme: scheme,
                 heroPage: _heroPage,
                 heroCtrl: _heroCtrl,
+                height: heroHeight,
                 onPageChanged: (i) => setState(() => _heroPage = i),
                 onBack: widget.onBack,
                 onRefresh: widget.onRefresh,
               ),
             ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _TabBarDelegate(
-                tabs: [
-                  t(lang, "trips.overview"),
-                  t(lang, "trips.activities_title"),
-                  t(lang, "trips.gallery_title"),
-                ],
-                controller: _tabs,
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(sidePad, 14, sidePad, 18),
+              child: _TripCommandPanel(
+                pkg: pkg,
+                lang: lang,
                 scheme: scheme,
+                onActivitiesTap: () => _tabs.animateTo(1),
+                onGalleryTap: () => _tabs.animateTo(2),
               ),
             ),
-          ],
-          body: TabBarView(
-            controller: _tabs,
-            children: [
-              PackageOverviewTab(pkg: pkg),
-              PackageActivitiesTab(activities: pkg.activities),
-              PackageGalleryTab(images: pkg.allImageItems),
-            ],
           ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(
+              tabs: [
+                t(lang, "trips.overview"),
+                t(lang, "trips.activities_title"),
+                t(lang, "trips.gallery_title"),
+              ],
+              controller: _tabs,
+              scheme: scheme,
+              horizontalPadding: sidePad,
+            ),
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabs,
+          children: [
+            PackageOverviewTab(pkg: pkg),
+            PackageActivitiesTab(activities: pkg.activities),
+            PackageGalleryTab(images: pkg.allImageItems),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -235,6 +244,7 @@ class _HeroSection extends StatelessWidget {
   final ColorScheme scheme;
   final int heroPage;
   final PageController heroCtrl;
+  final double height;
   final ValueChanged<int> onPageChanged;
   final VoidCallback onBack;
   final VoidCallback onRefresh;
@@ -245,6 +255,7 @@ class _HeroSection extends StatelessWidget {
     required this.scheme,
     required this.heroPage,
     required this.heroCtrl,
+    required this.height,
     required this.onPageChanged,
     required this.onBack,
     required this.onRefresh,
@@ -254,175 +265,309 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final images = pkg.allImages;
 
-    return SizedBox(
-      height: 340,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: images.isEmpty
-                ? _ImageFallback(scheme: scheme)
-                : PageView.builder(
-                    controller: heroCtrl,
-                    onPageChanged: onPageChanged,
-                    itemCount: images.length,
-                    itemBuilder: (_, i) {
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ImageFiltered(
-                            imageFilter: ImageFilter.blur(
-                              sigmaX: 20,
-                              sigmaY: 20,
-                            ),
-                            child: AppCachedImage(
-                              imageUrl: images[i],
-                              fit: BoxFit.cover,
-                              memCacheWidth: 1800,
-                              memCacheHeight: 1400,
-                              maxWidthDiskCache: 2400,
-                              maxHeightDiskCache: 1800,
-                              errorBuilder: (_) =>
-                                  _ImageFallback(scheme: scheme),
-                              placeholderBuilder: (_) =>
-                                  _ImageFallback(scheme: scheme),
-                            ),
-                          ),
-                          ColoredBox(
-                            color: Colors.black.withValues(alpha: 0.28),
-                          ),
-                          AppCachedImage(
-                            imageUrl: images[i],
-                            fit: BoxFit.contain,
-                            memCacheWidth: 1800,
-                            memCacheHeight: 1400,
-                            maxWidthDiskCache: 2400,
-                            maxHeightDiskCache: 1800,
-                            errorBuilder: (_) => _ImageFallback(scheme: scheme),
-                            placeholderBuilder: (_) =>
-                                _ImageFallback(scheme: scheme),
-                          ),
-                        ],
-                      );
-                    },
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: images.isEmpty
+                  ? _ImageFallback(scheme: scheme)
+                  : PageView.builder(
+                      controller: heroCtrl,
+                      onPageChanged: onPageChanged,
+                      itemCount: images.length,
+                      itemBuilder: (_, i) => AppCachedImage(
+                        imageUrl: images[i],
+                        fit: BoxFit.cover,
+                        memCacheWidth: 1500,
+                        memCacheHeight: 1200,
+                        maxWidthDiskCache: 1800,
+                        maxHeightDiskCache: 1400,
+                        errorBuilder: (_) => _ImageFallback(scheme: scheme),
+                        placeholderBuilder: (_) =>
+                            _ImageFallback(scheme: scheme),
+                      ),
+                    ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.38, 1.0],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.46),
+                      Colors.black.withValues(alpha: 0.08),
+                      Colors.black.withValues(alpha: 0.72),
+                    ],
                   ),
-          ),
-
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: 130,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.72),
-                    Colors.transparent,
-                  ],
                 ),
               ),
             ),
-          ),
-
-          Positioned(
-            top: 14,
-            left: 16,
-            right: 16,
-            child: Row(
-              children: [
-                _GlassRoundButton(
-                  icon: HugeIcons.strokeRoundedArrowLeft01,
-                  onTap: onBack,
-                ),
-                const Spacer(),
-                _GlassRoundButton(
-                  icon: HugeIcons.strokeRoundedRefresh,
-                  onTap: onRefresh,
-                ),
-              ],
-            ),
-          ),
-
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 14,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    _StatusBadge(isActive: pkg.isActive, lang: lang),
-                    const Spacer(),
-                    if (images.length > 1)
-                      _PageDots(count: images.length, current: heroPage),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  pkg.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 12,
-                        color: Colors.black54,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    if (pkg.durationDays != null) ...[
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedClock01,
-                        size: 13,
-                        color: Colors.white.withValues(alpha: 0.80),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${pkg.durationDays} ${pkg.durationDays == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    if (pkg.activities.isNotEmpty) ...[
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedActivity01,
-                        size: 13,
-                        color: Colors.white.withValues(alpha: 0.80),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${pkg.activities.length} ${t(lang, "trips.activities")}",
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+            Positioned(
+              top: 12,
+              left: 12,
+              right: 12,
+              child: Row(
+                children: [
+                  _HeroControl(
+                    icon: HugeIcons.strokeRoundedArrowLeft01,
+                    onTap: onBack,
+                  ),
+                  const Spacer(),
+                  if (images.length > 1)
+                    _HeroBadge(
+                      icon: HugeIcons.strokeRoundedImage01,
+                      label: "${heroPage + 1}/${images.length}",
+                    ),
+                  const SizedBox(width: 8),
+                  _HeroControl(
+                    icon: HugeIcons.strokeRoundedRefresh,
+                    onTap: onRefresh,
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 18,
+              right: 18,
+              bottom: 18,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _StatusBadge(isActive: pkg.isActive, lang: lang),
+                      if (pkg.durationDays != null)
+                        _HeroBadge(
+                          icon: HugeIcons.strokeRoundedClock01,
+                          label:
+                              "${pkg.durationDays} ${pkg.durationDays == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    pkg.title.trim().isEmpty
+                        ? t(lang, "trips.details_title")
+                        : pkg.title.trim(),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                      height: 1.04,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 18,
+                          color: Colors.black54,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (pkg.location.trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        HugeIcon(
+                          icon: HugeIcons.strokeRoundedMapsLocation02,
+                          size: 15,
+                          color: Colors.white.withValues(alpha: 0.82),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            pkg.location.trim(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.84),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (images.length > 1) ...[
+                    const SizedBox(height: 14),
+                    _PageDots(count: images.length, current: heroPage),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+/* ============================================================
+   TRIP COMMAND PANEL
+   ============================================================ */
+
+class _TripCommandPanel extends StatelessWidget {
+  final PackageDetailData pkg;
+  final String lang;
+  final ColorScheme scheme;
+  final VoidCallback onActivitiesTap;
+  final VoidCallback onGalleryTap;
+
+  const _TripCommandPanel({
+    required this.pkg,
+    required this.lang,
+    required this.scheme,
+    required this.onActivitiesTap,
+    required this.onGalleryTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final description = pkg.description.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SurfacePanel(
+          scheme: scheme,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _MiniMark(scheme: scheme),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t(lang, "trips.details_title"),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: scheme.primary,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          description.isEmpty
+                              ? t(lang, "banner.subtitle")
+                              : description,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            height: 1.55,
+                            fontWeight: FontWeight.w600,
+                            color: scheme.onSurface.withValues(alpha: 0.72),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 360;
+                  final facts = <Widget>[
+                    _FactTile(
+                      icon: HugeIcons.strokeRoundedClock01,
+                      label: t(lang, "trips.duration"),
+                      value: pkg.durationDays == null
+                          ? t(lang, "listings.no_data")
+                          : "${pkg.durationDays} ${pkg.durationDays == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
+                      scheme: scheme,
+                    ),
+                    _FactTile(
+                      icon: HugeIcons.strokeRoundedActivity01,
+                      label: t(lang, "trips.activities_title"),
+                      value: "${pkg.activities.length}",
+                      scheme: scheme,
+                    ),
+                    _FactTile(
+                      icon: HugeIcons.strokeRoundedImage01,
+                      label: t(lang, "trips.gallery_title"),
+                      value: "${pkg.allImageItems.length}",
+                      scheme: scheme,
+                    ),
+                  ];
+
+                  if (compact) {
+                    return Column(
+                      children: [
+                        for (int i = 0; i < facts.length; i++) ...[
+                          facts[i],
+                          if (i < facts.length - 1) const SizedBox(height: 8),
+                        ],
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      for (int i = 0; i < facts.length; i++) ...[
+                        Expanded(child: facts[i]),
+                        if (i < facts.length - 1) const SizedBox(width: 8),
+                      ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PanelAction(
+                      label: t(lang, "trips.activities_title"),
+                      icon: HugeIcons.strokeRoundedCalendar02,
+                      filled: true,
+                      scheme: scheme,
+                      onTap: onActivitiesTap,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _PanelAction(
+                      label: t(lang, "trips.gallery_title"),
+                      icon: HugeIcons.strokeRoundedImage01,
+                      filled: false,
+                      scheme: scheme,
+                      onTap: onGalleryTap,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -435,21 +580,25 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
   final List<String> tabs;
   final TabController controller;
   final ColorScheme scheme;
+  final double horizontalPadding;
 
   const _TabBarDelegate({
     required this.tabs,
     required this.controller,
     required this.scheme,
+    required this.horizontalPadding,
   });
 
   @override
-  double get minExtent => 56;
+  double get minExtent => 70;
   @override
-  double get maxExtent => 56;
+  double get maxExtent => 70;
 
   @override
   bool shouldRebuild(_TabBarDelegate old) =>
-      old.tabs != tabs || old.controller != controller;
+      old.tabs != tabs ||
+      old.controller != controller ||
+      old.horizontalPadding != horizontalPadding;
 
   @override
   Widget build(
@@ -457,28 +606,41 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+    return ColoredBox(
+      color: scheme.surface.withValues(alpha: 0.98),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          8,
+          horizontalPadding,
+          10,
+        ),
         child: Container(
-          height: 56,
-          color: scheme.surface.withValues(alpha: 0.82),
-          alignment: Alignment.center,
+          height: 52,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.48),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: scheme.outline.withValues(alpha: 0.10)),
+          ),
           child: TabBar(
             controller: controller,
             isScrollable: false,
             dividerColor: Colors.transparent,
-            indicatorColor: scheme.primary,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelColor: scheme.primary,
-            unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.55),
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+              color: scheme.primary,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            labelColor: scheme.onPrimary,
+            unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.58),
             labelStyle: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
             ),
             unselectedLabelStyle: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
             tabs: tabs.map((label) => Tab(text: label)).toList(),
           ),
@@ -492,26 +654,244 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
    SHARED UI PRIMITIVES
    ============================================================ */
 
-class _GlassRoundButton extends StatelessWidget {
-  final dynamic icon;
-  final VoidCallback onTap;
+class _SurfacePanel extends StatelessWidget {
+  final Widget child;
+  final ColorScheme scheme;
 
-  const _GlassRoundButton({required this.icon, required this.onTap});
+  const _SurfacePanel({required this.child, required this.scheme});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.28),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+    final isDark = scheme.brightness == Brightness.dark;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.055) : scheme.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.10)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _MiniMark extends StatelessWidget {
+  final ColorScheme scheme;
+
+  const _MiniMark({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.30),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Center(
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedRoute01,
+          size: 19,
+          color: scheme.onPrimary,
         ),
-        child: HugeIcon(icon: icon, size: 20, color: Colors.white),
+      ),
+    );
+  }
+}
+
+class _FactTile extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+  final String value;
+  final ColorScheme scheme;
+
+  const _FactTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.scheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 74),
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.075),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          HugeIcon(icon: icon, size: 15, color: scheme.primary),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.50),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PanelAction extends StatelessWidget {
+  final String label;
+  final dynamic icon;
+  final bool filled;
+  final ColorScheme scheme;
+  final VoidCallback onTap;
+
+  const _PanelAction({
+    required this.label,
+    required this.icon,
+    required this.filled,
+    required this.scheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = filled ? scheme.onPrimary : scheme.primary;
+    return Material(
+      color: filled ? scheme.primary : Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: filled
+                  ? scheme.primary
+                  : scheme.primary.withValues(alpha: 0.22),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              HugeIcon(icon: icon, size: 15, color: foreground),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: foreground,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroControl extends StatelessWidget {
+  final dynamic icon;
+  final VoidCallback onTap;
+
+  const _HeroControl({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.34),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: HugeIcon(icon: icon, size: 20, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroBadge extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+
+  const _HeroBadge({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HugeIcon(
+            icon: icon,
+            size: 13,
+            color: Colors.white.withValues(alpha: 0.90),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              color: Colors.white.withValues(alpha: 0.94),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -616,46 +996,74 @@ class _ErrorState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(22),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: scheme.surface.withValues(alpha: 0.10),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 420),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: scheme.error.withValues(alpha: 0.16)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  HugeIcon(
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: scheme.errorContainer.withValues(alpha: 0.60),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: HugeIcon(
                     icon: HugeIcons.strokeRoundedWifiError01,
-                    size: 30,
+                    size: 24,
                     color: scheme.error,
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: scheme.error,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: onRetry,
-                    child: Text(
-                      t(lang, "common.try_again"),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.error,
+                  fontWeight: FontWeight.w800,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: onRetry,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: scheme.primary,
+                    foregroundColor: scheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    t(lang, "common.try_again"),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -697,33 +1105,42 @@ class _PackageDetailsSkeletonState extends State<_PackageDetailsSkeleton>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final width = MediaQuery.sizeOf(context).width;
+    final sidePad = width >= 700 ? 24.0 : 16.0;
+    final heroHeight = width <= 360
+        ? 356.0
+        : width <= 430
+        ? 392.0
+        : 430.0;
 
     return AnimatedBuilder(
       animation: _c,
-      builder: (_, __) {
+      builder: (context, child) {
         final base = scheme.surfaceContainerHighest.withValues(alpha: 0.25);
         final hi = scheme.surfaceContainerHighest.withValues(alpha: 0.42);
         final c = Color.lerp(base, hi, _c.value)!;
 
         return Column(
           children: [
-            _SkelBox(color: c, height: 340),
-            Container(
-              height: 56,
-              color: scheme.surface.withValues(alpha: 0.82),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _SkelLine(color: c, width: 60, height: 12),
-                  _SkelLine(color: c, width: 60, height: 12),
-                  _SkelLine(color: c, width: 60, height: 12),
-                ],
+            Padding(
+              padding: EdgeInsets.fromLTRB(sidePad, 12, sidePad, 0),
+              child: _SkelBox(color: c, height: heroHeight, radius: 28),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(sidePad, 14, sidePad, 18),
+              child: _SkelBox(
+                color: c.withValues(alpha: 0.72),
+                height: 220,
+                radius: 22,
               ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(sidePad, 8, sidePad, 10),
+              child: _SkelBox(color: c, height: 52, radius: 18),
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: EdgeInsets.fromLTRB(sidePad, 16, sidePad, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
