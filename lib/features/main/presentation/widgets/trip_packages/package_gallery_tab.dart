@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
 
+import "../../../../../../core/widgets/app_cached_image.dart";
 import "../../../../../../i18n/lang.dart";
 import "../../../../../../i18n/translations.dart";
 import "package_models.dart";
@@ -39,10 +40,15 @@ class PackageGalleryTab extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                img.url,
+              AppCachedImage(
+                imageUrl: img.url,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _ImageFallback(scheme: scheme),
+                memCacheWidth: 900,
+                memCacheHeight: 1100,
+                maxWidthDiskCache: 1200,
+                maxHeightDiskCache: 1400,
+                errorBuilder: (_) => _ImageFallback(scheme: scheme),
+                placeholderBuilder: (_) => _ImageFallback(scheme: scheme),
               ),
               Positioned(
                 left: 0,
@@ -86,8 +92,10 @@ class PackageGalleryTab extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.amber.shade600,
                       borderRadius: BorderRadius.circular(999),
