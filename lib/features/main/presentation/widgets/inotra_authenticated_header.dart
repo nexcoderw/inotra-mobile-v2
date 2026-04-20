@@ -5,6 +5,7 @@ import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
 import "../../../../core/services/auth_session.dart";
+import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -44,8 +45,6 @@ class InotraAuthenticatedHeader extends StatelessWidget
         ? imageUrl
         : AuthSession.instance.value.user?["image"] as String?;
 
-    final avatarProvider =
-        (userImage != null && userImage.isNotEmpty) ? NetworkImage(userImage) : null;
     final shortName = _shortName(displayName);
 
     return AppBar(
@@ -61,9 +60,7 @@ class InotraAuthenticatedHeader extends StatelessWidget
       flexibleSpace: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            color: scheme.surface.withOpacity(0.70),
-          ),
+          child: Container(color: scheme.surface.withOpacity(0.70)),
         ),
       ),
 
@@ -104,7 +101,10 @@ class InotraAuthenticatedHeader extends StatelessWidget
           const SizedBox(height: 2),
           Text(
             t(currentLangSync(), "auth.welcome").isNotEmpty
-                ? t(currentLangSync(), "auth.welcome").replaceFirst("{name}", shortName)
+                ? t(
+                    currentLangSync(),
+                    "auth.welcome",
+                  ).replaceFirst("{name}", shortName)
                 : shortName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -122,7 +122,7 @@ class InotraAuthenticatedHeader extends StatelessWidget
         _ProfilePill(
           displayName: shortName,
           onTap: onProfileTap,
-          imageProvider: avatarProvider,
+          imageUrl: userImage,
         ),
         const SizedBox(width: 8),
       ],
@@ -131,8 +131,11 @@ class InotraAuthenticatedHeader extends StatelessWidget
 }
 
 String _shortName(String full) {
-  final parts =
-      full.trim().split(RegExp(r"\\s+")).where((p) => p.isNotEmpty).toList();
+  final parts = full
+      .trim()
+      .split(RegExp(r"\\s+"))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (parts.isEmpty || parts.first.isEmpty) return full;
   final firstInitial = "${parts.first[0]}.";
   if (parts.length == 1) return firstInitial;
@@ -311,12 +314,12 @@ class _NotificationPillButtonState extends State<_NotificationPillButton> {
 class _ProfilePill extends StatefulWidget {
   final String displayName;
   final VoidCallback onTap;
-  final ImageProvider? imageProvider;
+  final String? imageUrl;
 
   const _ProfilePill({
     required this.displayName,
     required this.onTap,
-    required this.imageProvider,
+    required this.imageUrl,
   });
 
   @override
@@ -357,18 +360,26 @@ class _ProfilePillState extends State<_ProfilePill> {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 13,
-                    backgroundColor: AppColors.primary.withOpacity(0.12),
-                    backgroundImage: widget.imageProvider,
-                    child: widget.imageProvider == null
-                        ? const HugeIcon(
-                            icon: HugeIcons.strokeRoundedUser,
-                            size: 14,
-                            strokeWidth: 2.0,
-                            color: AppColors.primary,
-                          )
-                        : null,
+                  ClipOval(
+                    child: SizedBox(
+                      width: 26,
+                      height: 26,
+                      child:
+                          widget.imageUrl != null &&
+                              widget.imageUrl!.trim().isNotEmpty
+                          ? AppCachedImage(
+                              imageUrl: widget.imageUrl!.trim(),
+                              fit: BoxFit.cover,
+                              memCacheWidth: 80,
+                              memCacheHeight: 80,
+                              maxWidthDiskCache: 120,
+                              maxHeightDiskCache: 120,
+                              errorBuilder: (_) => const _ProfileFallbackIcon(),
+                              placeholderBuilder: (_) =>
+                                  const _ProfileFallbackIcon(),
+                            )
+                          : const _ProfileFallbackIcon(),
+                    ),
                   ),
                   const SizedBox(width: 10),
                   ConstrainedBox(
@@ -394,6 +405,25 @@ class _ProfilePillState extends State<_ProfilePill> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileFallbackIcon extends StatelessWidget {
+  const _ProfileFallbackIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: AppColors.primary.withOpacity(0.12),
+      child: const Center(
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedUser,
+          size: 14,
+          strokeWidth: 2.0,
+          color: AppColors.primary,
         ),
       ),
     );
