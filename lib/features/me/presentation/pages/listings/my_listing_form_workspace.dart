@@ -14,6 +14,7 @@ import "../../../../../core/config/env.dart";
 import "../../../../../core/constants/api/my_listing_endpoints.dart";
 import "../../../../../core/constants/api/place_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
 import "../../../../main/presentation/widgets/page_header.dart";
@@ -2065,12 +2066,22 @@ class _ImagePreviewTile extends StatelessWidget {
             child: item.bytes != null
                 ? Image.memory(item.bytes!, fit: BoxFit.cover)
                 : item.url != null
-                ? Image.network(
-                    item.url!,
+                ? AppCachedImage(
+                    imageUrl: item.url!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Center(
+                    memCacheWidth: 700,
+                    memCacheHeight: 700,
+                    maxWidthDiskCache: 1000,
+                    maxHeightDiskCache: 1000,
+                    errorBuilder: (_) => Center(
                       child: Icon(
                         Icons.broken_image_outlined,
+                        color: scheme.onSurface.withValues(alpha: 0.40),
+                      ),
+                    ),
+                    placeholderBuilder: (_) => Center(
+                      child: Icon(
+                        Icons.photo_outlined,
                         color: scheme.onSurface.withValues(alpha: 0.40),
                       ),
                     ),
