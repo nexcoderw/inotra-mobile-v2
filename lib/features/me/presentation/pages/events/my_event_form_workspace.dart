@@ -14,6 +14,7 @@ import "../../../../../core/config/app_routes.dart";
 import "../../../../../core/config/env.dart";
 import "../../../../../core/constants/api/my_event_endpoints.dart";
 import "../../../../../core/services/auth_session.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "../../../../main/presentation/widgets/page_header.dart";
 import "../../../../../i18n/lang.dart";
 import "../../../../../i18n/translations.dart";
@@ -1216,10 +1217,16 @@ class _BannerDropzone extends StatelessWidget {
                     borderRadius: BorderRadius.circular(22),
                     child: bytes != null
                         ? Image.memory(bytes!, fit: BoxFit.cover)
-                        : Image.network(
-                            imageUrl!,
+                        : AppCachedImage(
+                            imageUrl: imageUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            memCacheWidth: 1200,
+                            memCacheHeight: 800,
+                            maxWidthDiskCache: 1600,
+                            maxHeightDiskCache: 1100,
+                            errorBuilder: (_) =>
+                                _BannerPlaceholder(scheme: scheme),
+                            placeholderBuilder: (_) =>
                                 _BannerPlaceholder(scheme: scheme),
                           ),
                   ),
