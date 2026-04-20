@@ -1,6 +1,7 @@
 import "dart:ui";
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
+import "../../../../../core/widgets/app_cached_image.dart";
 import "highlight_video_player.dart";
 
 class HighlightMediaItem {
@@ -102,20 +103,20 @@ class _HighlightCardState extends State<HighlightCard> {
                     ),
                   )
                 : media.isNotEmpty
-                    ? _MediaSlide(
-                        item: media.first,
-                        scheme: scheme,
-                        isActive: widget.isActive,
-                      )
-                    : Container(
-                        color: scheme.surfaceContainerHighest,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: scheme.onSurface.withValues(alpha: 0.5),
-                          size: 42,
-                        ),
-                      ),
+                ? _MediaSlide(
+                    item: media.first,
+                    scheme: scheme,
+                    isActive: widget.isActive,
+                  )
+                : Container(
+                    color: scheme.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: scheme.onSurface.withValues(alpha: 0.5),
+                      size: 42,
+                    ),
+                  ),
           ),
 
           // Subtle overall vignette
@@ -148,11 +149,16 @@ class _HighlightCardState extends State<HighlightCard> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
                     ),
                     child: Text(
                       "${_currentPage + 1}/${media.length}",
@@ -186,7 +192,10 @@ class _HighlightCardState extends State<HighlightCard> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.20),
                         borderRadius: BorderRadius.circular(999),
@@ -286,14 +295,15 @@ class _MediaSlide extends StatelessWidget {
       return HighlightVideoPlayer(url: item.url, isActive: isActive);
     }
 
-    return Image.network(
-      item.url,
+    return AppCachedImage(
+      imageUrl: item.url,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _mediaFallback(),
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return _mediaFallback();
-      },
+      memCacheWidth: 1100,
+      memCacheHeight: 1600,
+      maxWidthDiskCache: 1400,
+      maxHeightDiskCache: 1800,
+      errorBuilder: (_) => _mediaFallback(),
+      placeholderBuilder: (_) => _mediaFallback(),
     );
   }
 
@@ -401,7 +411,9 @@ class _BottomInfo extends StatelessWidget {
                     child: Text(
                       title,
                       maxLines: expanded ? null : 2,
-                      overflow: expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                      overflow: expanded
+                          ? TextOverflow.visible
+                          : TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -448,9 +460,15 @@ class _BottomInfo extends StatelessWidget {
 }
 
 String _initials(String name) {
-  final parts = name.trim().split(RegExp(r"\s+")).where((p) => p.isNotEmpty).toList();
+  final parts = name
+      .trim()
+      .split(RegExp(r"\s+"))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (parts.isEmpty) return "";
-  if (parts.length == 1) return parts.first.characters.take(2).toString().toUpperCase();
+  if (parts.length == 1) {
+    return parts.first.characters.take(2).toString().toUpperCase();
+  }
   final first = parts.first.characters.first;
   final second = parts[1].characters.first;
   return "$first$second".toUpperCase();
