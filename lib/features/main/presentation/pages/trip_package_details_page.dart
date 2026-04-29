@@ -1,4 +1,7 @@
+import "dart:async";
 import "dart:convert";
+import "dart:math" as math;
+import "dart:ui";
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -7,15 +10,20 @@ import "package:http/http.dart" as http;
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/observers/audit_route_observer.dart";
 import "../../../../core/services/audit_service.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../widgets/main_scaffold.dart";
-import "../widgets/trip_packages/package_models.dart";
-import "../widgets/trip_packages/package_overview_tab.dart";
+import "../widgets/listing_image_preview.dart";
 import "../widgets/trip_packages/package_activities_tab.dart";
 import "../widgets/trip_packages/package_gallery_tab.dart";
+import "../widgets/trip_packages/package_models.dart";
+import "../widgets/trip_packages/package_overview_tab.dart";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PAGE
+───────────────────────────────────────────────────────────────────────────── */
 
 class TripPackageDetailsPage extends StatefulWidget {
   final String? packageId;
@@ -38,7 +46,7 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
 
   Future<void> _fetch({bool forceRefresh = false}) async {
     if (forceRefresh) {
-      // Kept for compatibility with retry handlers.
+      // kept for retry handlers
     }
     final id =
         widget.packageId ??
@@ -81,493 +89,509 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
-    final pkg = _package;
+    final lang = currentLangSync();
 
-    return MainScaffold(
-      title: t(lang, "trips.details_title"),
-      showAppBar: false,
-      child: SafeArea(
-        child: _loading
-            ? const _PackageDetailsSkeleton()
-            : (_error != null || pkg == null)
-            ? _ErrorState(
-                message: _error ?? t(lang, "common.coming_soon"),
-                onRetry: () => _fetch(forceRefresh: true),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: scheme.surface,
+        body: SafeArea(
+          top: false,
+          child: _loading
+              ? const _PackageDetailsSkeleton()
+              : (_error != null || _package == null)
+              ? _ErrorState(
+                  message: _error ?? t(lang, "common.coming_soon"),
+                  onRetry: () => _fetch(forceRefresh: true),
+                )
+              : Stack(
+                  children: [
+                    Positioned.fill(
+                      child: _HeroPager(images: _heroImageUrls(_package!)),
+                    ),
+                    Positioned(
+                      left: 16,
+                      top: MediaQuery.of(context).padding.top + 14,
+                      child: _RoundIconButton(
+                        icon: HugeIcons.strokeRoundedArrowLeft01,
+                        onTap: () => Navigator.maybePop(context),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: _DetailsSheet(pkg: _package!, lang: lang),
+                    ),
+                  ],
+                ),
+        ),
+        bottomNavigationBar: (_package != null && !_loading && _error == null)
+            ? SafeArea(
+                minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: _BookCTAButton(
+                  label: _package!.instantConfirmationAvailable
+                      ? t(lang, "trips.book_now")
+                      : t(lang, "trips.inquire"),
+                  onTap: () {
+                    // Booking flow integration goes here.
+                  },
+                ),
               )
-            : _PackageBody(
-                pkg: pkg,
-                lang: lang,
-                scheme: scheme,
-                onBack: () => Navigator.maybePop(context),
-                onRefresh: () => _fetch(forceRefresh: true),
-              ),
+            : null,
       ),
     );
   }
 }
 
-/* ============================================================
-   BODY
-   ============================================================ */
+List<String> _heroImageUrls(PackageDetailData pkg) {
+  final urls = <String>{};
+  final ordered = <String>[];
 
-class _PackageBody extends StatefulWidget {
-  final PackageDetailData pkg;
-  final String lang;
-  final ColorScheme scheme;
-  final VoidCallback onBack;
-  final VoidCallback onRefresh;
+  void add(String? url) {
+    if (url == null) return;
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return;
+    if (urls.add(trimmed)) ordered.add(trimmed);
+  }
 
-  const _PackageBody({
-    required this.pkg,
-    required this.lang,
-    required this.scheme,
-    required this.onBack,
-    required this.onRefresh,
-  });
-
-  @override
-  State<_PackageBody> createState() => _PackageBodyState();
+  add(pkg.coverUrl);
+  for (final item in pkg.images) {
+    add(item.url);
+  }
+  for (final item in pkg.gallery) {
+    add(item.url);
+  }
+  return ordered;
 }
 
-class _PackageBodyState extends State<_PackageBody>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
-  int _heroPage = 0;
-  late final PageController _heroCtrl;
+/* ─────────────────────────────────────────────────────────────────────────────
+   HERO PAGER — auto-rotating, dot indicators, tap to preview
+───────────────────────────────────────────────────────────────────────────── */
+
+class _HeroPager extends StatefulWidget {
+  final List<String> images;
+  const _HeroPager({required this.images});
+
+  @override
+  State<_HeroPager> createState() => _HeroPagerState();
+}
+
+class _HeroPagerState extends State<_HeroPager>
+    with WidgetsBindingObserver, RouteAware {
+  int _index = 0;
+  late final PageController _pageCtrl;
+  Timer? _auto;
+  ModalRoute<dynamic>? _route;
+  bool _isAppInForeground = true;
+  bool _isRouteVisible = true;
+
+  bool get _canAutoRotate =>
+      _isAppInForeground && _isRouteVisible && widget.images.length > 1;
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
-    _heroCtrl = PageController();
+    WidgetsBinding.instance.addObserver(this);
+    _pageCtrl = PageController();
+    _syncAutoRotation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route == null || identical(route, _route)) return;
+    AuditRouteObserver.instance.unsubscribe(this);
+    _route = route;
+    AuditRouteObserver.instance.subscribe(this, route as dynamic);
+    _isRouteVisible = route.isCurrent;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _isAppInForeground = state == AppLifecycleState.resumed;
+    _syncAutoRotation();
+  }
+
+  void _startAuto() {
+    _auto?.cancel();
+    if (!_canAutoRotate) {
+      _auto = null;
+      return;
+    }
+    _auto = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted || !_canAutoRotate) return;
+      final total = widget.images.isEmpty ? 1 : widget.images.length;
+      if (total <= 1) return;
+      final next = (_index + 1) % total;
+      _pageCtrl.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void _syncAutoRotation() {
+    if (_canAutoRotate) {
+      _startAuto();
+      return;
+    }
+    _auto?.cancel();
+    _auto = null;
+  }
+
+  @override
+  void didPush() {
+    _isRouteVisible = true;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didPopNext() {
+    _isRouteVisible = true;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didPushNext() {
+    _isRouteVisible = false;
+    _syncAutoRotation();
+  }
+
+  @override
+  void didPop() {
+    _isRouteVisible = false;
+    _syncAutoRotation();
+  }
+
+  void _openPreview(BuildContext context, List<String> imgs) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.85),
+      builder: (_) => ListingImagePreview(images: imgs, initialIndex: _index),
+    );
   }
 
   @override
   void dispose() {
-    _tabs.dispose();
-    _heroCtrl.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    AuditRouteObserver.instance.unsubscribe(this);
+    _auto?.cancel();
+    _pageCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final pkg = widget.pkg;
-    final lang = widget.lang;
-    final scheme = widget.scheme;
-    final width = MediaQuery.sizeOf(context).width;
-    final isWide = width >= 700;
-    final sidePad = isWide ? 24.0 : 16.0;
-    final heroHeight = width <= 360
-        ? 356.0
-        : width <= 430
-        ? 392.0
-        : 430.0;
+    final scheme = Theme.of(context).colorScheme;
+    final imgs = widget.images.isNotEmpty ? widget.images : [""];
+    final media = MediaQuery.of(context);
+    final topPad = media.padding.top;
+    final heroHeight = media.size.height * 0.52;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            scheme.surface,
-            scheme.surfaceContainerLowest,
-            scheme.surface,
-          ],
-        ),
-      ),
-      child: NestedScrollView(
-        headerSliverBuilder: (context, _) => [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(sidePad, 12, sidePad, 0),
-              child: _HeroSection(
-                pkg: pkg,
-                lang: lang,
-                scheme: scheme,
-                heroPage: _heroPage,
-                heroCtrl: _heroCtrl,
-                height: heroHeight,
-                onPageChanged: (i) => setState(() => _heroPage = i),
-                onBack: widget.onBack,
-                onRefresh: widget.onRefresh,
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(sidePad, 14, sidePad, 18),
-              child: _TripCommandPanel(
-                pkg: pkg,
-                lang: lang,
-                scheme: scheme,
-                onActivitiesTap: () => _tabs.animateTo(1),
-                onGalleryTap: () => _tabs.animateTo(2),
-              ),
-            ),
-          ),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              tabs: [
-                t(lang, "trips.overview"),
-                t(lang, "trips.activities_title"),
-                t(lang, "trips.gallery_title"),
-              ],
-              controller: _tabs,
-              scheme: scheme,
-              horizontalPadding: sidePad,
-            ),
-          ),
-        ],
-        body: TabBarView(
-          controller: _tabs,
-          children: [
-            PackageOverviewTab(pkg: pkg),
-            PackageActivitiesTab(
-              days: pkg.days,
-              fallbackActivities: pkg.flattenedActivities,
-            ),
-            PackageGalleryTab(images: pkg.allImageItems),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/* ============================================================
-   HERO SECTION
-   ============================================================ */
-
-class _HeroSection extends StatelessWidget {
-  final PackageDetailData pkg;
-  final String lang;
-  final ColorScheme scheme;
-  final int heroPage;
-  final PageController heroCtrl;
-  final double height;
-  final ValueChanged<int> onPageChanged;
-  final VoidCallback onBack;
-  final VoidCallback onRefresh;
-
-  const _HeroSection({
-    required this.pkg,
-    required this.lang,
-    required this.scheme,
-    required this.heroPage,
-    required this.heroCtrl,
-    required this.height,
-    required this.onPageChanged,
-    required this.onBack,
-    required this.onRefresh,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final images = pkg.allImages;
-    final routeLabel = pkg.routeLabel;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: images.isEmpty
-                  ? _ImageFallback(scheme: scheme)
-                  : PageView.builder(
-                      controller: heroCtrl,
-                      onPageChanged: onPageChanged,
-                      itemCount: images.length,
-                      itemBuilder: (_, i) => AppCachedImage(
-                        imageUrl: images[i],
-                        fit: BoxFit.cover,
-                        memCacheWidth: 1500,
-                        memCacheHeight: 1200,
-                        maxWidthDiskCache: 1800,
-                        maxHeightDiskCache: 1400,
-                        errorBuilder: (_) => _ImageFallback(scheme: scheme),
-                        placeholderBuilder: (_) =>
-                            _ImageFallback(scheme: scheme),
-                      ),
-                    ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.38, 1.0],
-                    colors: [
-                      Colors.black.withValues(alpha: 0.46),
-                      Colors.black.withValues(alpha: 0.08),
-                      Colors.black.withValues(alpha: 0.72),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.16),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 12,
-              left: 12,
-              right: 12,
-              child: Row(
-                children: [
-                  _HeroControl(
-                    icon: HugeIcons.strokeRoundedArrowLeft01,
-                    onTap: onBack,
-                  ),
-                  const Spacer(),
-                  if (images.length > 1)
-                    _HeroBadge(
-                      icon: HugeIcons.strokeRoundedImage01,
-                      label: "${heroPage + 1}/${images.length}",
-                    ),
-                  const SizedBox(width: 8),
-                  _HeroControl(
-                    icon: HugeIcons.strokeRoundedRefresh,
-                    onTap: onRefresh,
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              left: 18,
-              right: 18,
-              bottom: 18,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      _StatusBadge(isActive: pkg.isActive, lang: lang),
-                      if (pkg.resolvedDaysCount > 0)
-                        _HeroBadge(
-                          icon: HugeIcons.strokeRoundedClock01,
-                          label:
-                              "${pkg.resolvedDaysCount} ${pkg.resolvedDaysCount == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    pkg.title.trim().isEmpty
-                        ? t(lang, "trips.details_title")
-                        : pkg.title.trim(),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.2,
-                      height: 1.04,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 18,
-                          color: Colors.black54,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (routeLabel.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        HugeIcon(
-                          icon: HugeIcons.strokeRoundedMapsLocation02,
-                          size: 15,
-                          color: Colors.white.withValues(alpha: 0.82),
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            routeLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.84),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (images.length > 1) ...[
-                    const SizedBox(height: 14),
-                    _PageDots(count: images.length, current: heroPage),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/* ============================================================
-   TRIP COMMAND PANEL
-   ============================================================ */
-
-class _TripCommandPanel extends StatelessWidget {
-  final PackageDetailData pkg;
-  final String lang;
-  final ColorScheme scheme;
-  final VoidCallback onActivitiesTap;
-  final VoidCallback onGalleryTap;
-
-  const _TripCommandPanel({
-    required this.pkg,
-    required this.lang,
-    required this.scheme,
-    required this.onActivitiesTap,
-    required this.onGalleryTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final description = pkg.displayDescription.trim();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        _SurfacePanel(
-          scheme: scheme,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _MiniMark(scheme: scheme),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t(lang, "trips.details_title"),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: scheme.primary,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          description.isEmpty
-                              ? t(lang, "banner.subtitle")
-                              : description,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.55,
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSurface.withValues(alpha: 0.72),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 360;
-                  final facts = <Widget>[
-                    _FactTile(
-                      icon: HugeIcons.strokeRoundedClock01,
-                      label: t(lang, "trips.duration"),
-                      value: pkg.resolvedDaysCount <= 0
-                          ? t(lang, "listings.no_data")
-                          : "${pkg.resolvedDaysCount} ${pkg.resolvedDaysCount == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
-                      scheme: scheme,
-                    ),
-                    _FactTile(
-                      icon: HugeIcons.strokeRoundedActivity01,
-                      label: t(lang, "trips.activities_title"),
-                      value: "${pkg.resolvedActivitiesCount}",
-                      scheme: scheme,
-                    ),
-                    _FactTile(
-                      icon: HugeIcons.strokeRoundedImage01,
-                      label: t(lang, "trips.gallery_title"),
-                      value: "${pkg.allImageItems.length}",
-                      scheme: scheme,
-                    ),
-                  ];
-
-                  if (compact) {
-                    return Column(
-                      children: [
-                        for (int i = 0; i < facts.length; i++) ...[
-                          facts[i],
-                          if (i < facts.length - 1) const SizedBox(height: 8),
-                        ],
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    children: [
-                      for (int i = 0; i < facts.length; i++) ...[
-                        Expanded(child: facts[i]),
-                        if (i < facts.length - 1) const SizedBox(width: 8),
-                      ],
-                    ],
+        Container(color: scheme.surface),
+        Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            height: heroHeight,
+            width: double.infinity,
+            child: GestureDetector(
+              onTap: () => _openPreview(context, imgs),
+              child: PageView.builder(
+                controller: _pageCtrl,
+                itemCount: imgs.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (_, i) {
+                  final url = imgs[i].trim();
+                  if (url.isEmpty) return _HeroPlaceholder(scheme: scheme);
+                  return AppCachedImage(
+                    imageUrl: url,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 1800,
+                    memCacheHeight: 1400,
+                    maxWidthDiskCache: 2400,
+                    maxHeightDiskCache: 1800,
+                    placeholderBuilder: (_) => _HeroPlaceholder(scheme: scheme),
+                    errorBuilder: (_) => _HeroPlaceholder(scheme: scheme),
                   );
                 },
               ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _PanelAction(
-                      label: t(lang, "trips.activities_title"),
-                      icon: HugeIcons.strokeRoundedCalendar02,
-                      filled: true,
-                      scheme: scheme,
-                      onTap: onActivitiesTap,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _PanelAction(
-                      label: t(lang, "trips.gallery_title"),
-                      icon: HugeIcons.strokeRoundedImage01,
-                      filled: false,
-                      scheme: scheme,
-                      onTap: onGalleryTap,
-                    ),
-                  ),
-                ],
+            ),
+          ),
+        ),
+
+        // Soft bottom fade — functional, helps the sheet read against the image
+        Positioned(
+          left: 0,
+          right: 0,
+          top: heroHeight - 180,
+          height: 180,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.18),
+                  ],
+                ),
               ),
+            ),
+          ),
+        ),
+
+        // Dot indicators
+        if (imgs.length > 1)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: topPad + 64,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(
+                  imgs.length,
+                  (i) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    width: _index == i ? 18 : 8,
+                    height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: _index == i
+                          ? Colors.white.withValues(alpha: 0.95)
+                          : Colors.white.withValues(alpha: 0.40),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _HeroPlaceholder extends StatelessWidget {
+  final ColorScheme scheme;
+  const _HeroPlaceholder({required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+      child: Center(
+        child: HugeIcon(
+          icon: HugeIcons.strokeRoundedImageNotFound01,
+          color: scheme.onSurface.withValues(alpha: 0.35),
+          size: 34,
+        ),
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DETAILS SHEET — title, meta row, tab bar, tab content
+───────────────────────────────────────────────────────────────────────────── */
+
+class _DetailsSheet extends StatelessWidget {
+  final PackageDetailData pkg;
+  final String lang;
+  const _DetailsSheet({required this.pkg, required this.lang});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final media = MediaQuery.of(context);
+    final isTablet = media.size.width >= 700;
+    final sheetHeight = media.size.height * (isTablet ? 0.60 : 0.62);
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0, end: 1),
+      builder: (context, t, _) {
+        return Transform.translate(
+          offset: Offset(0, (1 - t) * 24),
+          child: Opacity(
+            opacity: t.clamp(0.0, 1.0),
+            child: SizedBox(
+              height: sheetHeight,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: scheme.surface.withValues(alpha: 0.92),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(28),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 26,
+                          offset: const Offset(0, -10),
+                        ),
+                      ],
+                    ),
+                    child: _SheetBody(
+                      pkg: pkg,
+                      lang: lang,
+                      scheme: scheme,
+                      isTablet: isTablet,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SheetBody extends StatelessWidget {
+  final PackageDetailData pkg;
+  final String lang;
+  final ColorScheme scheme;
+  final bool isTablet;
+
+  const _SheetBody({
+    required this.pkg,
+    required this.lang,
+    required this.scheme,
+    required this.isTablet,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hPad = isTablet ? 24.0 : 16.0;
+    final priceLabel = _formatPrice(pkg);
+    final routeLabel = pkg.routeLabel.trim();
+    final durationDays = pkg.durationDays ?? pkg.resolvedDaysCount;
+
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        Container(
+          width: 44,
+          height: 5,
+          decoration: BoxDecoration(
+            color: scheme.onSurface.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Title + duration pill
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  pkg.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isTablet ? 22 : 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
+                    height: 1.05,
+                    color: scheme.onSurface,
+                  ),
+                ),
+              ),
+              if (durationDays > 0) ...[
+                const SizedBox(width: 10),
+                _DurationChip(days: durationDays, lang: lang, scheme: scheme),
+              ],
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // Route + price row
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: Row(
+            children: [
+              if (routeLabel.isNotEmpty)
+                Expanded(
+                  child: Row(
+                    children: [
+                      HugeIcon(
+                        icon: HugeIcons.strokeRoundedMapsLocation02,
+                        size: 16,
+                        color: scheme.onSurface.withValues(alpha: 0.65),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          routeLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: scheme.onSurface.withValues(alpha: 0.62),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                const Spacer(),
+              if (priceLabel != null) ...[
+                const SizedBox(width: 10),
+                _PriceChip(label: priceLabel, scheme: scheme),
+              ],
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Pill tab bar
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: _PillTabBar(
+            labels: [
+              t(lang, "trips.tab_overview"),
+              t(lang, "trips.tab_itinerary"),
+              t(lang, "trips.tab_gallery"),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // Tab content
+        Expanded(
+          child: TabBarView(
+            physics: const BouncingScrollPhysics(),
+            children: [
+              PackageOverviewTab(pkg: pkg),
+              PackageActivitiesTab(
+                days: pkg.days,
+                fallbackActivities: pkg.activities,
+              ),
+              PackageGalleryTab(images: _galleryImages(pkg)),
             ],
           ),
         ),
@@ -576,323 +600,127 @@ class _TripCommandPanel extends StatelessWidget {
   }
 }
 
-/* ============================================================
-   STICKY TAB BAR DELEGATE
-   ============================================================ */
-
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final List<String> tabs;
-  final TabController controller;
-  final ColorScheme scheme;
-  final double horizontalPadding;
-
-  const _TabBarDelegate({
-    required this.tabs,
-    required this.controller,
-    required this.scheme,
-    required this.horizontalPadding,
-  });
-
-  @override
-  double get minExtent => 70;
-  @override
-  double get maxExtent => 70;
-
-  @override
-  bool shouldRebuild(_TabBarDelegate old) =>
-      old.tabs != tabs ||
-      old.controller != controller ||
-      old.horizontalPadding != horizontalPadding;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return ColoredBox(
-      color: scheme.surface.withValues(alpha: 0.98),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          horizontalPadding,
-          8,
-          horizontalPadding,
-          10,
-        ),
-        child: Container(
-          height: 52,
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.48),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: scheme.outline.withValues(alpha: 0.10)),
-          ),
-          child: TabBar(
-            controller: controller,
-            isScrollable: false,
-            dividerColor: Colors.transparent,
-            indicatorSize: TabBarIndicatorSize.tab,
-            indicator: BoxDecoration(
-              color: scheme.primary,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            labelColor: scheme.onPrimary,
-            unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.58),
-            labelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-            tabs: tabs.map((label) => Tab(text: label)).toList(),
-          ),
-        ),
-      ),
-    );
+List<PackageImageItem> _galleryImages(PackageDetailData pkg) {
+  final seen = <String>{};
+  final merged = <PackageImageItem>[];
+  for (final list in [pkg.gallery, pkg.images]) {
+    for (final item in list) {
+      if (item.url.trim().isEmpty) continue;
+      if (seen.add(item.url)) merged.add(item);
+    }
   }
+  return merged;
 }
 
-/* ============================================================
-   SHARED UI PRIMITIVES
-   ============================================================ */
+String? _formatPrice(PackageDetailData pkg) {
+  final raw = pkg.priceAmount?.trim();
+  if (raw == null || raw.isEmpty) return null;
+  final n = num.tryParse(raw);
+  if (n == null) return null;
+  final cur = (pkg.priceCurrency ?? "USD").toUpperCase();
+  final formatted = n is int || n == n.toInt()
+      ? n.toInt().toString()
+      : n.toStringAsFixed(2);
+  return "$cur $formatted";
+}
 
-class _SurfacePanel extends StatelessWidget {
-  final Widget child;
-  final ColorScheme scheme;
+/* ─────────────────────────────────────────────────────────────────────────────
+   PILL TAB BAR — same look as listing details
+───────────────────────────────────────────────────────────────────────────── */
 
-  const _SurfacePanel({required this.child, required this.scheme});
+class _PillTabBar extends StatelessWidget {
+  final List<String> labels;
+  const _PillTabBar({required this.labels});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = scheme.brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.055) : scheme.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.10)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: child,
-    );
-  }
-}
-
-class _MiniMark extends StatelessWidget {
-  final ColorScheme scheme;
-
-  const _MiniMark({required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.30),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Center(
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedRoute01,
-          size: 19,
-          color: scheme.onPrimary,
+      child: TabBar(
+        isScrollable: true,
+        dividerColor: Colors.transparent,
+        indicator: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _FactTile extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final String value;
-  final ColorScheme scheme;
-
-  const _FactTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.scheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 74),
-      padding: const EdgeInsets.all(11),
-      decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.075),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.primary.withValues(alpha: 0.14)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          HugeIcon(icon: icon, size: 15, color: scheme.primary),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              color: scheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: scheme.onSurface.withValues(alpha: 0.50),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PanelAction extends StatelessWidget {
-  final String label;
-  final dynamic icon;
-  final bool filled;
-  final ColorScheme scheme;
-  final VoidCallback onTap;
-
-  const _PanelAction({
-    required this.label,
-    required this.icon,
-    required this.filled,
-    required this.scheme,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final foreground = filled ? scheme.onPrimary : scheme.primary;
-    return Material(
-      color: filled ? scheme.primary : Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          height: 48,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: filled
-                  ? scheme.primary
-                  : scheme.primary.withValues(alpha: 0.22),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              HugeIcon(icon: icon, size: 15, color: foreground),
-              const SizedBox(width: 7),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: foreground,
-                  ),
+        labelColor: scheme.onSurface,
+        unselectedLabelColor: scheme.onSurface.withValues(alpha: 0.55),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+        ),
+        tabAlignment: TabAlignment.start,
+        tabs: labels
+            .map(
+              (label) => Tab(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Text(label),
                 ),
               ),
-            ],
-          ),
-        ),
+            )
+            .toList(),
       ),
     );
   }
 }
 
-class _HeroControl extends StatelessWidget {
-  final dynamic icon;
-  final VoidCallback onTap;
+/* ─────────────────────────────────────────────────────────────────────────────
+   CHIPS
+───────────────────────────────────────────────────────────────────────────── */
 
-  const _HeroControl({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.34),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Center(
-            child: HugeIcon(icon: icon, size: 20, color: Colors.white),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroBadge extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-
-  const _HeroBadge({required this.icon, required this.label});
+class _DurationChip extends StatelessWidget {
+  final int days;
+  final String lang;
+  final ColorScheme scheme;
+  const _DurationChip({
+    required this.days,
+    required this.lang,
+    required this.scheme,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 34,
-      padding: const EdgeInsets.symmetric(horizontal: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.34),
+        color: scheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.50),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           HugeIcon(
-            icon: icon,
-            size: 13,
-            color: Colors.white.withValues(alpha: 0.90),
+            icon: HugeIcons.strokeRoundedClock01,
+            size: 12,
+            color: scheme.onSurface.withValues(alpha: 0.75),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
-            label,
+            "$days ${t(lang, "packages.days")}",
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              color: Colors.white.withValues(alpha: 0.94),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface.withValues(alpha: 0.85),
+              letterSpacing: 0.1,
             ),
           ),
         ],
@@ -901,183 +729,227 @@ class _HeroBadge extends StatelessWidget {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final bool isActive;
-  final String lang;
-
-  const _StatusBadge({required this.isActive, required this.lang});
+class _PriceChip extends StatelessWidget {
+  final String label;
+  final ColorScheme scheme;
+  const _PriceChip({required this.label, required this.scheme});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: isActive
-            ? Colors.green.withValues(alpha: 0.20)
-            : Colors.red.withValues(alpha: 0.20),
+        color: scheme.primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isActive
-              ? Colors.green.withValues(alpha: 0.45)
-              : Colors.red.withValues(alpha: 0.45),
+          color: scheme.primary.withValues(alpha: 0.25),
+          width: 1,
         ),
       ),
       child: Text(
-        isActive
-            ? t(lang, "trips.status_active")
-            : t(lang, "trips.status_inactive"),
+        label,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w900,
-          color: isActive ? Colors.green.shade300 : Colors.red.shade300,
+          color: scheme.primary,
+          letterSpacing: 0.1,
         ),
       ),
     );
   }
 }
 
-class _PageDots extends StatelessWidget {
-  final int count;
-  final int current;
+/* ─────────────────────────────────────────────────────────────────────────────
+   ROUND ICON BUTTON — back button (same look as listing details)
+───────────────────────────────────────────────────────────────────────────── */
 
-  const _PageDots({required this.count, required this.current});
+class _RoundIconButton extends StatelessWidget {
+  final dynamic icon;
+  final VoidCallback onTap;
+
+  const _RoundIconButton({required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(count, (i) {
-        final active = i == current;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 2.5),
-          width: active ? 16 : 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.white.withValues(alpha: 0.38),
-            borderRadius: BorderRadius.circular(999),
+    final scheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: scheme.surface.withValues(alpha: 0.86),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 44,
+          height: 44,
+          alignment: Alignment.center,
+          child: HugeIcon(
+            icon: icon,
+            size: 22,
+            color: scheme.onSurface.withValues(alpha: 0.85),
           ),
-        );
-      }),
-    );
-  }
-}
-
-class _ImageFallback extends StatelessWidget {
-  final ColorScheme scheme;
-  const _ImageFallback({required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
-      child: Center(
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedImageNotFound01,
-          size: 34,
-          color: scheme.onSurface.withValues(alpha: 0.30),
         ),
       ),
     );
   }
 }
 
-/* ============================================================
-   ERROR STATE
-   ============================================================ */
+/* ─────────────────────────────────────────────────────────────────────────────
+   STICKY BOOK CTA — press scale animation
+───────────────────────────────────────────────────────────────────────────── */
+
+class _BookCTAButton extends StatefulWidget {
+  final String label;
+  final VoidCallback? onTap;
+  const _BookCTAButton({required this.label, required this.onTap});
+
+  @override
+  State<_BookCTAButton> createState() => _BookCTAButtonState();
+}
+
+class _BookCTAButtonState extends State<_BookCTAButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 130),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return ScaleTransition(
+      scale: _scale,
+      child: GestureDetector(
+        onTapDown: (_) => _ctrl.forward(),
+        onTapUp: (_) => _ctrl.reverse(),
+        onTapCancel: () => _ctrl.reverse(),
+        onTap: widget.onTap,
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: scheme.primary,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: scheme.onPrimary,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowRight01,
+                size: 18,
+                color: scheme.onPrimary,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ERROR + SKELETON
+───────────────────────────────────────────────────────────────────────────── */
 
 class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-
   const _ErrorState({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final lang = currentLangSync();
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 420),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: scheme.surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: scheme.error.withValues(alpha: 0.16)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.errorContainer.withValues(alpha: 0.40),
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: scheme.errorContainer.withValues(alpha: 0.60),
-                  shape: BoxShape.circle,
+              child: Icon(
+                Icons.cloud_off_rounded,
+                color: scheme.error,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.75),
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                backgroundColor: scheme.primary.withValues(alpha: 0.10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
                 ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedWifiError01,
-                    size: 24,
-                    color: scheme.error,
-                  ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                message,
-                textAlign: TextAlign.center,
+              child: Text(
+                "Try again",
                 style: TextStyle(
-                  fontSize: 12,
-                  color: scheme.error,
+                  color: scheme.primary,
                   fontWeight: FontWeight.w800,
-                  height: 1.35,
                 ),
               ),
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: onRetry,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: scheme.primary,
-                    foregroundColor: scheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    t(lang, "common.try_again"),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
-/* ============================================================
-   SKELETON LOADER
-   ============================================================ */
 
 class _PackageDetailsSkeleton extends StatefulWidget {
   const _PackageDetailsSkeleton();
@@ -1089,137 +961,194 @@ class _PackageDetailsSkeleton extends StatefulWidget {
 
 class _PackageDetailsSkeletonState extends State<_PackageDetailsSkeleton>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c;
+  late final AnimationController _shimmer;
 
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(
+    _shimmer = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 1300),
+    )..repeat();
   }
 
   @override
   void dispose() {
-    _c.dispose();
+    _shimmer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final width = MediaQuery.sizeOf(context).width;
-    final sidePad = width >= 700 ? 24.0 : 16.0;
-    final heroHeight = width <= 360
-        ? 356.0
-        : width <= 430
-        ? 392.0
-        : 430.0;
+    final media = MediaQuery.of(context);
+    final heroHeight = media.size.height * 0.52;
+    final sheetHeight = media.size.height * 0.62;
 
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (context, child) {
-        final base = scheme.surfaceContainerHighest.withValues(alpha: 0.25);
-        final hi = scheme.surfaceContainerHighest.withValues(alpha: 0.42);
-        final c = Color.lerp(base, hi, _c.value)!;
-
-        return Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(sidePad, 12, sidePad, 0),
-              child: _SkelBox(color: c, height: heroHeight, radius: 28),
+    return Stack(
+      children: [
+        // Hero shimmer
+        Positioned.fill(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              height: heroHeight,
+              width: double.infinity,
+              child: _ShimmerBox(controller: _shimmer, scheme: scheme),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(sidePad, 14, sidePad, 18),
-              child: _SkelBox(
-                color: c.withValues(alpha: 0.72),
-                height: 220,
-                radius: 22,
+          ),
+        ),
+
+        // Back button placeholder
+        Positioned(
+          left: 16,
+          top: media.padding.top + 14,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: scheme.surface.withValues(alpha: 0.86),
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+
+        // Sheet shimmer
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: sheetHeight,
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(sidePad, 8, sidePad, 10),
-              child: _SkelBox(color: c, height: 52, radius: 18),
-            ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(sidePad, 16, sidePad, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _SkelBox(color: c, height: 60, radius: 14),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _SkelBox(color: c, height: 60, radius: 14),
-                        ),
-                      ],
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: scheme.onSurface.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                    const SizedBox(height: 16),
-                    _SkelLine(color: c, width: 120, height: 12),
-                    const SizedBox(height: 10),
-                    _SkelBox(color: c, height: 90, radius: 14),
-                    const SizedBox(height: 16),
-                    _SkelLine(color: c, width: 90, height: 12),
-                    const SizedBox(height: 10),
-                    _SkelBox(color: c, height: 52, radius: 14),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 18),
+                _ShimmerBar(
+                  controller: _shimmer,
+                  scheme: scheme,
+                  height: 22,
+                  widthFraction: 0.7,
+                ),
+                const SizedBox(height: 12),
+                _ShimmerBar(
+                  controller: _shimmer,
+                  scheme: scheme,
+                  height: 14,
+                  widthFraction: 0.5,
+                ),
+                const SizedBox(height: 22),
+                _ShimmerBar(
+                  controller: _shimmer,
+                  scheme: scheme,
+                  height: 40,
+                  widthFraction: 0.85,
+                ),
+                const SizedBox(height: 22),
+                Expanded(
+                  child: Column(
+                    children: List.generate(
+                      4,
+                      (_) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ShimmerBar(
+                          controller: _shimmer,
+                          scheme: scheme,
+                          height: 16,
+                          widthFraction: 0.95,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShimmerBox extends StatelessWidget {
+  final AnimationController controller;
+  final ColorScheme scheme;
+  const _ShimmerBox({required this.controller, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment(-1.5 + controller.value * 3, 0),
+              end: Alignment(-0.5 + controller.value * 3, 0),
+              colors: [
+                scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+                scheme.surfaceContainerHighest.withValues(alpha: 0.80),
+                scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 }
 
-class _SkelBox extends StatelessWidget {
-  final Color color;
+class _ShimmerBar extends StatelessWidget {
+  final AnimationController controller;
+  final ColorScheme scheme;
   final double height;
-  final double radius;
+  final double widthFraction;
 
-  const _SkelBox({
-    required this.color,
-    this.height = double.infinity,
-    this.radius = 0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height == double.infinity ? null : height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-}
-
-class _SkelLine extends StatelessWidget {
-  final Color color;
-  final double width;
-  final double height;
-
-  const _SkelLine({
-    required this.color,
-    required this.width,
+  const _ShimmerBar({
+    required this.controller,
+    required this.scheme,
     required this.height,
+    required this.widthFraction,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(999),
+    return LayoutBuilder(
+      builder: (context, constraints) => AnimatedBuilder(
+        animation: controller,
+        builder: (context, _) {
+          return Container(
+            height: height,
+            width: math.max(40, constraints.maxWidth * widthFraction),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              gradient: LinearGradient(
+                begin: Alignment(-1.5 + controller.value * 3, 0),
+                end: Alignment(-0.5 + controller.value * 3, 0),
+                colors: [
+                  scheme.surfaceContainerHighest.withValues(alpha: 0.50),
+                  scheme.surfaceContainerHighest.withValues(alpha: 0.80),
+                  scheme.surfaceContainerHighest.withValues(alpha: 0.50),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
