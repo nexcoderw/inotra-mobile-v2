@@ -8,6 +8,7 @@ import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
+import "../../../../core/widgets/image_not_found_svg.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -283,19 +284,24 @@ class _PackageCard extends StatelessWidget {
                       memCacheHeight: 900,
                       maxWidthDiskCache: 1600,
                       maxHeightDiskCache: 1200,
-                      errorBuilder: (_) => Container(
-                        color: scheme.surfaceVariant.withOpacity(0.7),
+                      errorBuilder: (_) => ImageNotFoundSvg(
+                        backgroundColor: scheme.surfaceContainerHighest
+                            .withValues(alpha: 0.7),
                       ),
                       placeholderBuilder: (_) => Container(
-                        color: scheme.surfaceVariant.withOpacity(0.7),
+                        color: scheme.surfaceContainerHighest.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                     ),
                   ),
                 )
               else
                 Positioned.fill(
-                  child: Container(
-                    color: scheme.surfaceVariant.withOpacity(0.7),
+                  child: ImageNotFoundSvg(
+                    backgroundColor: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.7,
+                    ),
                   ),
                 ),
 
