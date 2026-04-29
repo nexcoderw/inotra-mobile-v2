@@ -241,6 +241,12 @@ class PackageDetailData {
   final String difficultyLevel;
   final String physicalIntensity;
   final String pricingMode;
+  final String pricingNotes;
+  final String childPricingNote;
+  final String addOnsSummary;
+  final String? depositAmount;
+  final String? depositCurrency;
+  final int? depositDueDays;
   final String? coverUrl;
   final String? coverAltText;
   final int? durationDays;
@@ -250,6 +256,10 @@ class PackageDetailData {
   final int stopsCount;
   final String? priceAmount;
   final String? priceCurrency;
+  final bool privateTripAvailable;
+  final bool sharedTripAvailable;
+  final bool instantConfirmationAvailable;
+  final int? bookingCutoffHours;
   final bool isActive;
   final List<PackageActivity> activities;
   final List<PackageImageItem> images;
@@ -278,6 +288,12 @@ class PackageDetailData {
     required this.difficultyLevel,
     required this.physicalIntensity,
     required this.pricingMode,
+    required this.pricingNotes,
+    required this.childPricingNote,
+    required this.addOnsSummary,
+    required this.depositAmount,
+    required this.depositCurrency,
+    required this.depositDueDays,
     required this.coverUrl,
     required this.coverAltText,
     required this.durationDays,
@@ -287,6 +303,10 @@ class PackageDetailData {
     required this.stopsCount,
     required this.priceAmount,
     required this.priceCurrency,
+    required this.privateTripAvailable,
+    required this.sharedTripAvailable,
+    required this.instantConfirmationAvailable,
+    required this.bookingCutoffHours,
     required this.isActive,
     required this.activities,
     required this.images,
@@ -496,6 +516,16 @@ class PackageDetailData {
       difficultyLevel: (j["difficulty_level"] ?? "").toString(),
       physicalIntensity: (j["physical_intensity"] ?? "").toString(),
       pricingMode: (j["pricing_mode"] ?? "").toString(),
+      pricingNotes: (j["pricing_notes"] ?? "").toString(),
+      childPricingNote: (j["child_pricing_note"] ?? "").toString(),
+      addOnsSummary: (j["add_ons_summary"] ?? "").toString(),
+      depositAmount: (j["deposit_amount"] ?? "").toString().trim().isEmpty
+          ? null
+          : (j["deposit_amount"] ?? "").toString().trim(),
+      depositCurrency: (j["deposit_currency"] ?? "").toString().trim().isEmpty
+          ? null
+          : (j["deposit_currency"] ?? "").toString().trim(),
+      depositDueDays: (j["deposit_due_days"] as num?)?.toInt(),
       coverUrl: (j["cover_url"] ?? j["image_url"] ?? "").toString().trim(),
       coverAltText: (j["cover_alt_text"] ?? "").toString().trim().isEmpty
           ? null
@@ -512,6 +542,10 @@ class PackageDetailData {
       priceCurrency: (j["price_currency"] ?? "").toString().trim().isEmpty
           ? null
           : (j["price_currency"] ?? "").toString().trim(),
+      privateTripAvailable: j["private_trip_available"] != false,
+      sharedTripAvailable: j["shared_trip_available"] == true,
+      instantConfirmationAvailable: j["instant_confirmation_available"] == true,
+      bookingCutoffHours: (j["booking_cutoff_hours"] as num?)?.toInt(),
       isActive: j["is_active"] == true,
       activities: rawActivities,
       images: parseImages("images"),
