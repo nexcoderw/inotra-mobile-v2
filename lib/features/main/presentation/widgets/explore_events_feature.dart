@@ -9,6 +9,7 @@ import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
+import "../../../../core/widgets/image_not_found_svg.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -539,31 +540,13 @@ class _EventPosterThumb extends StatelessWidget {
                 memCacheHeight: 512,
                 maxWidthDiskCache: 768,
                 maxHeightDiskCache: 768,
-                errorBuilder: (_) =>
-                    _PlaceholderIcon(color: placeholder, scheme: scheme),
+                errorBuilder: (_) => ImageNotFoundSvg(
+                  backgroundColor: placeholder,
+                  sizeFactor: 0.46,
+                ),
                 placeholderBuilder: (_) => Container(color: placeholder),
               )
-            : _PlaceholderIcon(color: placeholder, scheme: scheme),
-      ),
-    );
-  }
-}
-
-class _PlaceholderIcon extends StatelessWidget {
-  final Color color;
-  final ColorScheme scheme;
-  const _PlaceholderIcon({required this.color, required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: color,
-      child: Center(
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedCalendar03,
-          color: scheme.onSurface.withValues(alpha: 0.35),
-          size: 22,
-        ),
+            : ImageNotFoundSvg(backgroundColor: placeholder, sizeFactor: 0.46),
       ),
     );
   }
