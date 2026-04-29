@@ -1129,6 +1129,7 @@ class _Package {
   final String? subtitle;
   final String? imageUrl;
   final int durationDays;
+  final int activitiesCount;
 
   _Package({
     required this.id,
@@ -1136,17 +1137,33 @@ class _Package {
     required this.subtitle,
     required this.imageUrl,
     required this.durationDays,
+    required this.activitiesCount,
   });
 
   static _Package fromJson(Map<String, dynamic> json) {
+    final route = (json["route_summary"] ?? "").toString().trim();
+    final origin = (json["origin_label"] ?? "").toString().trim();
+    final destination = (json["destination_label"] ?? "").toString().trim();
+    final summary = (json["summary"] ?? json["description"] ?? "")
+        .toString()
+        .trim();
+    final routeLabel = route.isNotEmpty
+        ? route
+        : (origin.isNotEmpty && destination.isNotEmpty
+              ? "$origin -> $destination"
+              : "");
     return _Package(
       id: json["id"]?.toString() ?? "",
       title: json["title"] as String? ?? json["name"] as String?,
-      subtitle: json["location"] as String? ?? json["description"] as String?,
+      subtitle: routeLabel.isNotEmpty ? routeLabel : summary,
       imageUrl:
           (json["cover_url"] ?? json["image"] ?? json["cover_image"])
               as String?,
-      durationDays: (json["duration_days"] as num?)?.toInt() ?? 0,
+      durationDays:
+          (json["duration_days"] as num?)?.toInt() ??
+          (json["days_count"] as num?)?.toInt() ??
+          0,
+      activitiesCount: (json["activities_count"] as num?)?.toInt() ?? 0,
     );
   }
 }
