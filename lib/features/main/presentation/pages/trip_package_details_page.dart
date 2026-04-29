@@ -225,7 +225,10 @@ class _PackageBodyState extends State<_PackageBody>
           controller: _tabs,
           children: [
             PackageOverviewTab(pkg: pkg),
-            PackageActivitiesTab(activities: pkg.activities),
+            PackageActivitiesTab(
+              days: pkg.days,
+              fallbackActivities: pkg.flattenedActivities,
+            ),
             PackageGalleryTab(images: pkg.allImageItems),
           ],
         ),
@@ -264,6 +267,7 @@ class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final images = pkg.allImages;
+    final routeLabel = pkg.routeLabel;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
@@ -355,11 +359,11 @@ class _HeroSection extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       _StatusBadge(isActive: pkg.isActive, lang: lang),
-                      if (pkg.durationDays != null)
+                      if (pkg.resolvedDaysCount > 0)
                         _HeroBadge(
                           icon: HugeIcons.strokeRoundedClock01,
                           label:
-                              "${pkg.durationDays} ${pkg.durationDays == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
+                              "${pkg.resolvedDaysCount} ${pkg.resolvedDaysCount == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
                         ),
                     ],
                   ),
@@ -385,7 +389,7 @@ class _HeroSection extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (pkg.location.trim().isNotEmpty) ...[
+                  if (routeLabel.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Row(
                       children: [
@@ -397,7 +401,7 @@ class _HeroSection extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            pkg.location.trim(),
+                            routeLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -445,7 +449,7 @@ class _TripCommandPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final description = pkg.description.trim();
+    final description = pkg.displayDescription.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,15 +504,15 @@ class _TripCommandPanel extends StatelessWidget {
                     _FactTile(
                       icon: HugeIcons.strokeRoundedClock01,
                       label: t(lang, "trips.duration"),
-                      value: pkg.durationDays == null
+                      value: pkg.resolvedDaysCount <= 0
                           ? t(lang, "listings.no_data")
-                          : "${pkg.durationDays} ${pkg.durationDays == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
+                          : "${pkg.resolvedDaysCount} ${pkg.resolvedDaysCount == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
                       scheme: scheme,
                     ),
                     _FactTile(
                       icon: HugeIcons.strokeRoundedActivity01,
                       label: t(lang, "trips.activities_title"),
-                      value: "${pkg.activities.length}",
+                      value: "${pkg.resolvedActivitiesCount}",
                       scheme: scheme,
                     ),
                     _FactTile(
