@@ -16,6 +16,8 @@ class PackageOverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
+    final routeLabel = pkg.routeLabel;
+    final overview = pkg.displayDescription;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -23,7 +25,7 @@ class PackageOverviewTab extends StatelessWidget {
         _StatsRow(pkg: pkg, lang: lang, scheme: scheme),
         const SizedBox(height: 16),
 
-        if (pkg.description.isNotEmpty) ...[
+        if (overview.isNotEmpty) ...[
           _SectionHeader(
             icon: HugeIcons.strokeRoundedTextAlignLeft01,
             label: t(lang, "listings.overview_title"),
@@ -33,7 +35,7 @@ class PackageOverviewTab extends StatelessWidget {
           _ContentCard(
             scheme: scheme,
             child: Text(
-              pkg.description,
+              overview,
               style: TextStyle(
                 fontSize: 12,
                 height: 1.65,
@@ -45,10 +47,10 @@ class PackageOverviewTab extends StatelessWidget {
           const SizedBox(height: 16),
         ],
 
-        if (pkg.location.isNotEmpty) ...[
+        if (routeLabel.isNotEmpty) ...[
           _SectionHeader(
             icon: HugeIcons.strokeRoundedMapsLocation02,
-            label: t(lang, "listings.address"),
+            label: "Route",
             scheme: scheme,
           ),
           const SizedBox(height: 10),
@@ -64,7 +66,7 @@ class PackageOverviewTab extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    pkg.location,
+                    routeLabel,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -72,6 +74,60 @@ class PackageOverviewTab extends StatelessWidget {
                     ),
                   ),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        if (pkg.travelerFit.trim().isNotEmpty) ...[
+          _SectionHeader(
+            icon: HugeIcons.strokeRoundedUserMultiple,
+            label: "Best For",
+            scheme: scheme,
+          ),
+          const SizedBox(height: 10),
+          _ContentCard(
+            scheme: scheme,
+            child: Text(
+              pkg.travelerFit.trim(),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+                color: scheme.onSurface.withValues(alpha: 0.82),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
+        if (pkg.includedItems.trim().isNotEmpty ||
+            pkg.excludedItems.trim().isNotEmpty ||
+            pkg.whatToBring.trim().isNotEmpty ||
+            pkg.importantNotes.trim().isNotEmpty) ...[
+          _SectionHeader(
+            icon: HugeIcons.strokeRoundedInformationCircle,
+            label: "Planning Notes",
+            scheme: scheme,
+          ),
+          const SizedBox(height: 10),
+          _ContentCard(
+            scheme: scheme,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (pkg.includedItems.trim().isNotEmpty)
+                  _TextBlock(label: "Included", value: pkg.includedItems),
+                if (pkg.excludedItems.trim().isNotEmpty)
+                  _TextBlock(label: "Excluded", value: pkg.excludedItems),
+                if (pkg.whatToBring.trim().isNotEmpty)
+                  _TextBlock(label: "What to bring", value: pkg.whatToBring),
+                if (pkg.importantNotes.trim().isNotEmpty)
+                  _TextBlock(
+                    label: "Important notes",
+                    value: pkg.importantNotes,
+                  ),
               ],
             ),
           ),
@@ -95,16 +151,22 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final chips = <({dynamic icon, String value})>[
-      if (pkg.durationDays != null)
+      if (pkg.resolvedDaysCount > 0)
         (
           icon: HugeIcons.strokeRoundedClock01,
           value:
-              "${pkg.durationDays} ${pkg.durationDays == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
+              "${pkg.resolvedDaysCount} ${pkg.resolvedDaysCount == 1 ? t(lang, "trips.day") : t(lang, "trips.days")}",
         ),
-      if (pkg.activities.isNotEmpty)
+      if (pkg.resolvedActivitiesCount > 0)
         (
           icon: HugeIcons.strokeRoundedActivity01,
-          value: "${pkg.activities.length} ${t(lang, "trips.activities")}",
+          value:
+              "${pkg.resolvedActivitiesCount} ${t(lang, "trips.activities")}",
+        ),
+      if (pkg.durationNights != null && pkg.durationNights! > 0)
+        (
+          icon: HugeIcons.strokeRoundedMoon02,
+          value: "${pkg.durationNights} nights",
         ),
     ];
 
@@ -123,6 +185,44 @@ class _StatsRow extends StatelessWidget {
           if (chip != chips.last) const SizedBox(width: 10),
         ],
       ],
+    );
+  }
+}
+
+class _TextBlock extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _TextBlock({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: scheme.onSurface.withValues(alpha: 0.88),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value.trim(),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.6,
+              fontWeight: FontWeight.w500,
+              color: scheme.onSurface.withValues(alpha: 0.78),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -224,9 +324,7 @@ class _ContentCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             color: scheme.surfaceContainerHighest.withValues(alpha: 0.18),
-            border: Border.all(
-              color: scheme.onSurface.withValues(alpha: 0.08),
-            ),
+            border: Border.all(color: scheme.onSurface.withValues(alpha: 0.08)),
           ),
           child: child,
         ),
