@@ -9,6 +9,7 @@ import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/place_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
+import "../../../../core/widgets/image_not_found_svg.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -289,10 +290,9 @@ class _ListingCardState extends State<_ListingCard> {
                           memCacheHeight: 900,
                           maxWidthDiskCache: 1200,
                           maxHeightDiskCache: 1200,
-                          errorBuilder: (_) => Container(
-                            color: scheme.surfaceContainerHighest.withValues(
-                              alpha: 0.7,
-                            ),
+                          errorBuilder: (_) => ImageNotFoundSvg(
+                            backgroundColor: scheme.surfaceContainerHighest
+                                .withValues(alpha: 0.7),
                           ),
                           placeholderBuilder: (_) => Container(
                             color: scheme.surfaceContainerHighest.withValues(
@@ -300,10 +300,9 @@ class _ListingCardState extends State<_ListingCard> {
                             ),
                           ),
                         )
-                      : Container(
-                          color: scheme.surfaceContainerHighest.withValues(
-                            alpha: 0.7,
-                          ),
+                      : ImageNotFoundSvg(
+                          backgroundColor: scheme.surfaceContainerHighest
+                              .withValues(alpha: 0.7),
                         ),
                 ),
 
