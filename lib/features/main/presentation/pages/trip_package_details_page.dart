@@ -894,6 +894,7 @@ class _ErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final lang = currentLangSync();
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Center(
@@ -937,7 +938,7 @@ class _ErrorState extends StatelessWidget {
                 ),
               ),
               child: Text(
-                "Try again",
+                t(lang, "common.try_again"),
                 style: TextStyle(
                   color: scheme.primary,
                   fontWeight: FontWeight.w800,
