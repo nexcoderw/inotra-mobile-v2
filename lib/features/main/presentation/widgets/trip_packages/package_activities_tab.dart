@@ -124,12 +124,21 @@ class _DayCard extends StatelessWidget {
                 ),
               ],
               if (day.overnightLocation.trim().isNotEmpty ||
-                  day.mealsIncluded.trim().isNotEmpty) ...[
+                  day.mealsIncluded.trim().isNotEmpty ||
+                  day.distanceLabel.trim().isNotEmpty ||
+                  day.travelTimeLabel.trim().isNotEmpty ||
+                  day.isRestDay) ...[
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
+                    if (day.isRestDay)
+                      _MetaTag(
+                        icon: HugeIcons.strokeRoundedSleeping,
+                        label: "Rest day",
+                        scheme: scheme,
+                      ),
                     if (day.overnightLocation.trim().isNotEmpty)
                       _MetaTag(
                         icon: HugeIcons.strokeRoundedBed,
@@ -140,6 +149,18 @@ class _DayCard extends StatelessWidget {
                       _MetaTag(
                         icon: HugeIcons.strokeRoundedRestaurant01,
                         label: day.mealsIncluded.trim(),
+                        scheme: scheme,
+                      ),
+                    if (day.distanceLabel.trim().isNotEmpty)
+                      _MetaTag(
+                        icon: HugeIcons.strokeRoundedRoute03,
+                        label: day.distanceLabel.trim(),
+                        scheme: scheme,
+                      ),
+                    if (day.travelTimeLabel.trim().isNotEmpty)
+                      _MetaTag(
+                        icon: HugeIcons.strokeRoundedClock01,
+                        label: day.travelTimeLabel.trim(),
                         scheme: scheme,
                       ),
                   ],
@@ -172,9 +193,10 @@ class _StopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = stop.title.trim().isNotEmpty
-        ? stop.title.trim()
-        : stop.placeName.trim();
+    final hasTitle = stop.title.trim().isNotEmpty;
+    final hasPlace = stop.placeName.trim().isNotEmpty;
+    final title = hasTitle ? stop.title.trim() : stop.placeName.trim();
+    final subtitle = (hasTitle && hasPlace) ? stop.placeName.trim() : "";
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -187,14 +209,54 @@ class _StopCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title.isNotEmpty)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurface.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+                if (stop.isPrimaryStop) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      "Primary",
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.6,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 2),
             Text(
-              title,
+              subtitle,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: scheme.onSurface.withValues(alpha: 0.9),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface.withValues(alpha: 0.62),
               ),
             ),
+          ],
           if (stop.description.trim().isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
@@ -211,16 +273,23 @@ class _StopCard extends StatelessWidget {
               stop.durationLabel.trim().isNotEmpty ||
               stop.distanceLabel.trim().isNotEmpty ||
               stop.arrivalTime.trim().isNotEmpty ||
-              stop.departureTime.trim().isNotEmpty) ...[
+              stop.departureTime.trim().isNotEmpty ||
+              stop.accommodationName.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (stop.transportMode.trim().isNotEmpty)
+                if (stop.arrivalTime.trim().isNotEmpty)
                   _MetaTag(
-                    icon: HugeIcons.strokeRoundedCar01,
-                    label: stop.transportMode.trim(),
+                    icon: HugeIcons.strokeRoundedTimeQuarterPass,
+                    label: "Arrive ${stop.arrivalTime.trim()}",
+                    scheme: scheme,
+                  ),
+                if (stop.departureTime.trim().isNotEmpty)
+                  _MetaTag(
+                    icon: HugeIcons.strokeRoundedTimeQuarterPass,
+                    label: "Depart ${stop.departureTime.trim()}",
                     scheme: scheme,
                   ),
                 if (stop.durationLabel.trim().isNotEmpty)
@@ -235,16 +304,16 @@ class _StopCard extends StatelessWidget {
                     label: stop.distanceLabel.trim(),
                     scheme: scheme,
                   ),
-                if (stop.arrivalTime.trim().isNotEmpty)
+                if (stop.transportMode.trim().isNotEmpty)
                   _MetaTag(
-                    icon: HugeIcons.strokeRoundedTimeQuarterPass,
-                    label: "Arrive ${stop.arrivalTime.trim()}",
+                    icon: HugeIcons.strokeRoundedCar01,
+                    label: stop.transportMode.trim(),
                     scheme: scheme,
                   ),
-                if (stop.departureTime.trim().isNotEmpty)
+                if (stop.accommodationName.trim().isNotEmpty)
                   _MetaTag(
-                    icon: HugeIcons.strokeRoundedTimeQuarterPass,
-                    label: "Depart ${stop.departureTime.trim()}",
+                    icon: HugeIcons.strokeRoundedBed,
+                    label: stop.accommodationName.trim(),
                     scheme: scheme,
                   ),
               ],
@@ -334,10 +403,49 @@ class _ActivityTile extends StatelessWidget {
               ),
             ),
           ],
+          if ((activity.estimatedDurationMinutes ?? 0) > 0 ||
+              activity.difficultyLevel.trim().isNotEmpty ||
+              activity.activityType.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                if ((activity.estimatedDurationMinutes ?? 0) > 0)
+                  _MetaTag(
+                    icon: HugeIcons.strokeRoundedClock01,
+                    label: _formatActivityMinutes(
+                      activity.estimatedDurationMinutes!,
+                    ),
+                    scheme: scheme,
+                  ),
+                if (activity.difficultyLevel.trim().isNotEmpty)
+                  _MetaTag(
+                    icon: HugeIcons.strokeRoundedFire,
+                    label: activity.difficultyLevel.trim(),
+                    scheme: scheme,
+                  ),
+                if (activity.activityType.trim().isNotEmpty)
+                  _MetaTag(
+                    icon: HugeIcons.strokeRoundedTag01,
+                    label: activity.activityType.trim(),
+                    scheme: scheme,
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+String _formatActivityMinutes(int minutes) {
+  if (minutes < 60) return "$minutes min";
+  final hours = minutes ~/ 60;
+  final remaining = minutes % 60;
+  if (remaining == 0) return "${hours}h";
+  return "${hours}h ${remaining}m";
 }
 
 class _MetaTag extends StatelessWidget {
