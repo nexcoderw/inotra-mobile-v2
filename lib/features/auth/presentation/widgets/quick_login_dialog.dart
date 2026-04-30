@@ -17,6 +17,7 @@ import "../../../../core/constants/api/auth_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../core/services/biometric_service.dart";
+import "../../../../core/services/mobile_user_access.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 
@@ -163,6 +164,8 @@ class _QuickLoginDialogState extends State<QuickLoginDialog>
         final tokens = body["tokens"] as Map<String, dynamic>? ?? {};
         final user = body["user"] as Map<String, dynamic>? ?? {};
 
+        if (!await _ensureMobileUser(user, lang: lang)) return;
+
         await AuthStorage.saveSession(
           tokens: tokens,
           user: user,
@@ -301,6 +304,10 @@ class _QuickLoginDialogState extends State<QuickLoginDialog>
         if (mounted) setState(() => _busy = false);
         return;
       }
+      if (!await _ensureMobileUser(user, lang: lang, clearBiometric: true)) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
 
       await AuthStorage.saveSession(
         tokens: {"access": accessToken, "refresh": refreshToken},
@@ -367,6 +374,10 @@ class _QuickLoginDialogState extends State<QuickLoginDialog>
         final body = jsonDecode(resp.body) as Map<String, dynamic>;
         final tokens = body["tokens"] as Map<String, dynamic>? ?? {};
         final user = body["user"] as Map<String, dynamic>? ?? {};
+
+        if (!await _ensureMobileUser(user, lang: lang, signOutGoogle: true)) {
+          return;
+        }
 
         await AuthStorage.saveSession(
           tokens: tokens,
@@ -442,6 +453,35 @@ class _QuickLoginDialogState extends State<QuickLoginDialog>
       }
     } catch (_) {}
     return t(currentLangSync(), "auth.login_failed");
+  }
+
+  Future<bool> _ensureMobileUser(
+    Map<String, dynamic> user, {
+    required String lang,
+    bool clearBiometric = false,
+    bool signOutGoogle = false,
+  }) async {
+    if (MobileUserAccess.isAllowed(user)) return true;
+
+    await AuthStorage.clearSession();
+    if (clearBiometric) await BiometricService.instance.clear();
+    if (signOutGoogle) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+    }
+
+    if (!mounted) return false;
+    toastification.show(
+      context: context,
+      type: ToastificationType.error,
+      style: ToastificationStyle.fillColored,
+      title: Text(t(lang, "auth.mobile_user_only_title")),
+      description: Text(t(lang, "auth.mobile_user_only_desc")),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 5),
+    );
+    return false;
   }
 
   @override
