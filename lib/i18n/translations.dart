@@ -164,6 +164,9 @@ const translations = {
     "auth.or": "Or",
     "auth.login_failed": "Sign in failed",
     "auth.signup_failed": "Sign up failed",
+    "auth.mobile_user_only_title": "Mobile access unavailable",
+    "auth.mobile_user_only_desc":
+        "Only customer accounts can sign in to the mobile app. Please use the correct portal for admin or representative accounts.",
     "auth.network_error": "Network error",
     "auth.network_retry":
         "Unable to sign in. Please check your connection and try again.",
@@ -1027,6 +1030,9 @@ const translations = {
     "auth.or": "Cyangwa",
     "auth.login_failed": "Kwinjira byanze",
     "auth.signup_failed": "Kwiyandikisha byanze",
+    "auth.mobile_user_only_title": "Ntiwemerewe gukoresha mobile",
+    "auth.mobile_user_only_desc":
+        "Konti z'abakiriya gusa ni zo zinjira muri mobile app. Koresha portal iboneye ya admin cyangwa representative.",
     "auth.network_error": "Ikosa rya interineti",
     "auth.network_retry":
         "Ntibishobotse kwinjira. Ongera ugerageze ufite interineti.",
@@ -1382,6 +1388,9 @@ const translations = {
     "auth.or": "Ou",
     "auth.login_failed": "Échec de connexion",
     "auth.signup_failed": "Échec d'inscription",
+    "auth.mobile_user_only_title": "Accès mobile indisponible",
+    "auth.mobile_user_only_desc":
+        "Seuls les comptes clients peuvent se connecter à l'application mobile. Utilisez le portail adapté pour les comptes admin ou représentants.",
     "auth.network_error": "Erreur réseau",
     "auth.network_retry":
         "Impossible de se connecter. Vérifiez votre connexion et réessayez.",
@@ -1740,6 +1749,9 @@ const translations = {
     "auth.or": "O",
     "auth.login_failed": "Error al iniciar sesión",
     "auth.signup_failed": "Error al registrarse",
+    "auth.mobile_user_only_title": "Acceso móvil no disponible",
+    "auth.mobile_user_only_desc":
+        "Solo las cuentas de cliente pueden iniciar sesión en la app móvil. Usa el portal correcto para cuentas de administrador o representante.",
     "auth.network_error": "Error de red",
     "auth.network_retry":
         "No se pudo iniciar sesión. Revisa tu conexión e inténtalo de nuevo.",
@@ -2098,6 +2110,9 @@ const translations = {
     "auth.or": "Oder",
     "auth.login_failed": "Anmeldung fehlgeschlagen",
     "auth.signup_failed": "Registrierung fehlgeschlagen",
+    "auth.mobile_user_only_title": "Mobiler Zugriff nicht verfügbar",
+    "auth.mobile_user_only_desc":
+        "Nur Kundenkonten können sich in der mobilen App anmelden. Verwende für Admin- oder Vertreterkonten bitte das passende Portal.",
     "auth.network_error": "Netzwerkfehler",
     "auth.network_retry":
         "Anmeldung nicht möglich. Bitte Verbindung prüfen und erneut versuchen.",
