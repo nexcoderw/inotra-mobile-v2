@@ -12,9 +12,11 @@ import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/observers/audit_route_observer.dart";
 import "../../../../core/services/audit_service.dart";
+import "../../../../core/services/auth_session.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../widgets/listing_image_preview.dart";
 import "../widgets/trip_packages/package_activities_tab.dart";
 import "../widgets/trip_packages/package_gallery_tab.dart";
@@ -128,12 +130,26 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
         bottomNavigationBar: (_package != null && !_loading && _error == null)
             ? SafeArea(
                 minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: _BookCTAButton(
-                  label: _package!.instantConfirmationAvailable
-                      ? t(lang, "trips.book_now")
-                      : t(lang, "trips.inquire"),
-                  onTap: () {
-                    // Booking flow integration goes here.
+                child: ValueListenableBuilder<AuthSessionState>(
+                  valueListenable: AuthSession.instance,
+                  builder: (context, auth, _) {
+                    final isInstant = _package!.instantConfirmationAvailable;
+                    if (!auth.isAuthenticated) {
+                      return _BookCTAButton(
+                        label: isInstant
+                            ? t(lang, "trips.login_to_book")
+                            : t(lang, "trips.login_to_inquire"),
+                        onTap: () => QuickLoginDialog.show(context),
+                      );
+                    }
+                    return _BookCTAButton(
+                      label: isInstant
+                          ? t(lang, "trips.book_now")
+                          : t(lang, "trips.inquire"),
+                      onTap: () {
+                        // Booking flow integration goes here.
+                      },
+                    );
                   },
                 ),
               )
