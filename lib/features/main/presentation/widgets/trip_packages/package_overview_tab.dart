@@ -1,4 +1,5 @@
 import "dart:ui";
+import "dart:math" as math;
 
 import "package:flutter/material.dart";
 import "package:hugeicons/hugeicons.dart";
@@ -190,19 +191,35 @@ class _StatsRow extends StatelessWidget {
 
     if (chips.isEmpty) return const SizedBox.shrink();
 
-    return Row(
-      children: [
-        for (final chip in chips) ...[
-          Expanded(
-            child: _StatChip(
-              icon: chip.icon,
-              value: chip.value,
-              scheme: scheme,
-            ),
-          ),
-          if (chip != chips.last) const SizedBox(width: 10),
-        ],
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        final maxWidth = constraints.maxWidth;
+        final columns = maxWidth >= 560
+            ? math.min(chips.length, 4)
+            : maxWidth >= 320
+            ? math.min(chips.length, 2)
+            : 1;
+        final chipWidth = columns <= 1
+            ? maxWidth
+            : (maxWidth - (gap * (columns - 1))) / columns;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final chip in chips)
+              SizedBox(
+                width: chipWidth,
+                child: _StatChip(
+                  icon: chip.icon,
+                  value: chip.value,
+                  scheme: scheme,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -263,7 +280,7 @@ class _StatChip extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             color: scheme.primary.withValues(alpha: 0.08),
@@ -271,15 +288,20 @@ class _StatChip extends StatelessWidget {
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               HugeIcon(icon: icon, size: 15, color: scheme.primary),
               const SizedBox(width: 7),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: scheme.primary,
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: scheme.primary,
+                  ),
                 ),
               ),
             ],
