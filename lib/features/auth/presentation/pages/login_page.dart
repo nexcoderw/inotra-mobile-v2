@@ -19,6 +19,7 @@ import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/auth_storage.dart";
 import "../../../../core/services/biometric_service.dart";
 import "../../../../core/services/device_info_service.dart";
+import "../../../../core/services/mobile_user_access.dart";
 import "../../../../i18n/lang.dart";
 import "../widgets/auth_scaffold.dart";
 import "../widgets/auth_ui.dart";
@@ -148,6 +149,8 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
         final body = _safeJson(response.body);
         final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
         final user = body?["user"] as Map<String, dynamic>? ?? {};
+
+        if (!await _ensureMobileUser(user)) return;
 
         await AuthStorage.saveSession(
           tokens: tokens,
@@ -294,6 +297,10 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
         if (mounted) setState(() => _isBusy = false);
         return;
       }
+      if (!await _ensureMobileUser(user, clearBiometric: true)) {
+        if (mounted) setState(() => _isBusy = false);
+        return;
+      }
 
       await AuthStorage.saveSession(
         tokens: {"access": accessToken, "refresh": refreshToken},
@@ -343,6 +350,36 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
     }
   }
 
+  Future<bool> _ensureMobileUser(
+    Map<String, dynamic> user, {
+    bool clearBiometric = false,
+    bool signOutGoogle = false,
+  }) async {
+    if (MobileUserAccess.isAllowed(user)) return true;
+
+    await AuthStorage.clearSession();
+    if (clearBiometric) await BiometricService.instance.clear();
+    if (signOutGoogle) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+    }
+
+    if (!mounted) return false;
+    final message = tr("auth.mobile_user_only_desc");
+    setState(() => _error = message);
+    toastification.show(
+      context: context,
+      type: ToastificationType.error,
+      style: ToastificationStyle.fillColored,
+      title: Text(tr("auth.mobile_user_only_title")),
+      description: Text(message),
+      alignment: Alignment.topCenter,
+      autoCloseDuration: const Duration(seconds: 5),
+    );
+    return false;
+  }
+
   String _extractError(http.Response response) {
     final body = _safeJson(response.body);
     final detail = body?["detail"] ?? body?["message"] ?? body?["error"];
@@ -381,6 +418,8 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
         final body = _safeJson(response.body);
         final tokens = body?["tokens"] as Map<String, dynamic>? ?? {};
         final user = body?["user"] as Map<String, dynamic>? ?? {};
+
+        if (!await _ensureMobileUser(user, signOutGoogle: true)) return;
 
         await AuthStorage.saveSession(
           tokens: tokens,
