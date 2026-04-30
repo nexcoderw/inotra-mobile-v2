@@ -68,6 +68,7 @@ import "../../i18n/translations.dart";
 
 // Guards
 import "../guards/auth_guard.dart";
+import "../widgets/not_found_page.dart";
 
 // Routes
 import "app_routes.dart";
@@ -459,8 +460,7 @@ final class AppRouter {
       // -------------------
       default:
         return MaterialPageRoute(
-          builder: (_) =>
-              Scaffold(body: Center(child: Text(t(lang, "common.not_found")))),
+          builder: (_) => NotFoundPage(routeName: settings.name),
         );
     }
   }
