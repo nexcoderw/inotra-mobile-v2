@@ -19,7 +19,8 @@ class InotraBottomNav extends StatelessWidget {
   });
 
   String _lang() {
-    final preferred = AuthSession.instance.value.user?['preferred_language'] as String?;
+    final preferred =
+        AuthSession.instance.value.user?['preferred_language'] as String?;
     if (preferred == null || preferred.isEmpty) return 'en';
     final lower = preferred.toLowerCase();
     if (lower.startsWith('rw')) return 'rw';
@@ -44,15 +45,15 @@ class InotraBottomNav extends StatelessWidget {
             child: Container(
               height: 64,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.92),
+                color: AppColors.primary.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(34),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.10),
+                  color: Colors.white.withValues(alpha: 0.10),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
+                    color: Colors.black.withValues(alpha: 0.18),
                     blurRadius: 24,
                     offset: const Offset(0, 12),
                   ),

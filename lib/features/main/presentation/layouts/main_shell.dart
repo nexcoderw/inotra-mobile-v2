@@ -30,6 +30,7 @@ class _MainShellState extends State<MainShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late int _index;
+  late final PageController _pageController;
   int _chatUnreadCount = 0;
   AuthSession? _authSession;
   late final List<Widget Function()> _tabBuilders;
@@ -46,8 +47,13 @@ class _MainShellState extends State<MainShell> {
       () => const EventsTab(),
       () => const HighlightsTab(),
     ];
-    _tabCache = List<Widget?>.filled(_tabBuilders.length, null, growable: false);
+    _tabCache = List<Widget?>.filled(
+      _tabBuilders.length,
+      null,
+      growable: false,
+    );
     _index = widget.initialIndex.clamp(0, _tabBuilders.length - 1);
+    _pageController = PageController(initialPage: _index);
     _ensureTabLoaded(_index);
   }
 
@@ -82,6 +88,24 @@ class _MainShellState extends State<MainShell> {
     if (_index != 2 && mounted) setState(() => _chatUnreadCount++);
   }
 
+  void _commitTabChange(int next) {
+    if (next == _index) return;
+    _ensureTabLoaded(next);
+    setState(() {
+      _index = next;
+      if (next == 2) _chatUnreadCount = 0;
+    });
+  }
+
+  void _animateToTab(int next) {
+    if (!_pageController.hasClients) return;
+    _pageController.animateToPage(
+      next,
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   void _onTabChange(int next) async {
     if (next == _index) return;
 
@@ -89,11 +113,25 @@ class _MainShellState extends State<MainShell> {
       return;
     }
 
-    _ensureTabLoaded(next);
-    setState(() {
-      _index = next;
-      if (next == 2) _chatUnreadCount = 0;
-    });
+    _commitTabChange(next);
+    _animateToTab(next);
+  }
+
+  void _handlePageChanged(int next) {
+    if (next == _index) return;
+
+    if (next == 2) {
+      () async {
+        if (await _maybeShowAuthDialog(featureLabel: "AI Chat")) {
+          if (mounted) _animateToTab(_index);
+          return;
+        }
+        if (mounted) _commitTabChange(next);
+      }();
+      return;
+    }
+
+    _commitTabChange(next);
   }
 
   void _handleAuthChange() {
@@ -164,13 +202,21 @@ class _MainShellState extends State<MainShell> {
         onSettingsTap: () => Navigator.pushNamed(context, AppRoutes.settings),
       ),
 
-      body: IndexedStack(
-        index: _index,
-        children: List<Widget>.generate(
-          _tabCache.length,
-          (index) => _tabCache[index] ?? const SizedBox.shrink(),
-          growable: false,
+      body: PageView.builder(
+        controller: _pageController,
+        reverse: true,
+        itemCount: _tabCache.length,
+        onPageChanged: _handlePageChanged,
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
         ),
+        itemBuilder: (context, index) {
+          _ensureTabLoaded(index);
+          return _KeepAliveTab(
+            key: ValueKey("main-tab-$index"),
+            child: _tabCache[index] ?? const SizedBox.shrink(),
+          );
+        },
       ),
 
       bottomNavigationBar: InotraBottomNav(
@@ -184,6 +230,28 @@ class _MainShellState extends State<MainShell> {
   @override
   void dispose() {
     _authSession?.removeListener(_handleAuthChange);
+    _pageController.dispose();
     super.dispose();
+  }
+}
+
+class _KeepAliveTab extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveTab({super.key, required this.child});
+
+  @override
+  State<_KeepAliveTab> createState() => _KeepAliveTabState();
+}
+
+class _KeepAliveTabState extends State<_KeepAliveTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }
