@@ -7,6 +7,7 @@ import "../config/api.dart";
 import "../constants/api/auth_endpoints.dart";
 import "auth_storage.dart";
 import "biometric_service.dart";
+import "mobile_user_access.dart";
 import "session_heartbeat_service.dart";
 
 /// Lightweight auth session tracker used by the mobile app header.
@@ -65,6 +66,16 @@ class AuthSession extends ValueNotifier<AuthSessionState> {
   Future<void> restore() async {
     final saved = await AuthStorage.loadSession();
     if (saved == null) {
+      value = const AuthSessionState(
+        status: AuthStatus.signedOut,
+        displayName: "Guest",
+      );
+      return;
+    }
+
+    if (!MobileUserAccess.isAllowed(saved.user)) {
+      await AuthStorage.clearSession();
+      await BiometricService.instance.clear();
       value = const AuthSessionState(
         status: AuthStatus.signedOut,
         displayName: "Guest",
