@@ -15,16 +15,16 @@ class SharedItem {
   const SharedItem({required this.type, required this.id, this.title});
 
   factory SharedItem.fromJson(Map<String, dynamic> json) => SharedItem(
-        type: (json["type"] ?? "").toString().toUpperCase(),
-        id: (json["id"] ?? "").toString(),
-        title: json["title"]?.toString(),
-      );
+    type: (json["type"] ?? "").toString().toUpperCase(),
+    id: (json["id"] ?? "").toString(),
+    title: json["title"]?.toString(),
+  );
 
   Map<String, String?> toSendBody() => {
-        if (type == "EVENT") "shared_event_id": id,
-        if (type == "LISTING") "shared_listing_id": id,
-        if (type == "PACKAGE") "shared_package_id": id,
-      };
+    if (type == "EVENT") "shared_event_id": id,
+    if (type == "LISTING") "shared_listing_id": id,
+    if (type == "PACKAGE") "shared_package_id": id,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,19 +61,19 @@ class ConvMessage {
   });
 
   ConvMessage copyWith({bool? pending, bool? failed}) => ConvMessage(
-        id: id,
-        text: text,
-        createdAt: createdAt,
-        isMine: isMine,
-        authorId: authorId,
-        authorName: authorName,
-        authorAvatarUrl: authorAvatarUrl,
-        shared: shared,
-        pending: pending ?? this.pending,
-        failed: failed ?? this.failed,
-        senderType: senderType,
-        metadata: metadata,
-      );
+    id: id,
+    text: text,
+    createdAt: createdAt,
+    isMine: isMine,
+    authorId: authorId,
+    authorName: authorName,
+    authorAvatarUrl: authorAvatarUrl,
+    shared: shared,
+    pending: pending ?? this.pending,
+    failed: failed ?? this.failed,
+    senderType: senderType,
+    metadata: metadata,
+  );
 
   factory ConvMessage.fromJson(Map<String, dynamic> json) {
     DateTime? tryParse(String? raw) {
@@ -91,7 +91,8 @@ class ConvMessage {
     final sender = json["sender"];
     if (sender is Map) {
       authorId = sender["id"]?.toString();
-      authorName = (sender["name"] ?? sender["full_name"] ?? sender["username"])?.toString();
+      authorName = (sender["name"] ?? sender["full_name"] ?? sender["username"])
+          ?.toString();
       authorAvatarUrl = sender["avatar_url"]?.toString();
     }
 
@@ -103,10 +104,17 @@ class ConvMessage {
 
     final senderType = (json["sender_type"] ?? "").toString().toUpperCase();
 
-    // For HUMAN messages (rep), prefer user_lang_text (translated into the user's language).
+    // Prefer user_lang_text when the backend provides a localized version.
+    // This covers representative replies and AI/system handoff summaries.
     final userLangText = (json["user_lang_text"] ?? "").toString().trim();
-    final sourceText = (json["source_text"] ?? json["text"] ?? json["content"] ?? json["body"] ?? "").toString();
-    final text = (senderType == "HUMAN" && userLangText.isNotEmpty) ? userLangText : sourceText;
+    final sourceText =
+        (json["source_text"] ??
+                json["text"] ??
+                json["content"] ??
+                json["body"] ??
+                "")
+            .toString();
+    final text = userLangText.isNotEmpty ? userLangText : sourceText;
 
     Map<String, dynamic> metadata = const {};
     final rawMeta = json["metadata"];
@@ -117,8 +125,10 @@ class ConvMessage {
     return ConvMessage(
       id: (json["id"] ?? "").toString(),
       text: text,
-      createdAt: tryParse(
-            (json["created_at"] ?? json["timestamp"] ?? json["sent_at"])?.toString(),
+      createdAt:
+          tryParse(
+            (json["created_at"] ?? json["timestamp"] ?? json["sent_at"])
+                ?.toString(),
           ) ??
           DateTime.now(),
       isMine: json["is_mine"] as bool? ?? false,
