@@ -204,7 +204,6 @@ class _MainShellState extends State<MainShell> {
 
       body: PageView.builder(
         controller: _pageController,
-        reverse: true,
         itemCount: _tabCache.length,
         onPageChanged: _handlePageChanged,
         physics: const BouncingScrollPhysics(
