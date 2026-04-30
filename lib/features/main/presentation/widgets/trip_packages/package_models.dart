@@ -104,8 +104,10 @@ class PackageStop {
   final String arrivalTime;
   final String departureTime;
   final String transportMode;
+  final String accommodationName;
   final String distanceLabel;
   final String durationLabel;
+  final bool isPrimaryStop;
   final List<PackageImageItem> media;
   final List<PackageActivity> activities;
 
@@ -119,8 +121,10 @@ class PackageStop {
     required this.arrivalTime,
     required this.departureTime,
     required this.transportMode,
+    required this.accommodationName,
     required this.distanceLabel,
     required this.durationLabel,
+    required this.isPrimaryStop,
     required this.media,
     required this.activities,
   });
@@ -143,22 +147,59 @@ class PackageStop {
 
     rawActivities.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
+    String firstNonEmpty(List<dynamic> values) {
+      for (final value in values) {
+        final s = (value ?? "").toString().trim();
+        if (s.isNotEmpty) return s;
+      }
+      return "";
+    }
+
+    final distanceRaw = firstNonEmpty([
+      j["distance_label"],
+      j["distance_from_previous_km"],
+    ]);
+    final distanceLabel = distanceRaw.isEmpty
+        ? ""
+        : (double.tryParse(distanceRaw) != null ? "$distanceRaw km" : distanceRaw);
+
+    final durationMinutes =
+        (j["estimated_duration_minutes"] as num?)?.toInt();
+    final durationLabel = firstNonEmpty([j["duration_label"]]).isNotEmpty
+        ? firstNonEmpty([j["duration_label"]])
+        : (durationMinutes != null && durationMinutes > 0
+              ? _formatMinutes(durationMinutes)
+              : "");
+
     return PackageStop(
       id: (j["id"] ?? "").toString(),
       sortOrder: (j["sort_order"] as num?)?.toInt() ?? 0,
       title: (j["title"] ?? "").toString(),
-      placeName: (j["place_name"] ?? "").toString(),
+      placeName: firstNonEmpty([j["place_label"], j["place_name"]]),
       stopType: (j["stop_type"] ?? "").toString(),
-      description: (j["description"] ?? "").toString(),
-      arrivalTime: (j["arrival_time"] ?? "").toString(),
-      departureTime: (j["departure_time"] ?? "").toString(),
+      description: firstNonEmpty([j["summary"], j["description"]]),
+      arrivalTime: firstNonEmpty([j["arrival_time_label"], j["arrival_time"]]),
+      departureTime: firstNonEmpty([
+        j["departure_time_label"],
+        j["departure_time"],
+      ]),
       transportMode: (j["transport_mode"] ?? "").toString(),
-      distanceLabel: (j["distance_label"] ?? "").toString(),
-      durationLabel: (j["duration_label"] ?? "").toString(),
+      accommodationName: (j["accommodation_name"] ?? "").toString(),
+      distanceLabel: distanceLabel,
+      durationLabel: durationLabel,
+      isPrimaryStop: j["is_primary_stop"] == true,
       media: rawMedia,
       activities: rawActivities,
     );
   }
+}
+
+String _formatMinutes(int minutes) {
+  if (minutes < 60) return "$minutes min";
+  final hours = minutes ~/ 60;
+  final remaining = minutes % 60;
+  if (remaining == 0) return "${hours}h";
+  return "${hours}h ${remaining}m";
 }
 
 class PackageDay {
@@ -168,7 +209,11 @@ class PackageDay {
   final String summary;
   final String overnightLocation;
   final String mealsIncluded;
-  final String notes;
+  final String startNote;
+  final String endNote;
+  final String distanceLabel;
+  final String travelTimeLabel;
+  final bool isRestDay;
   final List<PackageImageItem> media;
   final List<PackageStop> stops;
 
@@ -179,10 +224,21 @@ class PackageDay {
     required this.summary,
     required this.overnightLocation,
     required this.mealsIncluded,
-    required this.notes,
+    required this.startNote,
+    required this.endNote,
+    required this.distanceLabel,
+    required this.travelTimeLabel,
+    required this.isRestDay,
     required this.media,
     required this.stops,
   });
+
+  String get notes {
+    final parts = <String>[];
+    if (startNote.trim().isNotEmpty) parts.add(startNote.trim());
+    if (endNote.trim().isNotEmpty) parts.add(endNote.trim());
+    return parts.join("\n\n");
+  }
 
   factory PackageDay.fromJson(Map<String, dynamic> j) {
     final rawMedia =
@@ -202,6 +258,16 @@ class PackageDay {
 
     rawStops.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
+    final distanceRaw = (j["distance_km"] ?? "").toString().trim();
+    final distanceLabel = distanceRaw.isEmpty
+        ? ""
+        : (double.tryParse(distanceRaw) != null ? "$distanceRaw km" : distanceRaw);
+
+    final travelMinutes = (j["estimated_travel_time_minutes"] as num?)?.toInt();
+    final travelTimeLabel = (travelMinutes != null && travelMinutes > 0)
+        ? _formatMinutes(travelMinutes)
+        : "";
+
     return PackageDay(
       id: (j["id"] ?? "").toString(),
       dayNumber:
@@ -212,7 +278,11 @@ class PackageDay {
       summary: (j["summary"] ?? "").toString(),
       overnightLocation: (j["overnight_location"] ?? "").toString(),
       mealsIncluded: (j["meals_included"] ?? "").toString(),
-      notes: (j["notes"] ?? "").toString(),
+      startNote: (j["start_note"] ?? "").toString(),
+      endNote: (j["end_note"] ?? "").toString(),
+      distanceLabel: distanceLabel,
+      travelTimeLabel: travelTimeLabel,
+      isRestDay: j["is_rest_day"] == true,
       media: rawMedia,
       stops: rawStops,
     );
