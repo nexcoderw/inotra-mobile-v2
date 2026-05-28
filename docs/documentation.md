@@ -20,6 +20,7 @@ Documentation should capture durable mobile project knowledge.
 - `docs/architecture.md`: feature boundaries and app structure.
 - `docs/security.md`: mobile secrets, auth, storage, and data rules.
 - `docs/design.md`: mobile UX and UI rules.
+- `docs/language.md`: supported languages, translation requirements, and static text rules.
 - `docs/testing.md`: verification strategy.
 - `docs/operations.md`: builds, assets, release notes.
 
@@ -29,4 +30,3 @@ Documentation should capture durable mobile project knowledge.
 - Keep guidance direct and maintainable.
 - Do not include secrets, production tokens, or private user examples.
 - Update docs only when the information should remain true beyond the current task.
-
