@@ -61,7 +61,7 @@ class InotraStandaloneHeader extends StatelessWidget
           child: Container(color: scheme.surface.withValues(alpha: 0.70)),
         ),
       ),
-      leadingWidth: 112,
+      leadingWidth: isAuthenticated ? 112 : 58,
       leading: Padding(
         padding: const EdgeInsets.only(left: 8),
         child: Row(
@@ -71,11 +71,13 @@ class InotraStandaloneHeader extends StatelessWidget
               onTap: onBackTap,
               icon: HugeIcons.strokeRoundedArrowLeft01,
             ),
-            const SizedBox(width: 6),
-            _NotificationButton(
-              onTap: onNotificationsTap,
-              unreadCount: unreadCount,
-            ),
+            if (isAuthenticated) ...[
+              const SizedBox(width: 6),
+              _NotificationButton(
+                onTap: onNotificationsTap,
+                unreadCount: unreadCount,
+              ),
+            ],
           ],
         ),
       ),
