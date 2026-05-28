@@ -1,13 +1,13 @@
 import "package:flutter/material.dart";
 
 import "../services/auth_session.dart";
-import "../../features/main/presentation/widgets/auth_dialog.dart";
+import "../../features/auth/presentation/widgets/quick_login_dialog.dart";
 
 /// Centralized route guard used by AppRouter to protect authenticated screens.
 ///
 /// If the user is signed in, it builds the protected page. If not, it shows the
-/// shared AuthDialog and pops back to the previous page so the user stays on
-/// their current context.
+/// login dialog and keeps the user in their current context unless login
+/// succeeds.
 class AuthGuard {
   const AuthGuard._();
 
@@ -63,7 +63,24 @@ class _GuardedPageState extends State<_GuardedPage> {
     // Token missing/expired: sign out but keep user on the same page;
     // downstream widgets should render guest header automatically.
     await AuthSession.instance.expireSession();
-    if (mounted) setState(() => _allowed = true);
+    if (!mounted) return;
+
+    _prompted = true;
+    await QuickLoginDialog.show(context);
+    if (!mounted) return;
+
+    final signedIn = AuthSession.instance.value.isAuthenticated;
+    if (signedIn) {
+      setState(() => _allowed = true);
+      return;
+    }
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() => _allowed = true);
   }
 
   @override
