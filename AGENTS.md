@@ -13,6 +13,7 @@ Before changing this repository, read:
 - [docs/architecture.md](docs/architecture.md) for feature boundaries and Flutter structure.
 - [docs/security.md](docs/security.md) for mobile auth, storage, environment, and data handling rules.
 - [docs/design.md](docs/design.md) for mobile UI and interaction standards.
+- [docs/language.md](docs/language.md) for localization and static text rules.
 - [docs/testing.md](docs/testing.md) for verification expectations.
 - [docs/operations.md](docs/operations.md) for platform builds, assets, and release notes.
 - [docs/documentation.md](docs/documentation.md) for documentation maintenance rules.
@@ -34,4 +35,3 @@ Update [README.md](README.md) or [docs/](docs/) only when a durable project rule
 ## Commit Requirement
 
 Follow [docs/git.md](docs/git.md). This repository expects one commit per changed file using Conventional Commit messages.
-
