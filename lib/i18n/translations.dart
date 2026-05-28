@@ -696,10 +696,14 @@ const translations = {
     "chat.shared_event": "Event",
     "chat.shared_listing": "Listing",
     "chat.shared_package": "Trip Package",
+    "chat.more_actions": "More chat actions",
     "chat.end_chat": "End chat",
+    "chat.end_chat_dismiss": "Dismiss end chat dialog",
     "chat.end_chat_title": "End this conversation?",
     "chat.end_chat_body":
         "We'll close it on both sides. You can always start a new one when you need help again.",
+    "chat.end_chat_note":
+        "Your conversation history will remain available, but new messages will stop after closing.",
     "chat.end_chat_confirm": "End chat",
     "chat.end_chat_cancel": "Keep chatting",
     "chat.end_chat_failed": "Couldn't end the chat. Please try again.",
@@ -1299,10 +1303,14 @@ const translations = {
     "chat.shared_event": "Igikorwa",
     "chat.shared_listing": "Isoko",
     "chat.shared_package": "Gahunda y'urugendo",
+    "chat.more_actions": "Ibindi bikorwa by'ikiganiro",
     "chat.end_chat": "Soza ikiganiro",
+    "chat.end_chat_dismiss": "Funga idirishya ryo gusoza ikiganiro",
     "chat.end_chat_title": "Sozesha iki kiganiro?",
     "chat.end_chat_body":
         "Tuzagisora impande zombi. Ushobora gutangira ikindi igihe icyo aricyo cyose ukeneye ubufasha.",
+    "chat.end_chat_note":
+        "Amateka y'ikiganiro azakomeza kuboneka, ariko ubutumwa bushya buzahagarara nyuma yo kugisoza.",
     "chat.end_chat_confirm": "Soza ikiganiro",
     "chat.end_chat_cancel": "Komeza kuvugana",
     "chat.end_chat_failed":
@@ -1697,10 +1705,14 @@ const translations = {
     "chat.shared_event": "Événement",
     "chat.shared_listing": "Annonce",
     "chat.shared_package": "Forfait voyage",
+    "chat.more_actions": "Autres actions du chat",
     "chat.end_chat": "Terminer le chat",
+    "chat.end_chat_dismiss": "Fermer la fenêtre de fin de chat",
     "chat.end_chat_title": "Terminer cette conversation ?",
     "chat.end_chat_body":
         "Nous la fermerons des deux côtés. Vous pouvez en démarrer une autre dès que vous avez besoin d'aide.",
+    "chat.end_chat_note":
+        "Votre historique restera disponible, mais les nouveaux messages seront arrêtés après la fermeture.",
     "chat.end_chat_confirm": "Terminer le chat",
     "chat.end_chat_cancel": "Continuer la discussion",
     "chat.end_chat_failed":
@@ -2092,10 +2104,14 @@ const translations = {
     "chat.shared_event": "Evento",
     "chat.shared_listing": "Anuncio",
     "chat.shared_package": "Paquete de viaje",
+    "chat.more_actions": "Más acciones del chat",
     "chat.end_chat": "Finalizar chat",
+    "chat.end_chat_dismiss": "Cerrar diálogo de finalizar chat",
     "chat.end_chat_title": "¿Finalizar esta conversación?",
     "chat.end_chat_body":
         "La cerraremos en ambos lados. Puedes iniciar otra cuando necesites ayuda.",
+    "chat.end_chat_note":
+        "Tu historial seguirá disponible, pero los mensajes nuevos se detendrán al cerrar.",
     "chat.end_chat_confirm": "Finalizar chat",
     "chat.end_chat_cancel": "Seguir conversando",
     "chat.end_chat_failed": "No pudimos finalizar el chat. Inténtalo de nuevo.",
@@ -2484,10 +2500,14 @@ const translations = {
     "chat.shared_event": "Veranstaltung",
     "chat.shared_listing": "Angebot",
     "chat.shared_package": "Reisepaket",
+    "chat.more_actions": "Weitere Chat-Aktionen",
     "chat.end_chat": "Chat beenden",
+    "chat.end_chat_dismiss": "Dialog zum Beenden schließen",
     "chat.end_chat_title": "Diese Unterhaltung beenden?",
     "chat.end_chat_body":
         "Wir schließen sie auf beiden Seiten. Du kannst jederzeit eine neue starten, wenn du Hilfe brauchst.",
+    "chat.end_chat_note":
+        "Dein Verlauf bleibt verfügbar, aber neue Nachrichten werden nach dem Schließen gestoppt.",
     "chat.end_chat_confirm": "Chat beenden",
     "chat.end_chat_cancel": "Weiter chatten",
     "chat.end_chat_failed":
