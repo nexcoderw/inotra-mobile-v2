@@ -43,7 +43,7 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
   bool _saved = false;
   static const _favKey = "listing_favorites";
   static final _expiryMs = const Duration(days: 7).inMilliseconds;
-  Set<String> _favorites = {};
+  final Set<String> _favorites = {};
 
   @override
   void initState() {
@@ -232,13 +232,15 @@ class _ListingDetailsPageState extends State<ListingDetailsPage> {
                                 await Future.delayed(
                                   const Duration(milliseconds: 900),
                                 );
-                                if (!mounted) return;
+                                if (!context.mounted) return;
 
                                 toastification.show(
                                   context: context,
                                   type: ToastificationType.info,
                                   style: ToastificationStyle.fillColored,
-                                  title: Text(t(lang, "listings.reserve_integration")),
+                                  title: Text(
+                                    t(lang, "listings.reserve_integration"),
+                                  ),
                                   alignment: Alignment.topCenter,
                                   autoCloseDuration: const Duration(seconds: 5),
                                 );
@@ -963,7 +965,7 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
                           key: const ValueKey("label"),
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
-                            fontSize: 13,
+                            fontSize: 10,
                             color: Colors.white,
                             letterSpacing: 0.5,
                           ),
@@ -1078,7 +1080,7 @@ class _PremiumDotsLoaderState extends State<_PremiumDotsLoader>
     final scheme = Theme.of(context).colorScheme;
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) {
+      builder: (_, _) {
         final t = _ctrl.value;
         return Row(
           mainAxisSize: MainAxisSize.min,
