@@ -3,15 +3,21 @@ import "dart:convert";
 import "dart:ui";
 
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:hugeicons/hugeicons.dart";
 import "package:http/http.dart" as http;
+import "package:provider/provider.dart";
 
 import "../../../../core/config/api.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../core/constants/api/package_endpoints.dart";
+import "../../../../core/services/auth_session.dart";
+import "../../../../core/services/notification_service.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
-import "../widgets/page_header.dart";
+import "../widgets/discovery_search_bar.dart";
+import "../widgets/inotra_standalone_header.dart";
 
 class TripPackagesPage extends StatefulWidget {
   const TripPackagesPage({super.key});
@@ -25,15 +31,18 @@ class _TripPackagesPageState extends State<TripPackagesPage>
   final _scrollCtrl = ScrollController();
   final _searchCtrl = TextEditingController();
   final ValueNotifier<bool> _showBackToTop = ValueNotifier(false);
-  final ValueNotifier<bool> _showFloatingSearch = ValueNotifier(false);
 
   final List<_Package> _packages = [];
   bool _loading = false;
   bool _hasMore = true;
   int _page = 1;
+  int _requestSerial = 0;
+  int? _totalCount;
   String _query = "";
   String? _error;
   Timer? _searchDebounce;
+
+  static const int _pageSize = 10;
 
   // Entrance animation
   late AnimationController _entranceCtrl;
@@ -70,7 +79,6 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
     _showBackToTop.dispose();
-    _showFloatingSearch.dispose();
     _searchDebounce?.cancel();
     _entranceCtrl.dispose();
     super.dispose();
@@ -91,25 +99,23 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     if (showBackToTop != _showBackToTop.value) {
       _showBackToTop.value = showBackToTop;
     }
-
-    final showFloatingSearch = px >= 72;
-    if (showFloatingSearch != _showFloatingSearch.value) {
-      _showFloatingSearch.value = showFloatingSearch;
-    }
   }
 
   Future<void> _fetchPage({
     required bool reset,
     bool forceRefresh = false,
   }) async {
+    if (_loading && !reset) return;
     if (forceRefresh) {
       // Kept for compatibility with existing refresh/retry handlers.
     }
+    final requestId = ++_requestSerial;
     setState(() {
       _loading = true;
       if (reset) {
         _page = 1;
         _hasMore = true;
+        _totalCount = null;
         _packages.clear();
       }
       _error = null;
@@ -117,10 +123,11 @@ class _TripPackagesPageState extends State<TripPackagesPage>
 
     try {
       final uri = Api.url(
-        "${PackageEndpoints.list}?page=$_page&page_size=10"
-        "${_query.isNotEmpty ? "&search=$_query" : ""}",
+        "${PackageEndpoints.list}?page=$_page&page_size=$_pageSize"
+        "${_query.isNotEmpty ? "&search=${Uri.encodeQueryComponent(_query)}" : ""}",
       );
       final resp = await http.get(uri);
+      if (!mounted || requestId != _requestSerial) return;
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final decoded = jsonDecode(resp.body);
         final results =
@@ -130,19 +137,27 @@ class _TripPackagesPageState extends State<TripPackagesPage>
             .map(_Package.fromJson)
             .toList();
         setState(() {
-          final existing = _packages.map((e) => e.id).toSet();
-          final unique = items.where((e) => !existing.contains(e.id)).toList();
+          if (decoded is Map && decoded["count"] is num) {
+            _totalCount = (decoded["count"] as num).toInt();
+          }
+          final existing = _packages.map((e) => e.dedupeKey).toSet();
+          final unique = items
+              .where((e) => !existing.contains(e.dedupeKey))
+              .toList();
           _packages.addAll(unique);
-          _hasMore = items.length >= 10;
+          _hasMore = items.length >= _pageSize;
           if (_hasMore) _page += 1;
         });
       } else {
         setState(() => _error = "Status ${resp.statusCode}");
       }
     } catch (e) {
+      if (!mounted || requestId != _requestSerial) return;
       setState(() => _error = e.toString());
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && requestId == _requestSerial) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -155,9 +170,11 @@ class _TripPackagesPageState extends State<TripPackagesPage>
         return;
       }
       if (_query.length < 3) {
+        _requestSerial++;
         setState(() {
           _packages.clear();
           _hasMore = false;
+          _totalCount = null;
           _error = null;
           _loading = false;
         });
@@ -167,17 +184,40 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     });
   }
 
+  String get _countLabel {
+    if (_totalCount != null) return "${_packages.length}/$_totalCount";
+    return "${_packages.length}${_hasMore ? "+" : ""}";
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = currentLangSync();
     final scheme = Theme.of(context).colorScheme;
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hPad = isTablet ? 24.0 : 18.0;
+    final session = AuthSession.instance.value;
 
     return Scaffold(
       backgroundColor: scheme.surface,
+      appBar: InotraStandaloneHeader(
+        title: t(lang, "packages.title"),
+        displayName: session.displayName,
+        isAuthenticated: session.isAuthenticated,
+        unreadCount: context.watch<NotificationService>().unreadCount,
+        onBackTap: () => Navigator.maybePop(context),
+        onNotificationsTap: () => Navigator.pushNamed(
+          context,
+          session.isAuthenticated ? AppRoutes.notifications : AppRoutes.login,
+        ),
+        onProfileTap: () => Navigator.pushNamed(
+          context,
+          session.isAuthenticated ? AppRoutes.profile : AppRoutes.login,
+        ),
+      ),
       body: SafeArea(
+        top: false,
         child: FadeTransition(
           opacity: _entranceFade,
           child: SlideTransition(
@@ -192,52 +232,31 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                     controller: _scrollCtrl,
                     physics: const BouncingScrollPhysics(),
                     slivers: [
-                      // ── Page header ─────────────────────────────────
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(hPad - 4, 12, hPad, 0),
-                          child: PageHeader(title: t(lang, "packages.title")),
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _PackagesHeaderDelegate(
+                          isTablet: isTablet,
+                          isDark: isDark,
+                          scheme: scheme,
+                          title: t(lang, "packages.title"),
+                          countLabel: _countLabel,
+                          searchCtrl: _searchCtrl,
+                          hintText: t(lang, "packages.search_hint"),
+                          onSearchChanged: _onSearchChanged,
+                          onClear: () {
+                            _searchCtrl.clear();
+                            _onSearchChanged("");
+                          },
+                          showCount:
+                              !_loading &&
+                              (_packages.isNotEmpty || _query.isNotEmpty),
                         ),
                       ),
-
-                      // ── Search bar ──────────────────────────────────
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 14),
-                          child: _SearchBar(
-                            controller: _searchCtrl,
-                            hintText: t(lang, "packages.search_hint"),
-                            onChanged: _onSearchChanged,
-                            onClear: () {
-                              _searchCtrl.clear();
-                              _onSearchChanged("");
-                            },
-                            scheme: scheme,
-                          ),
-                        ),
-                      ),
-
-                      // ── Result count label ──────────────────────────
-                      if (!_loading && _packages.isNotEmpty)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 12),
-                            child: Text(
-                              "${_packages.length}${_hasMore ? "+" : ""} ${t(lang, "packages.title").toLowerCase()}",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: scheme.onSurface.withValues(alpha: 0.50),
-                                letterSpacing: 0.2,
-                              ),
-                            ),
-                          ),
-                        ),
 
                       // ── Skeletons ───────────────────────────────────
                       if (_loading && _packages.isEmpty)
                         SliverPadding(
-                          padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                          padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 0),
                           sliver: SliverList(
                             delegate: SliverChildBuilderDelegate(
                               (_, i) => Padding(
@@ -251,7 +270,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
 
                       // ── Package cards ───────────────────────────────
                       SliverPadding(
-                        padding: EdgeInsets.fromLTRB(hPad, 0, hPad, 0),
+                        padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 0),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
@@ -320,40 +339,6 @@ class _TripPackagesPageState extends State<TripPackagesPage>
                   ),
                 ),
 
-                // ── Floating search bar (appears after scroll) ────────
-                ValueListenableBuilder<bool>(
-                  valueListenable: _showFloatingSearch,
-                  builder: (context, show, child) => AnimatedPositioned(
-                    duration: const Duration(milliseconds: 240),
-                    curve: Curves.easeOutCubic,
-                    top: show ? 0 : -72,
-                    left: 0,
-                    right: 0,
-                    child: IgnorePointer(
-                      ignoring: !show,
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                          child: Container(
-                            color: scheme.surface.withValues(alpha: 0.92),
-                            padding: EdgeInsets.fromLTRB(hPad, 10, hPad, 10),
-                            child: _SearchBar(
-                              controller: _searchCtrl,
-                              hintText: t(lang, "packages.search_hint"),
-                              onChanged: _onSearchChanged,
-                              onClear: () {
-                                _searchCtrl.clear();
-                                _onSearchChanged("");
-                              },
-                              scheme: scheme,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
                 // ── Back to top ───────────────────────────────────────
                 ValueListenableBuilder<bool>(
                   valueListenable: _showBackToTop,
@@ -376,6 +361,155 @@ class _TripPackagesPageState extends State<TripPackagesPage>
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PACKAGES HEADER — title, count, reusable search
+───────────────────────────────────────────────────────────────────────────── */
+
+class _PackagesHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final bool isTablet;
+  final bool isDark;
+  final ColorScheme scheme;
+  final String title;
+  final String countLabel;
+  final TextEditingController searchCtrl;
+  final String hintText;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClear;
+  final bool showCount;
+
+  const _PackagesHeaderDelegate({
+    required this.isTablet,
+    required this.isDark,
+    required this.scheme,
+    required this.title,
+    required this.countLabel,
+    required this.searchCtrl,
+    required this.hintText,
+    required this.onSearchChanged,
+    required this.onClear,
+    required this.showCount,
+  });
+
+  @override
+  double get minExtent => 78.0;
+
+  @override
+  double get maxExtent => 154.0;
+
+  @override
+  bool shouldRebuild(_PackagesHeaderDelegate old) =>
+      isTablet != old.isTablet ||
+      isDark != old.isDark ||
+      scheme != old.scheme ||
+      title != old.title ||
+      countLabel != old.countLabel ||
+      searchCtrl.text != old.searchCtrl.text ||
+      hintText != old.hintText ||
+      showCount != old.showCount;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final range = maxExtent - minExtent;
+    final shrinkT = range > 0 ? (shrinkOffset / range).clamp(0.0, 1.0) : 1.0;
+    final hPad = isTablet ? 24.0 : 18.0;
+    final titleHeight = (44.0 * (1.0 - shrinkT)).clamp(0.0, 44.0);
+
+    return SizedBox.expand(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            color: scheme.surface.withValues(alpha: isDark ? 0.86 : 0.94),
+            padding: EdgeInsets.fromLTRB(hPad, 14, hPad, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: titleHeight,
+                  child: AnimatedOpacity(
+                    duration: Duration.zero,
+                    opacity: (1.0 - shrinkT * 1.5).clamp(0.0, 1.0),
+                    child: Transform.translate(
+                      offset: Offset(0, -shrinkT * 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: (30 - shrinkT * 6).clamp(24.0, 30.0),
+                                fontWeight: FontWeight.w900,
+                                color: scheme.onSurface,
+                                height: 1.05,
+                              ),
+                            ),
+                          ),
+                          if (showCount) ...[
+                            const SizedBox(width: 10),
+                            _CountBadge(label: countLabel, scheme: scheme),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: (12.0 * (1.0 - shrinkT)).clamp(0.0, 12.0)),
+                DiscoverySearchBar(
+                  controller: searchCtrl,
+                  hintText: hintText,
+                  onChanged: onSearchChanged,
+                  onClear: onClear,
+                  scheme: scheme,
+                  isDark: isDark,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CountBadge extends StatelessWidget {
+  final String label;
+  final ColorScheme scheme;
+
+  const _CountBadge({required this.label, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 138),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.16)),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: scheme.primary,
+          height: 1,
         ),
       ),
     );
@@ -481,18 +615,17 @@ class _PackageCardState extends State<_PackageCard>
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(widget.isTablet ? 22 : 18);
-    final imageRadius = BorderRadius.only(
-      topLeft: Radius.circular(widget.isTablet ? 22 : 18),
-      topRight: Radius.circular(widget.isTablet ? 22 : 18),
-    );
+    final radius = BorderRadius.circular(widget.isTablet ? 28 : 24);
     final scheme = widget.scheme;
     final title = (widget.pkg.title?.trim().isNotEmpty ?? false)
         ? widget.pkg.title!.trim()
         : t(widget.lang, "packages.title");
-    final subtitle = (widget.pkg.subtitle?.trim().isNotEmpty ?? false)
-        ? widget.pkg.subtitle!.trim()
-        : "";
+    final rawSubtitle = widget.pkg.subtitle?.trim() ?? "";
+    final subtitle = rawSubtitle.toLowerCase() == title.toLowerCase()
+        ? ""
+        : rawSubtitle;
+    final hasDuration = widget.pkg.durationDays > 0;
+    final hasActivities = widget.pkg.activitiesCount > 0;
 
     return ScaleTransition(
       scale: _pressScale,
@@ -500,114 +633,209 @@ class _PackageCardState extends State<_PackageCard>
         onTapDown: (_) => _pressCtrl.forward(),
         onTapUp: (_) => _pressCtrl.reverse(),
         onTapCancel: () => _pressCtrl.reverse(),
-        onTap: widget.onTap,
-        child: ClipRRect(
-          borderRadius: radius,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: scheme.surfaceContainerLowest,
-              borderRadius: radius,
-              border: Border.all(
-                color: scheme.outlineVariant.withValues(alpha: 0.35),
-                width: 1,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          widget.onTap();
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.22
+                      : 0.08,
+                ),
+                blurRadius: 24,
+                offset: const Offset(0, 16),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Image with duration pill ─────────────────────────
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: ClipRRect(
-                          borderRadius: imageRadius,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: radius,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerLowest,
+                borderRadius: radius,
+                border: Border.all(
+                  color: scheme.outlineVariant.withValues(alpha: 0.40),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AspectRatio(
+                    aspectRatio: widget.isTablet ? 2.55 : 1.72,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
                           child: _CardImage(
                             url: widget.pkg.imageUrl,
                             scheme: scheme,
                           ),
                         ),
-                      ),
-                      if (widget.pkg.durationDays > 0)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: _DurationPill(
-                            days: widget.pkg.durationDays,
-                            lang: widget.lang,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-
-                // ── Info section ─────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: widget.isTablet ? 16 : 15,
-                                fontWeight: FontWeight.w700,
-                                color: scheme.onSurface,
-                                letterSpacing: -0.2,
-                                height: 1.25,
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.02),
+                                  Colors.black.withValues(alpha: 0.14),
+                                  Colors.black.withValues(alpha: 0.58),
+                                ],
+                                stops: const [0.0, 0.52, 1.0],
                               ),
                             ),
-                            if (subtitle.isNotEmpty) ...[
-                              const SizedBox(height: 4),
+                          ),
+                        ),
+                        Positioned(
+                          left: 14,
+                          right: 14,
+                          bottom: 14,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasDuration || hasActivities) ...[
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    if (hasDuration)
+                                      _MetaPill(
+                                        icon: HugeIcons.strokeRoundedClock01,
+                                        label:
+                                            "${widget.pkg.durationDays} ${t(widget.lang, "packages.days")}",
+                                        isOnImage: true,
+                                      ),
+                                    if (hasActivities)
+                                      _MetaPill(
+                                        icon: HugeIcons.strokeRoundedRoute03,
+                                        label:
+                                            "${widget.pkg.activitiesCount} ${t(widget.lang, "packages.activities")}",
+                                        isOnImage: true,
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                              ],
                               Text(
-                                subtitle,
+                                title,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: widget.isTablet ? 12.5 : 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: scheme.onSurfaceVariant.withValues(
-                                    alpha: 0.85,
-                                  ),
-                                  height: 1.4,
+                                  fontSize: widget.isTablet ? 22 : 19,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  height: 1.08,
                                 ),
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: scheme.surface,
-                          border: Border.all(
-                            color: scheme.outlineVariant.withValues(
-                              alpha: 0.45,
-                            ),
-                            width: 1,
                           ),
                         ),
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 16,
-                          color: scheme.onSurface.withValues(alpha: 0.85),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.primary.withValues(alpha: 0.10),
+                            border: Border.all(
+                              color: scheme.primary.withValues(alpha: 0.14),
+                            ),
+                          ),
+                          child: Center(
+                            child: HugeIcon(
+                              icon: HugeIcons.strokeRoundedLocation01,
+                              size: 17,
+                              strokeWidth: 2,
+                              color: scheme.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (subtitle.isNotEmpty) ...[
+                                Text(
+                                  subtitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: widget.isTablet ? 13.5 : 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: scheme.onSurface.withValues(
+                                      alpha: 0.74,
+                                    ),
+                                    height: 1.35,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                              ],
+                              Row(
+                                children: [
+                                  Text(
+                                    t(widget.lang, "common.tap_details"),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      color: scheme.primary,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  HugeIcon(
+                                    icon: HugeIcons.strokeRoundedArrowRight01,
+                                    size: 13,
+                                    strokeWidth: 2,
+                                    color: scheme.primary,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: scheme.surface,
+                            border: Border.all(
+                              color: scheme.outlineVariant.withValues(
+                                alpha: 0.45,
+                              ),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 16,
+                            color: scheme.onSurface.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -659,44 +887,51 @@ class _Placeholder extends StatelessWidget {
   }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   DURATION PILL — solid surface, no gradient
-───────────────────────────────────────────────────────────────────────────── */
+class _MetaPill extends StatelessWidget {
+  final dynamic icon;
+  final String label;
+  final bool isOnImage;
 
-class _DurationPill extends StatelessWidget {
-  final int days;
-  final String lang;
-  const _DurationPill({required this.days, required this.lang});
+  const _MetaPill({
+    required this.icon,
+    required this.label,
+    this.isOnImage = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: 0.92),
+        color: isOnImage
+            ? Colors.white.withValues(alpha: 0.18)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.50),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.50),
+          color: isOnImage
+              ? Colors.white.withValues(alpha: 0.22)
+              : scheme.outlineVariant.withValues(alpha: 0.40),
           width: 1,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.schedule_rounded,
-            size: 11,
-            color: scheme.onSurface.withValues(alpha: 0.75),
+          HugeIcon(
+            icon: icon,
+            size: 12,
+            strokeWidth: 2,
+            color: isOnImage ? Colors.white : scheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 5),
           Text(
-            "$days ${t(lang, "packages.days")}",
+            label,
             style: TextStyle(
               fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: scheme.onSurface.withValues(alpha: 0.85),
-              letterSpacing: 0.1,
+              fontWeight: FontWeight.w900,
+              color: isOnImage ? Colors.white : scheme.onSurfaceVariant,
+              height: 1,
             ),
           ),
         ],
@@ -886,105 +1121,6 @@ class _ShimmerBar extends StatelessWidget {
   }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   SEARCH BAR — minimal, theme-aware
-───────────────────────────────────────────────────────────────────────────── */
-
-class _SearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-  final ColorScheme scheme;
-
-  const _SearchBar({
-    required this.controller,
-    required this.hintText,
-    required this.onChanged,
-    required this.onClear,
-    required this.scheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.50),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 13),
-          Icon(
-            Icons.search_rounded,
-            size: 17,
-            color: scheme.onSurface.withValues(alpha: 0.50),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: scheme.onSurface,
-              ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: scheme.onSurface.withValues(alpha: 0.40),
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              if (value.text.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return GestureDetector(
-                onTap: onClear,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: scheme.onSurface.withValues(alpha: 0.10),
-                    ),
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 12,
-                      color: scheme.onSurface.withValues(alpha: 0.70),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   ERROR PANEL — solid surface, no excess decoration
-───────────────────────────────────────────────────────────────────────────── */
-
 class _ErrorPanel extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
@@ -1139,6 +1275,9 @@ class _Package {
     required this.durationDays,
     required this.activitiesCount,
   });
+
+  String get dedupeKey =>
+      id.isNotEmpty ? id : "${title ?? ""}|${subtitle ?? ""}|${imageUrl ?? ""}";
 
   static _Package fromJson(Map<String, dynamic> json) {
     final route = (json["route_summary"] ?? "").toString().trim();
