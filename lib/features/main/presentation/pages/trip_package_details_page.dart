@@ -500,7 +500,6 @@ class _SheetBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hPad = isTablet ? 24.0 : 16.0;
-    final priceLabel = _formatPrice(pkg);
     final routeLabel = pkg.routeLabel.trim();
     final durationDays = pkg.durationDays ?? pkg.resolvedDaysCount;
 
@@ -547,7 +546,7 @@ class _SheetBody extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // Route + price row
+        // Route row
         Padding(
           padding: EdgeInsets.symmetric(horizontal: hPad),
           child: Row(
@@ -579,10 +578,6 @@ class _SheetBody extends StatelessWidget {
                 )
               else
                 const Spacer(),
-              if (priceLabel != null) ...[
-                const SizedBox(width: 10),
-                _PriceChip(label: priceLabel, scheme: scheme),
-              ],
             ],
           ),
         ),
@@ -632,18 +627,6 @@ List<PackageImageItem> _galleryImages(PackageDetailData pkg) {
     }
   }
   return merged;
-}
-
-String? _formatPrice(PackageDetailData pkg) {
-  final raw = pkg.priceAmount?.trim();
-  if (raw == null || raw.isEmpty) return null;
-  final n = num.tryParse(raw);
-  if (n == null) return null;
-  final cur = (pkg.priceCurrency ?? "USD").toUpperCase();
-  final formatted = n is int || n == n.toInt()
-      ? n.toInt().toString()
-      : n.toStringAsFixed(2);
-  return "$cur $formatted";
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -746,36 +729,6 @@ class _DurationChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PriceChip extends StatelessWidget {
-  final String label;
-  final ColorScheme scheme;
-  const _PriceChip({required this.label, required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: scheme.primary.withValues(alpha: 0.25),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w900,
-          color: scheme.primary,
-          letterSpacing: 0.1,
-        ),
       ),
     );
   }
