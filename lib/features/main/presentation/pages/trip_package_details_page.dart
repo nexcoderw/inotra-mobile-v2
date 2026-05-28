@@ -139,6 +139,9 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
                         label: isInstant
                             ? t(lang, "trips.login_to_book")
                             : t(lang, "trips.login_to_inquire"),
+                        icon: isInstant
+                            ? HugeIcons.strokeRoundedCalendarCheckIn01
+                            : HugeIcons.strokeRoundedMessage02,
                         onTap: () => QuickLoginDialog.show(context),
                       );
                     }
@@ -146,6 +149,9 @@ class _TripPackageDetailsPageState extends State<TripPackageDetailsPage> {
                       label: isInstant
                           ? t(lang, "trips.book_now")
                           : t(lang, "trips.inquire"),
+                      icon: isInstant
+                          ? HugeIcons.strokeRoundedCalendarCheckIn01
+                          : HugeIcons.strokeRoundedMessage02,
                       onTap: () {
                         // Booking flow integration goes here.
                       },
@@ -816,8 +822,13 @@ class _RoundIconButton extends StatelessWidget {
 
 class _BookCTAButton extends StatefulWidget {
   final String label;
+  final dynamic icon;
   final VoidCallback? onTap;
-  const _BookCTAButton({required this.label, required this.onTap});
+  const _BookCTAButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   State<_BookCTAButton> createState() => _BookCTAButtonState();
@@ -878,21 +889,18 @@ class _BookCTAButtonState extends State<_BookCTAButton>
           alignment: Alignment.center,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
+              HugeIcon(icon: widget.icon, size: 18, color: scheme.onPrimary),
+              const SizedBox(width: 10),
               Text(
                 widget.label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.w900,
                   color: scheme.onPrimary,
                   letterSpacing: 0.5,
                 ),
-              ),
-              const SizedBox(width: 8),
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
-                size: 18,
-                color: scheme.onPrimary,
               ),
             ],
           ),
