@@ -31,11 +31,7 @@ class InotraAppHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     if (!isAuthenticated) {
-      return InotraGuestHeader(
-        title: title,
-        onMenuTap: onMenuTap,
-        height: _headerHeight,
-      );
+      return InotraGuestHeader(title: title, height: _headerHeight);
     }
 
     return InotraAuthenticatedHeader(
