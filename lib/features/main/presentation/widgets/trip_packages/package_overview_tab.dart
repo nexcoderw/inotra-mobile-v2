@@ -106,10 +106,7 @@ class PackageOverviewTab extends StatelessWidget {
         if (pkg.includedItems.trim().isNotEmpty ||
             pkg.excludedItems.trim().isNotEmpty ||
             pkg.whatToBring.trim().isNotEmpty ||
-            pkg.importantNotes.trim().isNotEmpty ||
-            pkg.pricingNotes.trim().isNotEmpty ||
-            pkg.childPricingNote.trim().isNotEmpty ||
-            pkg.addOnsSummary.trim().isNotEmpty) ...[
+            pkg.importantNotes.trim().isNotEmpty) ...[
           _SectionHeader(
             icon: HugeIcons.strokeRoundedInformationCircle,
             label: "Planning Notes",
@@ -132,15 +129,6 @@ class PackageOverviewTab extends StatelessWidget {
                     label: "Important notes",
                     value: pkg.importantNotes,
                   ),
-                if (pkg.pricingNotes.trim().isNotEmpty)
-                  _TextBlock(label: "Pricing notes", value: pkg.pricingNotes),
-                if (pkg.childPricingNote.trim().isNotEmpty)
-                  _TextBlock(
-                    label: "Child pricing",
-                    value: pkg.childPricingNote,
-                  ),
-                if (pkg.addOnsSummary.trim().isNotEmpty)
-                  _TextBlock(label: "Add-ons", value: pkg.addOnsSummary),
               ],
             ),
           ),
@@ -180,12 +168,6 @@ class _StatsRow extends StatelessWidget {
         (
           icon: HugeIcons.strokeRoundedMoon02,
           value: "${pkg.durationNights} nights",
-        ),
-      if (pkg.depositAmount != null)
-        (
-          icon: HugeIcons.strokeRoundedWallet03,
-          value:
-              "Deposit ${pkg.depositCurrency ?? pkg.priceCurrency ?? "RWF"} ${pkg.depositAmount}",
         ),
     ];
 
