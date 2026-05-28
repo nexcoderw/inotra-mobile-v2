@@ -965,7 +965,7 @@ class _ReserveCTAButtonState extends State<_ReserveCTAButton> {
                           key: const ValueKey("label"),
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
-                            fontSize: 10,
+                            fontSize: 11,
                             color: Colors.white,
                             letterSpacing: 0.5,
                           ),
