@@ -4,6 +4,7 @@ import "../../../../core/constants/app_colors.dart";
 import "../../../../core/config/app_routes.dart";
 import "../../../../i18n/translations.dart";
 import "../../../../i18n/lang.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 
 class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
   static const double defaultHeight = kToolbarHeight + 6;
@@ -53,7 +54,7 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
-                          color: scheme.onSurface.withOpacity(0.62),
+                          color: scheme.onSurface.withValues(alpha: 0.62),
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -67,18 +68,26 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primary.withOpacity(0.7)),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        side: BorderSide(
+                          color: AppColors.primary.withValues(alpha: 0.7),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),
                         ),
                         minimumSize: const Size(0, 0),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
+                      onPressed: () => QuickLoginDialog.show(context),
                       child: Text(
                         t(lang, "auth.sign_in"),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -86,7 +95,10 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(999),
                         ),
@@ -94,10 +106,14 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         elevation: 0,
                       ),
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
+                      onPressed: () =>
+                          Navigator.pushNamed(context, AppRoutes.register),
                       child: Text(
                         t(lang, "auth.sign_up"),
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
