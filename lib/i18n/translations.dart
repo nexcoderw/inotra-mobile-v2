@@ -219,6 +219,7 @@ const translations = {
     "payments.feature_payout": "Bank payout scheduling and history",
     "common.cancel": "Cancel",
     "common.tap_details": "Tap to view details",
+    "common.see_more": "See more",
     "common.all": "All",
     "common.empty": "Nothing here yet",
     "common.try_again": "Try again",
@@ -672,6 +673,15 @@ const translations = {
     "chat.shared_event": "Event",
     "chat.shared_listing": "Listing",
     "chat.shared_package": "Trip Package",
+    "chat.end_chat": "End chat",
+    "chat.end_chat_title": "End this conversation?",
+    "chat.end_chat_body":
+        "We'll close it on both sides. You can always start a new one when you need help again.",
+    "chat.end_chat_confirm": "End chat",
+    "chat.end_chat_cancel": "Keep chatting",
+    "chat.end_chat_failed": "Couldn't end the chat. Please try again.",
+    "chat.ended_banner_title": "Conversation ended",
+    "chat.ended_banner_body": "Start a new chat any time you need a hand.",
     "common.view_all": "View all",
     "dashboard.greeting_morning": "Good morning",
     "dashboard.greeting_afternoon": "Good afternoon",
@@ -1089,6 +1099,7 @@ const translations = {
     "payments.feature_payout":
         "Gushyira mu mugango no mateka y'ihembwa ry'ibanki",
     "common.tap_details": "Kanda urebe ibisobanuro",
+    "common.see_more": "Reba byinshi",
     "common.all": "Byose",
     "common.empty": "Nta na kimwe",
     "common.try_again": "Ongera ugerageze",
@@ -1242,6 +1253,17 @@ const translations = {
     "chat.shared_event": "Igikorwa",
     "chat.shared_listing": "Isoko",
     "chat.shared_package": "Gahunda y'urugendo",
+    "chat.end_chat": "Soza ikiganiro",
+    "chat.end_chat_title": "Sozesha iki kiganiro?",
+    "chat.end_chat_body":
+        "Tuzagisora impande zombi. Ushobora gutangira ikindi igihe icyo aricyo cyose ukeneye ubufasha.",
+    "chat.end_chat_confirm": "Soza ikiganiro",
+    "chat.end_chat_cancel": "Komeza kuvugana",
+    "chat.end_chat_failed":
+        "Ntibyashobotse gusoza ikiganiro. Ongera ugerageze.",
+    "chat.ended_banner_title": "Ikiganiro cyararangiye",
+    "chat.ended_banner_body":
+        "Tangiza ikindi ikiganiro igihe ukeneye ubufasha.",
   },
   "fr": {
     "settings.title": "Paramètres",
@@ -1450,6 +1472,7 @@ const translations = {
     "payments.feature_payout":
         "Planification et historique des virements bancaires",
     "common.tap_details": "Touchez pour voir les détails",
+    "common.see_more": "Voir plus",
     "common.all": "Tout",
     "common.empty": "Rien ici pour l'instant",
     "common.try_again": "Réessayer",
@@ -1605,6 +1628,17 @@ const translations = {
     "chat.shared_event": "Événement",
     "chat.shared_listing": "Annonce",
     "chat.shared_package": "Forfait voyage",
+    "chat.end_chat": "Terminer le chat",
+    "chat.end_chat_title": "Terminer cette conversation ?",
+    "chat.end_chat_body":
+        "Nous la fermerons des deux côtés. Vous pouvez en démarrer une autre dès que vous avez besoin d'aide.",
+    "chat.end_chat_confirm": "Terminer le chat",
+    "chat.end_chat_cancel": "Continuer la discussion",
+    "chat.end_chat_failed":
+        "Impossible de terminer le chat. Veuillez réessayer.",
+    "chat.ended_banner_title": "Conversation terminée",
+    "chat.ended_banner_body":
+        "Démarrez un nouveau chat dès que vous avez besoin d'aide.",
   },
   "es": {
     "settings.title": "Configuración",
@@ -1811,6 +1845,7 @@ const translations = {
     "payments.feature_payout":
         "Programación e historial de transferencias bancarias",
     "common.tap_details": "Toca para ver detalles",
+    "common.see_more": "Ver más",
     "common.all": "Todo",
     "common.empty": "Nada aquí todavía",
     "common.try_again": "Intentar de nuevo",
@@ -1965,6 +2000,15 @@ const translations = {
     "chat.shared_event": "Evento",
     "chat.shared_listing": "Anuncio",
     "chat.shared_package": "Paquete de viaje",
+    "chat.end_chat": "Finalizar chat",
+    "chat.end_chat_title": "¿Finalizar esta conversación?",
+    "chat.end_chat_body":
+        "La cerraremos en ambos lados. Puedes iniciar otra cuando necesites ayuda.",
+    "chat.end_chat_confirm": "Finalizar chat",
+    "chat.end_chat_cancel": "Seguir conversando",
+    "chat.end_chat_failed": "No pudimos finalizar el chat. Inténtalo de nuevo.",
+    "chat.ended_banner_title": "Conversación finalizada",
+    "chat.ended_banner_body": "Inicia un nuevo chat cuando necesites ayuda.",
   },
   "de": {
     "settings.title": "Einstellungen",
@@ -2171,6 +2215,7 @@ const translations = {
         "Mobile Money- und Kartenzahlungsverfolgung",
     "payments.feature_payout": "Banküberweisung planen und Verlauf anzeigen",
     "common.tap_details": "Tippe für Details",
+    "common.see_more": "Mehr anzeigen",
     "common.all": "Alle",
     "common.empty": "Noch nichts hier",
     "common.try_again": "Erneut versuchen",
@@ -2324,6 +2369,17 @@ const translations = {
     "chat.shared_event": "Veranstaltung",
     "chat.shared_listing": "Angebot",
     "chat.shared_package": "Reisepaket",
+    "chat.end_chat": "Chat beenden",
+    "chat.end_chat_title": "Diese Unterhaltung beenden?",
+    "chat.end_chat_body":
+        "Wir schließen sie auf beiden Seiten. Du kannst jederzeit eine neue starten, wenn du Hilfe brauchst.",
+    "chat.end_chat_confirm": "Chat beenden",
+    "chat.end_chat_cancel": "Weiter chatten",
+    "chat.end_chat_failed":
+        "Chat konnte nicht beendet werden. Bitte erneut versuchen.",
+    "chat.ended_banner_title": "Unterhaltung beendet",
+    "chat.ended_banner_body":
+        "Starte jederzeit eine neue Unterhaltung, wenn du Hilfe brauchst.",
   },
 };
 
