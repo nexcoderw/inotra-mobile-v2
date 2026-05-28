@@ -937,97 +937,127 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
           BoxShadow(
             color: Colors.black.withValues(
               alpha: Theme.of(context).brightness == Brightness.dark
-                  ? 0.24
-                  : 0.10,
+                  ? 0.34
+                  : 0.18,
             ),
-            blurRadius: 22,
-            offset: const Offset(0, 14),
+            blurRadius: 28,
+            offset: const Offset(0, 18),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: radius,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerLowest,
-            borderRadius: radius,
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1,
-            ),
-          ),
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: _ShimmerBox(controller: _shimmer, scheme: scheme),
-                ),
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.00),
-                          Colors.black.withValues(alpha: 0.12),
-                          Colors.black.withValues(alpha: 0.48),
-                        ],
-                      ),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: _ShimmerBox(controller: _shimmer, scheme: scheme),
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.34),
+                      width: 1,
+                    ),
+                    borderRadius: radius,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.02),
+                        Colors.black.withValues(alpha: 0.10),
+                        Colors.black.withValues(alpha: 0.72),
+                      ],
+                      stops: const [0.0, 0.48, 1.0],
                     ),
                   ),
                 ),
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _ShimmerBar(
-                        controller: _shimmer,
-                        scheme: scheme,
-                        height: 18,
-                        widthFraction: 0.68,
-                        isDarkSurface: true,
+              ),
+              Positioned(
+                top: 14,
+                right: 14,
+                child: _SkeletonHeart(controller: _shimmer, scheme: scheme),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ShimmerBar(
+                      controller: _shimmer,
+                      scheme: scheme,
+                      height: isTablet ? 25 : 21,
+                      widthFraction: 0.72,
+                      isDarkSurface: true,
+                    ),
+                    const SizedBox(height: 9),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _SkeletonMetaPill(
+                          controller: _shimmer,
+                          scheme: scheme,
+                          width: 86,
+                        ),
+                        _SkeletonMetaPill(
+                          controller: _shimmer,
+                          scheme: scheme,
+                          width: 112,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.58),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.09),
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      Row(
+                      child: Row(
                         children: [
-                          _ShimmerPill(controller: _shimmer, scheme: scheme),
-                          const SizedBox(width: 8),
-                          _ShimmerPill(controller: _shimmer, scheme: scheme),
+                          Expanded(
+                            child: Center(
+                              child: _ShimmerBar(
+                                controller: _shimmer,
+                                scheme: scheme,
+                                height: 13,
+                                widthFraction: 0.34,
+                                isDarkSurface: true,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: 46,
+                            height: 46,
+                            margin: const EdgeInsets.only(right: 5),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: _ShimmerCircle(
+                                controller: _shimmer,
+                                scheme: scheme,
+                                size: 20,
+                                isDark: false,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.34),
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.08),
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _ShimmerBar(
-                              controller: _shimmer,
-                              scheme: scheme,
-                              height: 12,
-                              widthFraction: 0.30,
-                              isDarkSurface: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1054,6 +1084,120 @@ class _ShimmerBox extends StatelessWidget {
                 scheme.surfaceContainerHighest.withValues(alpha: 0.55),
                 scheme.surfaceContainerHighest.withValues(alpha: 0.80),
                 scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SkeletonHeart extends StatelessWidget {
+  final AnimationController controller;
+  final ColorScheme scheme;
+
+  const _SkeletonHeart({required this.controller, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.32)),
+      ),
+      child: Center(
+        child: _ShimmerCircle(
+          controller: controller,
+          scheme: scheme,
+          size: 18,
+          isDark: true,
+        ),
+      ),
+    );
+  }
+}
+
+class _SkeletonMetaPill extends StatelessWidget {
+  final AnimationController controller;
+  final ColorScheme scheme;
+  final double width;
+
+  const _SkeletonMetaPill({
+    required this.controller,
+    required this.scheme,
+    required this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ShimmerCircle(
+            controller: controller,
+            scheme: scheme,
+            size: 12,
+            isDark: true,
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: _ShimmerBar(
+              controller: controller,
+              scheme: scheme,
+              height: 11,
+              widthFraction: 1,
+              isDarkSurface: true,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShimmerCircle extends StatelessWidget {
+  final AnimationController controller;
+  final ColorScheme scheme;
+  final double size;
+  final bool isDark;
+
+  const _ShimmerCircle({
+    required this.controller,
+    required this.scheme,
+    required this.size,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final base = isDark ? Colors.white : scheme.surfaceContainerHighest;
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment(-1.5 + controller.value * 3, 0),
+              end: Alignment(-0.5 + controller.value * 3, 0),
+              colors: [
+                base.withValues(alpha: isDark ? 0.12 : 0.52),
+                base.withValues(alpha: isDark ? 0.28 : 0.78),
+                base.withValues(alpha: isDark ? 0.12 : 0.52),
               ],
             ),
           ),
@@ -1110,27 +1254,6 @@ class _ShimmerBar extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _ShimmerPill extends StatelessWidget {
-  final AnimationController controller;
-  final ColorScheme scheme;
-
-  const _ShimmerPill({required this.controller, required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 88,
-      child: _ShimmerBar(
-        controller: controller,
-        scheme: scheme,
-        height: 24,
-        widthFraction: 1,
-        isDarkSurface: true,
       ),
     );
   }
