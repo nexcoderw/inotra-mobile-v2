@@ -13,7 +13,6 @@ import "../../../../core/services/chat_socket_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../pages/ai_chat_thread_page.dart";
-import "../widgets/chat/conversation/header.dart";
 import "../widgets/chat/conversation/message_list.dart";
 import "../widgets/chat/conversation/models.dart";
 
@@ -793,22 +792,11 @@ class _AiChatTabState extends State<AiChatTab> {
     }
 
     return SafeArea(
-      child: Column(
-        children: [
-          ConvHeader(
-            name: t(lang, "ai.assistant_name"),
-            showBackButton: false,
-            onBack: () {},
-          ),
-          Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 260),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeIn,
-              child: _buildFlowBody(lang: lang, scheme: scheme),
-            ),
-          ),
-        ],
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeIn,
+        child: _buildFlowBody(lang: lang, scheme: scheme),
       ),
     );
   }
