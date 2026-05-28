@@ -10,7 +10,9 @@ import "../../../../core/constants/api/chat_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/chat_socket_service.dart";
 import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../widgets/chat/conversation/composer.dart";
+import "../widgets/chat/conversation/end_chat_dialog.dart";
 import "../widgets/chat/conversation/header.dart";
 import "../widgets/chat/conversation/message_list.dart";
 import "../widgets/chat/conversation/models.dart";
@@ -30,11 +32,14 @@ class AiChatThreadPage extends StatefulWidget {
   final bool showBackButton;
   final String? statusLabel;
   final String? introMessage;
+
   /// When true, shows a typing indicator when the rep is composing a reply.
   final bool checkTyping;
+
   /// Called after the user successfully ends the chat. Use this when embedded
   /// inside AiChatTab to switch back to the no-active-chat screen.
   final VoidCallback? onChatEnded;
+
   /// Called whenever a new incoming message is received via WebSocket.
   /// Used by the parent to track unread messages when this tab is not visible.
   final VoidCallback? onNewMessage;
@@ -150,7 +155,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     final msg = ConvMessage.fromJson(raw);
     if (_knownIds.contains(msg.id)) return;
 
-    final atBottom = !_scrollCtrl.hasClients ||
+    final atBottom =
+        !_scrollCtrl.hasClients ||
         _scrollCtrl.position.pixels >=
             _scrollCtrl.position.maxScrollExtent - 120;
 
@@ -172,13 +178,16 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) return;
     try {
-      final uri = Api.url(ChatEndpoints.messages(widget.threadId)).replace(
-        queryParameters: {"page": "1", "page_size": "$_pageSize"},
+      final uri = Api.url(
+        ChatEndpoints.messages(widget.threadId),
+      ).replace(queryParameters: {"page": "1", "page_size": "$_pageSize"});
+      final resp = await http.get(
+        uri,
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $token",
+        },
       );
-      final resp = await http.get(uri, headers: {
-        "Accept": "application/json",
-        "Authorization": "Bearer $token",
-      });
       if (!mounted || resp.statusCode < 200 || resp.statusCode >= 300) return;
       final decoded = jsonDecode(resp.body);
       List raw = const [];
@@ -210,21 +219,23 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
     _socket?.disconnect();
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _error = "auth";
         });
+      }
       return;
     }
 
-    if (mounted)
+    if (mounted) {
       setState(() {
         _loading = true;
         _error = null;
         _page = 1;
         _hasMore = true;
       });
+    }
 
     try {
       final uri = Api.url(
@@ -274,11 +285,12 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         _initSocket();
       } else if (resp.statusCode == 401) {
         await AuthSession.instance.expireSession();
-        if (mounted)
+        if (mounted) {
           setState(() {
             _loading = false;
             _error = "401";
           });
+        }
       } else {
         setState(() {
           _loading = false;
@@ -286,11 +298,12 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         });
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loading = false;
           _error = e.toString();
         });
+      }
     }
   }
 
@@ -350,7 +363,9 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
             : 0.0;
 
         setState(() {
-          for (final m in older) _knownIds.add(m.id);
+          for (final m in older) {
+            _knownIds.add(m.id);
+          }
           _messages.insertAll(0, older);
           _page = nextPage;
           _hasMore = hasNext;
@@ -450,8 +465,9 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
           });
         } else {
           setState(() {
-            if (idx != -1)
+            if (idx != -1) {
               _messages[idx] = _messages[idx].copyWith(pending: false);
+            }
             _sending = false;
           });
         }
@@ -537,26 +553,8 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
   // ── End chat ─────────────────────────────────────────────────────────────
 
   Future<void> _endChat() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("End this chat?"),
-        content: const Text(
-          "The conversation will be closed. You can start a new one at any time.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Cancel"),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("End Chat"),
-          ),
-        ],
-      ),
-    );
+    final lang = currentLangSync();
+    final confirmed = await EndChatDialog.show(context, lang: lang);
 
     if (confirmed != true || !mounted) return;
 
@@ -576,10 +574,10 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
         _socket?.disconnect();
         widget.onChatEnded?.call();
       } else {
-        _showSnack("Could not end chat (${resp.statusCode}).");
+        _showSnack(t(lang, "chat.end_chat_failed"));
       }
     } catch (_) {
-      if (mounted) _showSnack("Could not end chat.");
+      if (mounted) _showSnack(t(lang, "chat.end_chat_failed"));
     }
   }
 
@@ -631,29 +629,67 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
               onBack: () => Navigator.maybePop(context),
               trailing: widget.onChatEnded != null
                   ? PopupMenuButton<String>(
-                      icon: Icon(
-                        Icons.more_vert_rounded,
-                        color: scheme.onSurface.withValues(alpha: 0.6),
-                        size: 22,
+                      tooltip: t(lang, "chat.more_actions"),
+                      position: PopupMenuPosition.under,
+                      offset: const Offset(0, 8),
+                      elevation: 14,
+                      color: scheme.surface,
+                      surfaceTintColor: Colors.transparent,
+                      shadowColor: Colors.black.withValues(
+                        alpha: scheme.brightness == Brightness.dark
+                            ? 0.38
+                            : 0.16,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(18),
+                        side: BorderSide(
+                          color: scheme.onSurface.withValues(
+                            alpha: scheme.brightness == Brightness.dark
+                                ? 0.08
+                                : 0.06,
+                          ),
+                          width: 0.7,
+                        ),
                       ),
                       onSelected: (value) {
-                        if (value == "end") _endChat();
+                        if (value == "end") {
+                          _endChat();
+                        }
                       },
-                      itemBuilder: (_) => const [
+                      itemBuilder: (_) => [
                         PopupMenuItem(
                           value: "end",
-                          child: Row(
-                            children: [
-                              Icon(Icons.stop_circle_outlined, size: 18),
-                              SizedBox(width: 10),
-                              Text("End Chat"),
-                            ],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          child: _ChatMenuAction(
+                            label: t(lang, "chat.end_chat"),
+                            scheme: scheme,
                           ),
                         ),
                       ],
+                      child: Container(
+                        height: 36,
+                        width: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: scheme.surfaceContainerHighest.withValues(
+                            alpha: scheme.brightness == Brightness.dark
+                                ? 0.48
+                                : 0.72,
+                          ),
+                          border: Border.all(
+                            color: scheme.onSurface.withValues(alpha: 0.06),
+                            width: 0.7,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.more_horiz_rounded,
+                          color: scheme.onSurface.withValues(alpha: 0.64),
+                          size: 20,
+                        ),
+                      ),
                     )
                   : null,
             ),
@@ -754,9 +790,10 @@ class _RepTypingBubbleState extends State<_RepTypingBubble>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     )..repeat(reverse: true);
-    _fade = Tween<double>(begin: 0.45, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _fade = Tween<double>(
+      begin: 0.45,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -824,6 +861,62 @@ class _RepTypingBubbleState extends State<_RepTypingBubble>
   }
 }
 
+class _ChatMenuAction extends StatelessWidget {
+  final String label;
+  final ColorScheme scheme;
+
+  const _ChatMenuAction({required this.label, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = scheme.brightness == Brightness.dark;
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 168),
+      padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: scheme.errorContainer.withValues(alpha: isDark ? 0.16 : 0.28),
+        border: Border.all(
+          color: scheme.error.withValues(alpha: isDark ? 0.18 : 0.12),
+          width: 0.7,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 28,
+            width: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.error.withValues(alpha: isDark ? 0.18 : 0.10),
+            ),
+            child: Icon(
+              Icons.stop_circle_outlined,
+              size: 16,
+              color: scheme.error,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: scheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TypingDot extends StatefulWidget {
   final int delay;
 
@@ -846,9 +939,10 @@ class _TypingDotState extends State<_TypingDot>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _scale = Tween<double>(begin: 0.7, end: 1.2).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 0.7,
+      end: 1.2,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     _delayTimer = Timer(Duration(milliseconds: widget.delay), () {
       if (mounted) _ctrl.repeat(reverse: true);
     });
