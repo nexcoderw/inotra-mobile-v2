@@ -797,7 +797,6 @@ class _AiChatTabState extends State<AiChatTab> {
         children: [
           ConvHeader(
             name: t(lang, "ai.assistant_name"),
-            statusLabel: t(lang, "ai.assistant_status"),
             showBackButton: false,
             onBack: () {},
           ),
