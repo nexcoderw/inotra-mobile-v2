@@ -1470,9 +1470,9 @@ class _StartChatPanel extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         gradient: LinearGradient(
           colors: [
             scheme.primary.withValues(alpha: isDark ? 0.24 : 0.13),
@@ -1485,7 +1485,7 @@ class _StartChatPanel extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+          color: scheme.primary.withValues(alpha: isDark ? 0.24 : 0.14),
           width: 0.8,
         ),
         boxShadow: [
@@ -1502,11 +1502,11 @@ class _StartChatPanel extends StatelessWidget {
           Row(
             children: [
               Container(
-                height: 48,
-                width: 48,
+                height: 52,
+                width: 52,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: scheme.surface.withValues(alpha: isDark ? 0.16 : 0.78),
+                  color: scheme.surface.withValues(alpha: isDark ? 0.18 : 0.82),
                   border: Border.all(
                     color: scheme.primary.withValues(
                       alpha: isDark ? 0.22 : 0.14,
@@ -1516,7 +1516,7 @@ class _StartChatPanel extends StatelessWidget {
                 child: Center(
                   child: HugeIcon(
                     icon: HugeIcons.strokeRoundedSparkles,
-                    size: 24,
+                    size: 25,
                     color: scheme.primary,
                   ),
                 ),
@@ -1557,10 +1557,64 @@ class _StartChatPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
+          Container(
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: scheme.surface.withValues(alpha: isDark ? 0.12 : 0.54),
+              border: Border.all(
+                color: scheme.onSurface.withValues(
+                  alpha: isDark ? 0.075 : 0.05,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                _PlanningStepDot(
+                  icon: HugeIcons.strokeRoundedRoute03,
+                  scheme: scheme,
+                  isDark: isDark,
+                  isActive: true,
+                ),
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 7),
+                    color: scheme.primary.withValues(
+                      alpha: isDark ? 0.24 : 0.16,
+                    ),
+                  ),
+                ),
+                _PlanningStepDot(
+                  icon: HugeIcons.strokeRoundedClock01,
+                  scheme: scheme,
+                  isDark: isDark,
+                  isActive: false,
+                ),
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 7),
+                    color: scheme.primary.withValues(
+                      alpha: isDark ? 0.18 : 0.11,
+                    ),
+                  ),
+                ),
+                _PlanningStepDot(
+                  icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                  scheme: scheme,
+                  isDark: isDark,
+                  isActive: false,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
             t(lang, "ai.plan_trip_title"),
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 25,
               fontWeight: FontWeight.w900,
               height: 1.04,
               color: scheme.onSurface,
@@ -1576,25 +1630,26 @@ class _StartChatPanel extends StatelessWidget {
               color: scheme.onSurface.withValues(alpha: 0.68),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 46,
             child: FilledButton.icon(
               onPressed: busy ? null : onStart,
               style: FilledButton.styleFrom(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 backgroundColor: scheme.primary,
                 foregroundColor: scheme.onPrimary,
                 disabledBackgroundColor: scheme.primary.withValues(alpha: 0.35),
+                padding: const EdgeInsets.symmetric(horizontal: 18),
               ),
               icon: busy
                   ? SizedBox(
-                      height: 16,
-                      width: 16,
+                      height: 15,
+                      width: 15,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: scheme.onPrimary,
@@ -1602,19 +1657,61 @@ class _StartChatPanel extends StatelessWidget {
                     )
                   : HugeIcon(
                       icon: HugeIcons.strokeRoundedMessage02,
-                      size: 17,
+                      size: 15,
                       color: scheme.onPrimary,
                     ),
               label: Text(
                 t(lang, "ai.start_new_chat"),
                 style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PlanningStepDot extends StatelessWidget {
+  final List<List<dynamic>> icon;
+  final ColorScheme scheme;
+  final bool isDark;
+  final bool isActive;
+
+  const _PlanningStepDot({
+    required this.icon,
+    required this.scheme,
+    required this.isDark,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      height: 24,
+      width: 24,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isActive
+            ? scheme.primary
+            : scheme.surface.withValues(alpha: isDark ? 0.18 : 0.72),
+        border: Border.all(
+          color: isActive
+              ? scheme.primary
+              : scheme.primary.withValues(alpha: isDark ? 0.20 : 0.12),
+        ),
+      ),
+      child: Center(
+        child: HugeIcon(
+          icon: icon,
+          size: 12,
+          color: isActive ? scheme.onPrimary : scheme.primary,
+        ),
       ),
     );
   }
@@ -1687,7 +1784,7 @@ class _HistoryFilterBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(999),
         color: scheme.surfaceContainerHighest.withValues(
           alpha: isDark ? 0.42 : 0.62,
         ),
@@ -1763,14 +1860,14 @@ class _HistoryFilterChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: selected ? null : onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(999),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 7),
+          height: 38,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(999),
             color: selected ? scheme.primary : Colors.transparent,
             boxShadow: selected
                 ? [
@@ -1786,7 +1883,7 @@ class _HistoryFilterChip extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(icon: icon, size: 14, color: foreground),
+              HugeIcon(icon: icon, size: 13, color: foreground),
               const SizedBox(width: 5),
               Flexible(
                 child: Text(
@@ -1796,6 +1893,7 @@ class _HistoryFilterChip extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
+                    height: 1,
                     color: foreground,
                   ),
                 ),
