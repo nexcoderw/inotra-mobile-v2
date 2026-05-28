@@ -649,7 +649,7 @@ class _PackageCardState extends State<_PackageCard>
             ],
           ),
           child: AspectRatio(
-            aspectRatio: widget.isTablet ? 1.18 : 0.82,
+            aspectRatio: 1,
             child: ClipRRect(
               borderRadius: radius,
               child: Stack(
@@ -751,13 +751,13 @@ class _PackageCardState extends State<_PackageCard>
                           ),
                           child: Row(
                             children: [
-                              const Expanded(
+                              Expanded(
                                 child: Center(
                                   child: Text(
-                                    "See more",
+                                    t(widget.lang, "common.see_more"),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 13,
                                       fontWeight: FontWeight.w900,
@@ -957,7 +957,7 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
             ),
           ),
           child: AspectRatio(
-            aspectRatio: isTablet ? 1.18 : 0.82,
+            aspectRatio: 1,
             child: Stack(
               children: [
                 Positioned.fill(
