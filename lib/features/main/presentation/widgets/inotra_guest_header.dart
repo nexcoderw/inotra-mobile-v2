@@ -12,13 +12,11 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
   static const double defaultHeight = kToolbarHeight + 6;
 
   final String title;
-  final VoidCallback onMenuTap;
   final double height;
 
   const InotraGuestHeader({
     super.key,
     required this.title,
-    required this.onMenuTap,
     this.height = defaultHeight,
   });
 
@@ -44,18 +42,8 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
           child: Container(color: scheme.surface.withValues(alpha: 0.70)),
         ),
       ),
-      leadingWidth: 58,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 8),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: _GlassIconButton(
-            tooltip: "Menu",
-            onTap: onMenuTap,
-            icon: HugeIcons.strokeRoundedMenuCircle,
-          ),
-        ),
-      ),
+      leadingWidth: 0,
+      leading: const SizedBox.shrink(),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -92,71 +80,6 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
         ),
         const SizedBox(width: 8),
       ],
-    );
-  }
-}
-
-class _GlassIconButton extends StatefulWidget {
-  final String tooltip;
-  final VoidCallback onTap;
-  final dynamic icon;
-
-  const _GlassIconButton({
-    required this.tooltip,
-    required this.onTap,
-    required this.icon,
-  });
-
-  @override
-  State<_GlassIconButton> createState() => _GlassIconButtonState();
-}
-
-class _GlassIconButtonState extends State<_GlassIconButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Semantics(
-      button: true,
-      label: widget.tooltip,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 130),
-          curve: Curves.easeOut,
-          scale: _pressed ? 0.98 : 1,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                height: 38,
-                width: 38,
-                decoration: BoxDecoration(
-                  color: scheme.surface.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: scheme.onSurface.withValues(alpha: 0.08),
-                  ),
-                ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: widget.icon,
-                    size: 18,
-                    strokeWidth: 2,
-                    color: scheme.onSurface.withValues(alpha: 0.80),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
