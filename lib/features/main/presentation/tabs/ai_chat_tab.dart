@@ -98,7 +98,12 @@ class _AiChatTabState extends State<AiChatTab> {
     });
 
     if (_token.isEmpty) {
-      if (mounted) setState(() { _apiLoading = false; _error = "auth"; });
+      if (mounted) {
+        setState(() {
+          _apiLoading = false;
+          _error = "auth";
+        });
+      }
       return;
     }
 
@@ -118,7 +123,10 @@ class _AiChatTabState extends State<AiChatTab> {
         return;
       }
       if (resp.statusCode >= 400) {
-        setState(() { _apiLoading = false; _error = "${resp.statusCode}"; });
+        setState(() {
+          _apiLoading = false;
+          _error = "${resp.statusCode}";
+        });
         return;
       }
 
@@ -127,7 +135,12 @@ class _AiChatTabState extends State<AiChatTab> {
       // No open thread exists — show history + start-new-chat screen.
       if (data["thread_id"] == null || data["has_active_thread"] == false) {
         await _fetchHistory();
-        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.noActiveChat; });
+        if (mounted) {
+          setState(() {
+            _apiLoading = false;
+            _flow = _AiFlow.noActiveChat;
+          });
+        }
         return;
       }
 
@@ -138,13 +151,23 @@ class _AiChatTabState extends State<AiChatTab> {
       _injectMessages(data);
 
       if (_stage == 5) {
-        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.conversation; });
+        if (mounted) {
+          setState(() {
+            _apiLoading = false;
+            _flow = _AiFlow.conversation;
+          });
+        }
         return;
       }
 
       if (_stage == 0) {
         await _fetchLanguages();
-        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.languagePicker; });
+        if (mounted) {
+          setState(() {
+            _apiLoading = false;
+            _flow = _AiFlow.languagePicker;
+          });
+        }
         return;
       }
 
@@ -159,7 +182,12 @@ class _AiChatTabState extends State<AiChatTab> {
         _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) setState(() { _apiLoading = false; _error = e.toString(); });
+      if (mounted) {
+        setState(() {
+          _apiLoading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
@@ -167,7 +195,11 @@ class _AiChatTabState extends State<AiChatTab> {
 
   Future<void> _startNewChat() async {
     if (_apiLoading) return;
-    setState(() { _apiLoading = true; _error = null; _flow = _AiFlow.loading; });
+    setState(() {
+      _apiLoading = true;
+      _error = null;
+      _flow = _AiFlow.loading;
+    });
 
     try {
       final resp = await http.post(
@@ -183,7 +215,10 @@ class _AiChatTabState extends State<AiChatTab> {
         return;
       }
       if (resp.statusCode >= 400) {
-        setState(() { _apiLoading = false; _error = "${resp.statusCode}"; });
+        setState(() {
+          _apiLoading = false;
+          _error = "${resp.statusCode}";
+        });
         return;
       }
 
@@ -195,24 +230,42 @@ class _AiChatTabState extends State<AiChatTab> {
       _injectMessages(data);
 
       if (_stage == 5) {
-        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.conversation; });
+        if (mounted) {
+          setState(() {
+            _apiLoading = false;
+            _flow = _AiFlow.conversation;
+          });
+        }
         return;
       }
 
       if (_stage == 0) {
         await _fetchLanguages();
-        if (mounted) setState(() { _apiLoading = false; _flow = _AiFlow.languagePicker; });
+        if (mounted) {
+          setState(() {
+            _apiLoading = false;
+            _flow = _AiFlow.languagePicker;
+          });
+        }
         return;
       }
 
       await _fetchMessages();
       if (mounted) {
-        setState(() { _apiLoading = false; _flow = _AiFlow.questions; });
+        setState(() {
+          _apiLoading = false;
+          _flow = _AiFlow.questions;
+        });
         _initSocket();
         _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) setState(() { _apiLoading = false; _error = e.toString(); });
+      if (mounted) {
+        setState(() {
+          _apiLoading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
@@ -225,25 +278,39 @@ class _AiChatTabState extends State<AiChatTab> {
     _messages.clear();
     _knownIds.clear();
     _fetchHistory().then((_) {
-      if (mounted) setState(() { _flow = _AiFlow.noActiveChat; });
+      if (mounted) {
+        setState(() {
+          _flow = _AiFlow.noActiveChat;
+        });
+      }
     });
   }
 
   // ── Fetch thread history (closed + open threads) ──────────────────────────
 
   Future<void> _fetchHistory() async {
-    if (mounted) setState(() { _historyLoading = true; _historyError = false; });
+    if (mounted) {
+      setState(() {
+        _historyLoading = true;
+        _historyError = false;
+      });
+    }
     try {
-      final uri = Api.url(ChatEndpoints.threads)
-          .replace(queryParameters: {"page": "1", "page_size": "20"});
+      final uri = Api.url(
+        ChatEndpoints.threads,
+      ).replace(queryParameters: {"page": "1", "page_size": "20"});
       final resp = await http.get(
         uri,
-        headers: {"Accept": "application/json", "Authorization": "Bearer $_token"},
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $_token",
+        },
       );
       if (!mounted) return;
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
-        final raw = (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
+        final raw =
+            (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
         setState(() {
           _historicalThreads = raw
               .whereType<Map>()
@@ -253,10 +320,18 @@ class _AiChatTabState extends State<AiChatTab> {
           _historyError = false;
         });
       } else {
-        setState(() { _historyLoading = false; _historyError = true; });
+        setState(() {
+          _historyLoading = false;
+          _historyError = true;
+        });
       }
     } catch (_) {
-      if (mounted) setState(() { _historyLoading = false; _historyError = true; });
+      if (mounted) {
+        setState(() {
+          _historyLoading = false;
+          _historyError = true;
+        });
+      }
     }
   }
 
@@ -266,7 +341,10 @@ class _AiChatTabState extends State<AiChatTab> {
     try {
       final resp = await http.get(
         Api.url(ChatEndpoints.aiLanguages),
-        headers: {"Accept": "application/json", "Authorization": "Bearer $_token"},
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $_token",
+        },
       );
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -280,7 +358,9 @@ class _AiChatTabState extends State<AiChatTab> {
 
   Future<void> _selectLanguage(String code, String name) async {
     if (_threadId == null || _apiLoading) return;
-    setState(() { _apiLoading = true; });
+    setState(() {
+      _apiLoading = true;
+    });
     HapticFeedback.lightImpact();
 
     try {
@@ -293,7 +373,9 @@ class _AiChatTabState extends State<AiChatTab> {
       if (!mounted) return;
 
       if (resp.statusCode >= 400) {
-        setState(() { _apiLoading = false; });
+        setState(() {
+          _apiLoading = false;
+        });
         return;
       }
 
@@ -311,7 +393,11 @@ class _AiChatTabState extends State<AiChatTab> {
         _scrollToBottom();
       }
     } catch (_) {
-      if (mounted) setState(() { _apiLoading = false; });
+      if (mounted) {
+        setState(() {
+          _apiLoading = false;
+        });
+      }
     }
   }
 
@@ -320,15 +406,20 @@ class _AiChatTabState extends State<AiChatTab> {
   Future<void> _fetchMessages() async {
     if (_threadId == null) return;
     try {
-      final uri = Api.url(ChatEndpoints.messages(_threadId!))
-          .replace(queryParameters: {"page": "1", "page_size": "50"});
+      final uri = Api.url(
+        ChatEndpoints.messages(_threadId!),
+      ).replace(queryParameters: {"page": "1", "page_size": "50"});
       final resp = await http.get(
         uri,
-        headers: {"Accept": "application/json", "Authorization": "Bearer $_token"},
+        headers: {
+          "Accept": "application/json",
+          "Authorization": "Bearer $_token",
+        },
       );
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
-        final raw = (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
+        final raw =
+            (body is Map ? (body["results"] as List?) : (body as List?)) ?? [];
         final msgs = raw
             .whereType<Map>()
             .map((m) => ConvMessage.fromJson(Map<String, dynamic>.from(m)))
@@ -347,7 +438,7 @@ class _AiChatTabState extends State<AiChatTab> {
   }
 
   void _injectMessages(Map<String, dynamic> data) {
-    void _add(Map raw) {
+    void addMessage(Map raw) {
       final m = ConvMessage.fromJson(Map<String, dynamic>.from(raw));
       if (!_knownIds.contains(m.id)) {
         _knownIds.add(m.id);
@@ -356,13 +447,13 @@ class _AiChatTabState extends State<AiChatTab> {
     }
 
     final welcome = data["welcome_message"];
-    if (welcome is Map) _add(welcome);
+    if (welcome is Map) addMessage(welcome);
 
     final userMsg = data["user_message"];
-    if (userMsg is Map) _add(userMsg);
+    if (userMsg is Map) addMessage(userMsg);
 
     for (final raw in (data["ai_messages"] as List? ?? [])) {
-      if (raw is Map) _add(raw);
+      if (raw is Map) addMessage(raw);
     }
   }
 
@@ -391,13 +482,15 @@ class _AiChatTabState extends State<AiChatTab> {
     setState(() {
       _awaitingResponse = true;
       _knownIds.add(optimisticId);
-      _messages.add(ConvMessage(
-        id: optimisticId,
-        text: label,
-        createdAt: DateTime.now(),
-        isMine: true,
-        senderType: "USER",
-      ));
+      _messages.add(
+        ConvMessage(
+          id: optimisticId,
+          text: label,
+          createdAt: DateTime.now(),
+          isMine: true,
+          senderType: "USER",
+        ),
+      );
     });
     _scrollToBottom();
 
@@ -427,7 +520,9 @@ class _AiChatTabState extends State<AiChatTab> {
       final userMsgRaw = data["user_message"];
       final idx = _messages.indexWhere((m) => m.id == optimisticId);
       if (userMsgRaw is Map && idx != -1) {
-        final real = ConvMessage.fromJson(Map<String, dynamic>.from(userMsgRaw));
+        final real = ConvMessage.fromJson(
+          Map<String, dynamic>.from(userMsgRaw),
+        );
         _knownIds.remove(optimisticId);
         _knownIds.add(real.id);
         _messages[idx] = real;
@@ -475,7 +570,11 @@ class _AiChatTabState extends State<AiChatTab> {
 
   // ── No active chat (ended or never started) ───────────────────────────────
 
-  Widget _buildNoActiveChat({required String lang, required ColorScheme scheme, required Key key}) {
+  Widget _buildNoActiveChat({
+    required String lang,
+    required ColorScheme scheme,
+    required Key key,
+  }) {
     final isDark = scheme.brightness == Brightness.dark;
 
     return ListView(
@@ -611,7 +710,10 @@ class _AiChatTabState extends State<AiChatTab> {
             final topic = thread["topic"]?.toString() ?? "Trip Planning";
             final preview = thread["last_message_preview"]?.toString();
             final isOpen = thread["is_open"] as bool? ?? false;
-            final rawDate = thread["last_message_at"] ?? thread["updated_at"] ?? thread["created_at"];
+            final rawDate =
+                thread["last_message_at"] ??
+                thread["updated_at"] ??
+                thread["created_at"];
             DateTime? date;
             if (rawDate is String) date = DateTime.tryParse(rawDate);
 
@@ -662,7 +764,8 @@ class _AiChatTabState extends State<AiChatTab> {
     final msg = ConvMessage.fromJson(raw);
     if (_knownIds.contains(msg.id)) return;
 
-    final atBottom = !_scrollCtrl.hasClients ||
+    final atBottom =
+        !_scrollCtrl.hasClients ||
         _scrollCtrl.position.pixels >=
             _scrollCtrl.position.maxScrollExtent - 120;
 
@@ -739,21 +842,41 @@ class _AiChatTabState extends State<AiChatTab> {
   Widget _buildFlowBody({required String lang, required ColorScheme scheme}) {
     switch (_flow) {
       case _AiFlow.loading:
-        return _buildLoading(lang: lang, scheme: scheme, key: const ValueKey("loading"));
+        return _buildLoading(
+          lang: lang,
+          scheme: scheme,
+          key: const ValueKey("loading"),
+        );
       case _AiFlow.languagePicker:
-        return _buildLanguagePicker(lang: lang, scheme: scheme, key: const ValueKey("lang-picker"));
+        return _buildLanguagePicker(
+          lang: lang,
+          scheme: scheme,
+          key: const ValueKey("lang-picker"),
+        );
       case _AiFlow.questions:
-        return _buildQuestions(lang: lang, scheme: scheme, key: const ValueKey("questions"));
+        return _buildQuestions(
+          lang: lang,
+          scheme: scheme,
+          key: const ValueKey("questions"),
+        );
       case _AiFlow.conversation:
         return const SizedBox.shrink(key: ValueKey("conversation-placeholder"));
       case _AiFlow.noActiveChat:
-        return _buildNoActiveChat(lang: lang, scheme: scheme, key: const ValueKey("no-active-chat"));
+        return _buildNoActiveChat(
+          lang: lang,
+          scheme: scheme,
+          key: const ValueKey("no-active-chat"),
+        );
     }
   }
 
   // ── Loading ───────────────────────────────────────────────────────────────
 
-  Widget _buildLoading({required String lang, required ColorScheme scheme, required Key key}) {
+  Widget _buildLoading({
+    required String lang,
+    required ColorScheme scheme,
+    required Key key,
+  }) {
     if (_error != null) {
       return Center(
         key: key,
@@ -766,7 +889,11 @@ class _AiChatTabState extends State<AiChatTab> {
               const SizedBox(height: 14),
               Text(
                 t(lang, "common.error"),
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: scheme.onSurface),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton.tonal(
@@ -790,7 +917,11 @@ class _AiChatTabState extends State<AiChatTab> {
 
   // ── Language picker ───────────────────────────────────────────────────────
 
-  Widget _buildLanguagePicker({required String lang, required ColorScheme scheme, required Key key}) {
+  Widget _buildLanguagePicker({
+    required String lang,
+    required ColorScheme scheme,
+    required Key key,
+  }) {
     final isDark = scheme.brightness == Brightness.dark;
 
     return Column(
@@ -838,7 +969,11 @@ class _AiChatTabState extends State<AiChatTab> {
 
   // ── Questions ─────────────────────────────────────────────────────────────
 
-  Widget _buildQuestions({required String lang, required ColorScheme scheme, required Key key}) {
+  Widget _buildQuestions({
+    required String lang,
+    required ColorScheme scheme,
+    required Key key,
+  }) {
     return Column(
       key: key,
       children: [
@@ -1302,9 +1437,10 @@ class _ThinkingDotState extends State<_ThinkingDot>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _scale = Tween<double>(begin: 0.82, end: 1.12).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scale = Tween<double>(
+      begin: 0.82,
+      end: 1.12,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
     _delayTimer = Timer(Duration(milliseconds: widget.delay), () {
       if (mounted) _controller.repeat(reverse: true);
     });
@@ -1507,9 +1643,10 @@ class _HistoryShimmerCardState extends State<_HistoryShimmerCard>
       vsync: this,
       duration: const Duration(milliseconds: 850),
     )..repeat(reverse: true);
-    _pulse = Tween<double>(begin: 0.3, end: 0.7).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _pulse = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -1525,7 +1662,7 @@ class _HistoryShimmerCardState extends State<_HistoryShimmerCard>
 
     return AnimatedBuilder(
       animation: _pulse,
-      builder: (_, __) {
+      builder: (context, _) {
         final v = _pulse.value;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
