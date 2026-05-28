@@ -177,8 +177,8 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
               ? ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.symmetric(horizontal: hPad),
-                  itemBuilder: (_, __) => const _ListingSkeleton(),
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, _) => const _ListingSkeleton(),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemCount: 4,
                 )
               : _error != null
@@ -200,7 +200,7 @@ class _ExploreListingsFeatureState extends State<ExploreListingsFeature> {
                   scrollDirection: Axis.horizontal,
                   padding: EdgeInsets.symmetric(horizontal: hPad),
                   itemCount: _items.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, i) {
                     final listing = _items[i];
                     return _ListingCard(
@@ -642,11 +642,33 @@ class _Listing {
       name: (json["name"] ?? json["title"] ?? "").toString(),
       city: (json["city"] ?? "").toString(),
       country: (json["country"] ?? "").toString(),
-      imageUrl: json["first_image_url"] as String?,
+      imageUrl: _firstListingImageUrl(json),
       avgRating: avg,
       reviewsCount: reviews,
     );
   }
+}
+
+String? _firstListingImageUrl(Map json) {
+  for (final key in ["first_image_url", "image", "cover_image"]) {
+    final value = json[key];
+    if (value is String && value.trim().isNotEmpty) return value.trim();
+  }
+
+  final images = json["images"];
+  if (images is List) {
+    for (final item in images) {
+      if (item is String && item.trim().isNotEmpty) return item.trim();
+      if (item is Map) {
+        for (final key in ["image_url", "url"]) {
+          final value = item[key];
+          if (value is String && value.trim().isNotEmpty) return value.trim();
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 double _toDouble(dynamic v) {
