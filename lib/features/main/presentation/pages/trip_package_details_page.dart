@@ -859,15 +859,19 @@ class _BookCTAButtonState extends State<_BookCTAButton>
         onTapCancel: () => _ctrl.reverse(),
         onTap: widget.onTap,
         child: Container(
-          height: 54,
+          height: 58,
           decoration: BoxDecoration(
-            color: scheme.primary,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(999),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [scheme.primary, scheme.primary.withValues(alpha: 0.88)],
+            ),
             boxShadow: [
               BoxShadow(
-                color: scheme.primary.withValues(alpha: 0.28),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
+                color: scheme.primary.withValues(alpha: 0.22),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
@@ -876,12 +880,12 @@ class _BookCTAButtonState extends State<_BookCTAButton>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                widget.label,
+                widget.label.toUpperCase(),
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 10,
                   fontWeight: FontWeight.w900,
                   color: scheme.onPrimary,
-                  letterSpacing: 0.1,
+                  letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(width: 8),
