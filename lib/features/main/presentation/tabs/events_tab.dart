@@ -13,6 +13,7 @@ import "../../../../core/constants/api/event_endpoints.dart";
 import "../../../../core/widgets/app_cached_image.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../widgets/discovery_search_bar.dart";
 
 class EventsTab extends StatefulWidget {
   const EventsTab({super.key});
@@ -455,7 +456,7 @@ class _EventsHeaderDelegate extends SliverPersistentHeaderDelegate {
                   ),
                 ),
                 SizedBox(height: (10.0 * (1.0 - t_)).clamp(0.0, 10.0)),
-                _PremiumSearchBar(
+                DiscoverySearchBar(
                   controller: searchCtrl,
                   hintText: t(lang, "packages.search_hint"),
                   onChanged: onSearchChanged,
@@ -1307,107 +1308,6 @@ class _EventCardSkeletonState extends State<_EventCardSkeleton>
           ),
         );
       },
-    );
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   SEARCH BAR
-───────────────────────────────────────────────────────────────────────────── */
-
-class _PremiumSearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onClear;
-  final bool isDark;
-  final ColorScheme scheme;
-
-  const _PremiumSearchBar({
-    required this.controller,
-    required this.hintText,
-    required this.onChanged,
-    required this.onClear,
-    required this.isDark,
-    required this.scheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 44,
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.07)
-            : Colors.black.withValues(alpha: 0.055),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.10)
-              : Colors.black.withValues(alpha: 0.08),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 13),
-          Icon(
-            Icons.search_rounded,
-            size: 17,
-            color: scheme.onSurface.withValues(alpha: 0.45),
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: TextField(
-              controller: controller,
-              onChanged: onChanged,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: scheme.onSurface,
-              ),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: scheme.onSurface.withValues(alpha: 0.38),
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              if (value.text.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return GestureDetector(
-                onTap: onClear,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: scheme.onSurface.withValues(alpha: 0.15),
-                    ),
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 12,
-                      color: scheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
     );
   }
 }
