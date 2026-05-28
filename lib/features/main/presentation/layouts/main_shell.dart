@@ -7,10 +7,10 @@ import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/notification_service.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../widgets/inotra_bottom_nav.dart";
 import "../widgets/inotra_app_header.dart";
 import "../widgets/inotra_sidebar_drawer.dart";
-import "../widgets/auth_dialog.dart";
 
 import "../tabs/explore_tab.dart";
 import "../tabs/listings_tab.dart";
@@ -109,7 +109,7 @@ class _MainShellState extends State<MainShell> {
   void _onTabChange(int next) async {
     if (next == _index) return;
 
-    if (next == 2 && await _maybeShowAuthDialog(featureLabel: "AI Chat")) {
+    if (next == 2 && await _maybeShowLoginDialog()) {
       return;
     }
 
@@ -122,7 +122,7 @@ class _MainShellState extends State<MainShell> {
 
     if (next == 2) {
       () async {
-        if (await _maybeShowAuthDialog(featureLabel: "AI Chat")) {
+        if (await _maybeShowLoginDialog()) {
           if (mounted) _animateToTab(_index);
           return;
         }
@@ -144,18 +144,14 @@ class _MainShellState extends State<MainShell> {
     _authSession!.addListener(_handleAuthChange);
   }
 
-  Future<bool> _maybeShowAuthDialog({required String featureLabel}) async {
+  Future<bool> _maybeShowLoginDialog() async {
     _ensureAuthSession();
     final isAuthed = _authSession?.value.isAuthenticated ?? false;
     if (isAuthed) return false;
 
     if (!mounted) return true;
-    await AuthDialog.show(
-      context,
-      featureLabel: featureLabel,
-      description: null,
-    );
-    return true;
+    await QuickLoginDialog.show(context);
+    return !AuthSession.instance.value.isAuthenticated;
   }
 
   @override
