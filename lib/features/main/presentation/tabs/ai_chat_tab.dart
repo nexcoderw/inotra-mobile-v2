@@ -23,6 +23,8 @@ import "../widgets/chat/conversation/models.dart";
 
 enum _AiFlow { loading, languagePicker, questions, conversation, noActiveChat }
 
+enum _ChatHistoryFilter { all, active, ended }
+
 // ─────────────────────────────────────────────────────────────────────────────
 // AiChatTab
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ class _AiChatTabState extends State<AiChatTab> {
   List<Map<String, dynamic>> _historicalThreads = [];
   bool _historyLoading = false;
   bool _historyError = false;
+  _ChatHistoryFilter _historyFilter = _ChatHistoryFilter.all;
 
   // Questions flow
   final List<ConvMessage> _messages = [];
@@ -570,115 +573,79 @@ class _AiChatTabState extends State<AiChatTab> {
 
   // ── No active chat (ended or never started) ───────────────────────────────
 
+  List<Map<String, dynamic>> get _filteredHistoricalThreads {
+    return _historicalThreads.where((thread) {
+      final isOpen = thread["is_open"] as bool? ?? false;
+      return switch (_historyFilter) {
+        _ChatHistoryFilter.all => true,
+        _ChatHistoryFilter.active => isOpen,
+        _ChatHistoryFilter.ended => !isOpen,
+      };
+    }).toList();
+  }
+
+  int get _activeHistoryCount => _historicalThreads
+      .where((thread) => thread["is_open"] as bool? ?? false)
+      .length;
+
+  int get _endedHistoryCount => _historicalThreads.length - _activeHistoryCount;
+
   Widget _buildNoActiveChat({
     required String lang,
     required ColorScheme scheme,
     required Key key,
   }) {
     final isDark = scheme.brightness == Brightness.dark;
+    final filteredThreads = _filteredHistoricalThreads;
 
     return ListView(
       key: key,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
       children: [
-        // ── Start new chat card ──────────────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              colors: [
-                scheme.primary.withValues(alpha: isDark ? 0.18 : 0.10),
-                scheme.primary.withValues(alpha: isDark ? 0.08 : 0.04),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(
-              color: scheme.primary.withValues(alpha: isDark ? 0.24 : 0.16),
-              width: 0.8,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: scheme.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-                  border: Border.all(
-                    color: scheme.primary.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Center(
-                  child: HugeIcon(
-                    icon: HugeIcons.strokeRoundedSparkles,
-                    size: 26,
-                    color: scheme.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                "Plan Your Next Trip",
+        _StartChatPanel(
+          lang: lang,
+          scheme: scheme,
+          isDark: isDark,
+          busy: _apiLoading,
+          onStart: _startNewChat,
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                t(lang, "ai.previous_conversations"),
                 style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.3,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                   color: scheme.onSurface,
+                  height: 1,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                "Our AI assistant will ask you a few questions\nto match you with the perfect experience.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  height: 1.55,
-                  color: scheme.onSurface.withValues(alpha: 0.62),
-                ),
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _apiLoading ? null : _startNewChat,
-                  icon: _apiLoading
-                      ? SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: scheme.onPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.add_rounded, size: 18),
-                  label: const Text("Start New Chat"),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            _HistoryTotalBadge(
+              lang: lang,
+              count: _historicalThreads.length,
+              scheme: scheme,
+              isDark: isDark,
+            ),
+          ],
         ),
-
-        // ── Previous conversations ───────────────────────────────────────────
-        const SizedBox(height: 28),
-        Text(
-          "Previous Conversations",
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.1,
-            color: scheme.onSurface.withValues(alpha: 0.55),
-          ),
+        const SizedBox(height: 14),
+        _HistoryFilterBar(
+          lang: lang,
+          selected: _historyFilter,
+          totalCount: _historicalThreads.length,
+          activeCount: _activeHistoryCount,
+          endedCount: _endedHistoryCount,
+          scheme: scheme,
+          isDark: isDark,
+          onChanged: (value) {
+            HapticFeedback.selectionClick();
+            setState(() => _historyFilter = value);
+          },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         if (_historyLoading) ...[
           _HistoryShimmerCard(scheme: scheme, isDark: isDark),
           const SizedBox(height: 10),
@@ -690,24 +657,29 @@ class _AiChatTabState extends State<AiChatTab> {
             scheme: scheme,
             isDark: isDark,
             onRetry: _fetchHistory,
+            lang: lang,
           )
         else if (_historicalThreads.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Center(
-              child: Text(
-                "No previous conversations",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: scheme.onSurface.withValues(alpha: 0.38),
-                ),
-              ),
-            ),
+          _HistoryEmptyState(
+            lang: lang,
+            scheme: scheme,
+            isDark: isDark,
+            isFiltered: false,
+            onStart: _apiLoading ? null : _startNewChat,
+          )
+        else if (filteredThreads.isEmpty)
+          _HistoryEmptyState(
+            lang: lang,
+            scheme: scheme,
+            isDark: isDark,
+            isFiltered: true,
+            onStart: null,
           )
         else
-          ..._historicalThreads.map((thread) {
+          ...filteredThreads.map((thread) {
             final threadId = thread["id"]?.toString() ?? "";
-            final topic = thread["topic"]?.toString() ?? "Trip Planning";
+            final topic =
+                thread["topic"]?.toString() ?? t(lang, "ai.trip_planning");
             final preview = thread["last_message_preview"]?.toString();
             final isOpen = thread["is_open"] as bool? ?? false;
             final rawDate =
@@ -718,8 +690,9 @@ class _AiChatTabState extends State<AiChatTab> {
             if (rawDate is String) date = DateTime.tryParse(rawDate);
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 12),
               child: _HistoryThreadCard(
+                lang: lang,
                 topic: topic,
                 preview: preview,
                 isOpen: isOpen,
@@ -734,7 +707,9 @@ class _AiChatTabState extends State<AiChatTab> {
                         title: topic,
                         showBackButton: true,
                         checkTyping: isOpen,
-                        statusLabel: isOpen ? null : "Ended",
+                        statusLabel: isOpen
+                            ? null
+                            : t(lang, "ai.history_ended"),
                       ),
                     ),
                   );
@@ -1472,10 +1447,499 @@ class _ThinkingDotState extends State<_ThinkingDot>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// _StartChatPanel — premium entry point for starting a new AI plan
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StartChatPanel extends StatelessWidget {
+  final String lang;
+  final ColorScheme scheme;
+  final bool isDark;
+  final bool busy;
+  final VoidCallback onStart;
+
+  const _StartChatPanel({
+    required this.lang,
+    required this.scheme,
+    required this.isDark,
+    required this.busy,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [
+            scheme.primary.withValues(alpha: isDark ? 0.24 : 0.13),
+            scheme.tertiary.withValues(alpha: isDark ? 0.16 : 0.08),
+            scheme.surfaceContainerHighest.withValues(
+              alpha: isDark ? 0.34 : 0.52,
+            ),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: isDark ? 0.16 : 0.10),
+            blurRadius: 28,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: scheme.surface.withValues(alpha: isDark ? 0.16 : 0.78),
+                  border: Border.all(
+                    color: scheme.primary.withValues(
+                      alpha: isDark ? 0.22 : 0.14,
+                    ),
+                  ),
+                ),
+                child: Center(
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedSparkles,
+                    size: 24,
+                    color: scheme.primary,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                height: 32,
+                padding: const EdgeInsets.symmetric(horizontal: 11),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: scheme.surface.withValues(alpha: isDark ? 0.16 : 0.72),
+                  border: Border.all(
+                    color: scheme.onSurface.withValues(
+                      alpha: isDark ? 0.08 : 0.06,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    HugeIcon(
+                      icon: HugeIcons.strokeRoundedMessage02,
+                      size: 14,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      t(lang, "ai.assistant_name"),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: scheme.onSurface.withValues(alpha: 0.78),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            t(lang, "ai.plan_trip_title"),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              height: 1.04,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            t(lang, "ai.plan_trip_subtitle"),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+              color: scheme.onSurface.withValues(alpha: 0.68),
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton.icon(
+              onPressed: busy ? null : onStart,
+              style: FilledButton.styleFrom(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                backgroundColor: scheme.primary,
+                foregroundColor: scheme.onPrimary,
+                disabledBackgroundColor: scheme.primary.withValues(alpha: 0.35),
+              ),
+              icon: busy
+                  ? SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: scheme.onPrimary,
+                      ),
+                    )
+                  : HugeIcon(
+                      icon: HugeIcons.strokeRoundedMessage02,
+                      size: 17,
+                      color: scheme.onPrimary,
+                    ),
+              label: Text(
+                t(lang, "ai.start_new_chat"),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryTotalBadge extends StatelessWidget {
+  final String lang;
+  final int count;
+  final ColorScheme scheme;
+  final bool isDark;
+
+  const _HistoryTotalBadge({
+    required this.lang,
+    required this.count,
+    required this.scheme,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 30,
+      padding: const EdgeInsets.symmetric(horizontal: 11),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: scheme.surfaceContainerHighest.withValues(
+          alpha: isDark ? 0.58 : 0.74,
+        ),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: isDark ? 0.07 : 0.05),
+          width: 0.7,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        t(lang, "ai.history_total").replaceAll("{count}", count.toString()),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: scheme.onSurface.withValues(alpha: 0.64),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryFilterBar extends StatelessWidget {
+  final String lang;
+  final _ChatHistoryFilter selected;
+  final int totalCount;
+  final int activeCount;
+  final int endedCount;
+  final ColorScheme scheme;
+  final bool isDark;
+  final ValueChanged<_ChatHistoryFilter> onChanged;
+
+  const _HistoryFilterBar({
+    required this.lang,
+    required this.selected,
+    required this.totalCount,
+    required this.activeCount,
+    required this.endedCount,
+    required this.scheme,
+    required this.isDark,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        color: scheme.surfaceContainerHighest.withValues(
+          alpha: isDark ? 0.42 : 0.62,
+        ),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: isDark ? 0.07 : 0.05),
+          width: 0.7,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _HistoryFilterChip(
+              label: t(lang, "ai.history_filter_all"),
+              icon: HugeIcons.strokeRoundedMessage02,
+              count: totalCount,
+              selected: selected == _ChatHistoryFilter.all,
+              scheme: scheme,
+              onTap: () => onChanged(_ChatHistoryFilter.all),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: _HistoryFilterChip(
+              label: t(lang, "ai.history_filter_active"),
+              icon: HugeIcons.strokeRoundedPlay,
+              count: activeCount,
+              selected: selected == _ChatHistoryFilter.active,
+              scheme: scheme,
+              onTap: () => onChanged(_ChatHistoryFilter.active),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: _HistoryFilterChip(
+              label: t(lang, "ai.history_filter_ended"),
+              icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+              count: endedCount,
+              selected: selected == _ChatHistoryFilter.ended,
+              scheme: scheme,
+              onTap: () => onChanged(_ChatHistoryFilter.ended),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryFilterChip extends StatelessWidget {
+  final String label;
+  final List<List<dynamic>> icon;
+  final int count;
+  final bool selected;
+  final ColorScheme scheme;
+  final VoidCallback onTap;
+
+  const _HistoryFilterChip({
+    required this.label,
+    required this.icon,
+    required this.count,
+    required this.selected,
+    required this.scheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = selected
+        ? scheme.onPrimary
+        : scheme.onSurface.withValues(alpha: 0.66);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: selected ? null : onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            color: selected ? scheme.primary : Colors.transparent,
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: scheme.primary.withValues(alpha: 0.22),
+                      blurRadius: 14,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HugeIcon(icon: icon, size: 14, color: foreground),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: foreground,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                count.toString(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: foreground.withValues(alpha: selected ? 0.82 : 0.58),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryEmptyState extends StatelessWidget {
+  final String lang;
+  final ColorScheme scheme;
+  final bool isDark;
+  final bool isFiltered;
+  final VoidCallback? onStart;
+
+  const _HistoryEmptyState({
+    required this.lang,
+    required this.scheme,
+    required this.isDark,
+    required this.isFiltered,
+    required this.onStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: scheme.surfaceContainerHighest.withValues(
+          alpha: isDark ? 0.38 : 0.58,
+        ),
+        border: Border.all(
+          color: scheme.onSurface.withValues(alpha: isDark ? 0.08 : 0.055),
+          width: 0.8,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 58,
+            width: 58,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: scheme.primary.withValues(alpha: isDark ? 0.16 : 0.09),
+              border: Border.all(
+                color: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.13),
+              ),
+            ),
+            child: Center(
+              child: HugeIcon(
+                icon: isFiltered
+                    ? HugeIcons.strokeRoundedCheckmarkCircle01
+                    : HugeIcons.strokeRoundedMessage02,
+                size: 25,
+                color: scheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            t(
+              lang,
+              isFiltered
+                  ? "ai.no_filtered_history_title"
+                  : "ai.no_history_title",
+            ),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+              height: 1.15,
+              color: scheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            t(
+              lang,
+              isFiltered
+                  ? "ai.no_filtered_history_subtitle"
+                  : "ai.no_history_subtitle",
+            ),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.48,
+              fontWeight: FontWeight.w500,
+              color: scheme.onSurface.withValues(alpha: 0.62),
+            ),
+          ),
+          if (onStart != null) ...[
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 42,
+              child: FilledButton.icon(
+                onPressed: onStart,
+                style: FilledButton.styleFrom(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: HugeIcon(
+                  icon: HugeIcons.strokeRoundedSparkles,
+                  size: 16,
+                  color: scheme.onPrimary,
+                ),
+                label: Text(
+                  t(lang, "ai.start_new_chat"),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // _HistoryThreadCard — single row in the previous conversations list
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _HistoryThreadCard extends StatelessWidget {
+  final String lang;
   final String topic;
   final String? preview;
   final bool isOpen;
@@ -1485,6 +1949,7 @@ class _HistoryThreadCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _HistoryThreadCard({
+    required this.lang,
     required this.topic,
     required this.isOpen,
     required this.scheme,
@@ -1498,10 +1963,25 @@ class _HistoryThreadCard extends StatelessWidget {
     if (date == null) return "";
     final now = DateTime.now();
     final diff = now.difference(date!);
-    if (diff.inMinutes < 1) return "just now";
-    if (diff.inHours < 1) return "${diff.inMinutes}m ago";
-    if (diff.inDays < 1) return "${diff.inHours}h ago";
-    if (diff.inDays < 7) return "${diff.inDays}d ago";
+    if (diff.inMinutes < 1) return t(lang, "ai.just_now");
+    if (diff.inHours < 1) {
+      return t(
+        lang,
+        "ai.minutes_ago",
+      ).replaceAll("{count}", diff.inMinutes.toString());
+    }
+    if (diff.inDays < 1) {
+      return t(
+        lang,
+        "ai.hours_ago",
+      ).replaceAll("{count}", diff.inHours.toString());
+    }
+    if (diff.inDays < 7) {
+      return t(
+        lang,
+        "ai.days_ago",
+      ).replaceAll("{count}", diff.inDays.toString());
+    }
     return "${date!.day}/${date!.month}/${date!.year}";
   }
 
@@ -1511,29 +1991,43 @@ class _HistoryThreadCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             color: isDark
-                ? scheme.surfaceContainerHighest.withValues(alpha: 0.5)
-                : scheme.surfaceContainerHigh.withValues(alpha: 0.4),
+                ? scheme.surfaceContainerHighest.withValues(alpha: 0.44)
+                : scheme.surfaceContainerHigh.withValues(alpha: 0.56),
             border: Border.all(
               color: isDark
-                  ? Colors.white.withValues(alpha: 0.07)
-                  : Colors.black.withValues(alpha: 0.06),
+                  ? Colors.white.withValues(alpha: 0.075)
+                  : Colors.black.withValues(alpha: 0.055),
               width: 0.7,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.035),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Container(
-                height: 38,
-                width: 38,
+                height: 42,
+                width: 42,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: scheme.primary.withValues(alpha: isDark ? 0.14 : 0.08),
+                  border: Border.all(
+                    color: scheme.primary.withValues(
+                      alpha: isDark ? 0.18 : 0.10,
+                    ),
+                  ),
                 ),
                 child: Center(
                   child: HugeIcon(
@@ -1556,8 +2050,9 @@ class _HistoryThreadCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              height: 1.15,
                               color: scheme.onSurface,
                             ),
                           ),
@@ -1568,7 +2063,8 @@ class _HistoryThreadCard extends StatelessWidget {
                             _formatDate(),
                             style: TextStyle(
                               fontSize: 11,
-                              color: scheme.onSurface.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.w700,
+                              color: scheme.onSurface.withValues(alpha: 0.42),
                             ),
                           ),
                         ],
@@ -1582,6 +2078,8 @@ class _HistoryThreadCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
+                          height: 1.28,
+                          fontWeight: FontWeight.w500,
                           color: scheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
@@ -1590,24 +2088,73 @@ class _HistoryThreadCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: isOpen
-                      ? scheme.primary.withValues(alpha: isDark ? 0.18 : 0.10)
-                      : scheme.onSurface.withValues(alpha: 0.06),
-                ),
-                child: Text(
-                  isOpen ? "Active" : "Ended",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: isOpen
-                        ? scheme.primary
-                        : scheme.onSurface.withValues(alpha: 0.4),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: isOpen
+                          ? scheme.primary.withValues(
+                              alpha: isDark ? 0.18 : 0.10,
+                            )
+                          : scheme.onSurface.withValues(alpha: 0.06),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        HugeIcon(
+                          icon: isOpen
+                              ? HugeIcons.strokeRoundedPlay
+                              : HugeIcons.strokeRoundedCheckmarkCircle01,
+                          size: 11,
+                          color: isOpen
+                              ? scheme.primary
+                              : scheme.onSurface.withValues(alpha: 0.45),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isOpen
+                              ? t(lang, "ai.history_active")
+                              : t(lang, "ai.history_ended"),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: isOpen
+                                ? scheme.primary
+                                : scheme.onSurface.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 26,
+                    width: 26,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: scheme.surface.withValues(
+                        alpha: isDark ? 0.12 : 0.80,
+                      ),
+                      border: Border.all(
+                        color: scheme.onSurface.withValues(alpha: 0.06),
+                      ),
+                    ),
+                    child: Center(
+                      child: HugeIcon(
+                        icon: HugeIcons.strokeRoundedArrowRight01,
+                        size: 13,
+                        color: scheme.onSurface.withValues(alpha: 0.52),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1735,11 +2282,13 @@ class _HistoryShimmerCardState extends State<_HistoryShimmerCard>
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _HistoryErrorRow extends StatelessWidget {
+  final String lang;
   final ColorScheme scheme;
   final bool isDark;
   final VoidCallback onRetry;
 
   const _HistoryErrorRow({
+    required this.lang,
     required this.scheme,
     required this.isDark,
     required this.onRetry,
@@ -1767,7 +2316,7 @@ class _HistoryErrorRow extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              "Couldn't load history",
+              t(lang, "ai.history_load_error"),
               style: TextStyle(
                 fontSize: 13,
                 color: scheme.onSurface.withValues(alpha: 0.7),
@@ -1777,7 +2326,7 @@ class _HistoryErrorRow extends StatelessWidget {
           GestureDetector(
             onTap: onRetry,
             child: Text(
-              "Retry",
+              t(lang, "common.try_again"),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
