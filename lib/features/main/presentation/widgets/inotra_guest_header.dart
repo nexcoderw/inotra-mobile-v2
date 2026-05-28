@@ -1,17 +1,26 @@
+import "dart:ui";
+
 import "package:flutter/material.dart";
+import "package:hugeicons/hugeicons.dart";
 
 import "../../../../core/constants/app_colors.dart";
-import "../../../../core/config/app_routes.dart";
-import "../../../../i18n/translations.dart";
 import "../../../../i18n/lang.dart";
+import "../../../../i18n/translations.dart";
 import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 
 class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
   static const double defaultHeight = kToolbarHeight + 6;
 
+  final String title;
+  final VoidCallback onMenuTap;
   final double height;
 
-  const InotraGuestHeader({super.key, this.height = defaultHeight});
+  const InotraGuestHeader({
+    super.key,
+    required this.title,
+    required this.onMenuTap,
+    this.height = defaultHeight,
+  });
 
   @override
   Size get preferredSize => Size.fromHeight(height);
@@ -21,104 +30,220 @@ class InotraGuestHeader extends StatelessWidget implements PreferredSizeWidget {
     final scheme = Theme.of(context).colorScheme;
     final lang = currentLangSync();
 
-    return PreferredSize(
-      preferredSize: preferredSize,
-      child: Material(
-        color: scheme.surface,
-        elevation: 0,
-        child: SafeArea(
-          bottom: false,
-          child: Container(
-            height: height,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            alignment: Alignment.center,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        t(lang, "welcome.title"),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        t(lang, "welcome.subtitle"),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                          color: scheme.onSurface.withValues(alpha: 0.62),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+    return AppBar(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleSpacing: 8,
+      automaticallyImplyLeading: false,
+      backgroundColor: Colors.transparent,
+      foregroundColor: scheme.onSurface,
+      flexibleSpace: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(color: scheme.surface.withValues(alpha: 0.70)),
+        ),
+      ),
+      leadingWidth: 58,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: _GlassIconButton(
+            tooltip: "Menu",
+            onTap: onMenuTap,
+            icon: HugeIcons.strokeRoundedMenuCircle,
+          ),
+        ),
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: scheme.onSurface.withValues(alpha: 0.94),
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            t(lang, "welcome.subtitle"),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: scheme.onSurface.withValues(alpha: 0.72),
+              height: 1.1,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        _SignInPill(
+          label: t(lang, "auth.sign_in"),
+          onTap: () => QuickLoginDialog.show(context),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+}
+
+class _GlassIconButton extends StatefulWidget {
+  final String tooltip;
+  final VoidCallback onTap;
+  final dynamic icon;
+
+  const _GlassIconButton({
+    required this.tooltip,
+    required this.onTap,
+    required this.icon,
+  });
+
+  @override
+  State<_GlassIconButton> createState() => _GlassIconButtonState();
+}
+
+class _GlassIconButtonState extends State<_GlassIconButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      label: widget.tooltip,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 130),
+          curve: Curves.easeOut,
+          scale: _pressed ? 0.98 : 1,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                height: 38,
+                width: 38,
+                decoration: BoxDecoration(
+                  color: scheme.surface.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: scheme.onSurface.withValues(alpha: 0.08),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(
-                          color: AppColors.primary.withValues(alpha: 0.7),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: () => QuickLoginDialog.show(context),
-                      child: Text(
-                        t(lang, "auth.sign_in"),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        elevation: 0,
-                      ),
-                      onPressed: () =>
-                          Navigator.pushNamed(context, AppRoutes.register),
-                      child: Text(
-                        t(lang, "auth.sign_up"),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Center(
+                  child: HugeIcon(
+                    icon: widget.icon,
+                    size: 18,
+                    strokeWidth: 2,
+                    color: scheme.onSurface.withValues(alpha: 0.80),
+                  ),
                 ),
-              ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SignInPill extends StatefulWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _SignInPill({required this.label, required this.onTap});
+
+  @override
+  State<_SignInPill> createState() => _SignInPillState();
+}
+
+class _SignInPillState extends State<_SignInPill> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 130),
+        curve: Curves.easeOut,
+        scale: _pressed ? 0.99 : 1,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: scheme.surface.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: scheme.onSurface.withValues(alpha: 0.08),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _SignInIcon(),
+                  const SizedBox(width: 10),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 112),
+                    child: Text(
+                      widget.label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                        color: scheme.onSurface.withValues(alpha: 0.88),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SignInIcon extends StatelessWidget {
+  const _SignInIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: ColoredBox(
+        color: AppColors.primary.withValues(alpha: 0.12),
+        child: const SizedBox(
+          width: 26,
+          height: 26,
+          child: Center(
+            child: HugeIcon(
+              icon: HugeIcons.strokeRoundedUser,
+              size: 14,
+              strokeWidth: 2,
+              color: AppColors.primary,
             ),
           ),
         ),
