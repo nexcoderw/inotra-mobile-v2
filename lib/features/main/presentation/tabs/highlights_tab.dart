@@ -66,7 +66,8 @@ class _HighlightsTabState extends State<HighlightsTab> {
       final resp = await http.get(
         uri,
         headers: {
-          if (token != null && token.isNotEmpty) "Authorization": "Bearer $token",
+          if (token != null && token.isNotEmpty)
+            "Authorization": "Bearer $token",
           "Accept": "application/json",
         },
       );
@@ -80,10 +81,14 @@ class _HighlightsTabState extends State<HighlightsTab> {
         if (mounted) {
           setState(() => _items = results);
           // Record view for the currently visible highlight after load
-          if (results.isNotEmpty) _recordView(_activeIndex.clamp(0, results.length - 1));
+          if (results.isNotEmpty) {
+            _recordView(_activeIndex.clamp(0, results.length - 1));
+          }
         }
       } else {
-        if (!silent && mounted) setState(() => _error = "Status ${resp.statusCode}");
+        if (!silent && mounted) {
+          setState(() => _error = "Status ${resp.statusCode}");
+        }
       }
     } catch (e) {
       if (!silent && mounted) setState(() => _error = e.toString());
@@ -95,7 +100,10 @@ class _HighlightsTabState extends State<HighlightsTab> {
   /// Shows the quick login dialog when an action requires authentication.
   /// After successful login, silently refreshes data and restores the user's
   /// position, then re-attempts the original action.
-  Future<void> _requireAuth(BuildContext ctx, Future<void> Function() action) async {
+  Future<void> _requireAuth(
+    BuildContext ctx,
+    Future<void> Function() action,
+  ) async {
     if (AuthSession.instance.value.isAuthenticated) {
       await action();
       return;
@@ -128,16 +136,21 @@ class _HighlightsTabState extends State<HighlightsTab> {
     setState(() {
       _items[index] = item.copyWith(
         liked: optimisticLiked,
-        likes: optimisticLiked ? item.likes + 1 : (item.likes - 1).clamp(0, 1 << 31),
+        likes: optimisticLiked
+            ? item.likes + 1
+            : (item.likes - 1).clamp(0, 1 << 31),
       );
     });
 
     final uri = Api.url(HighlightEndpoints.likeToggle(item.id));
     try {
-      final resp = await http.post(uri, headers: {
-        "Authorization": "Bearer $token",
-        "Accept": "application/json",
-      });
+      final resp = await http.post(
+        uri,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Accept": "application/json",
+        },
+      );
       if (await _handleUnauthorized(resp.statusCode)) {
         if (mounted) setState(() => _items[index] = item); // revert
         return;
@@ -149,7 +162,8 @@ class _HighlightsTabState extends State<HighlightsTab> {
           setState(() {
             _items[index] = _items[index].copyWith(
               liked: data["liked"] as bool? ?? optimisticLiked,
-              likes: (data["likes_count"] as num?)?.toInt() ?? _items[index].likes,
+              likes:
+                  (data["likes_count"] as num?)?.toInt() ?? _items[index].likes,
             );
           });
         }
@@ -174,7 +188,10 @@ class _HighlightsTabState extends State<HighlightsTab> {
     final shareUrl = _highlightShareUrl(item.id);
 
     // Always open the native share dialog — no auth required for sharing
-    await Share.share(shareUrl, subject: item.caption ?? "Check out this highlight on Inotra");
+    await Share.share(
+      shareUrl,
+      subject: item.caption ?? "Check out this highlight on Inotra",
+    );
 
     // Record the share on the backend only if the user is authenticated
     final token = AuthSession.instance.value.accessToken;
@@ -213,7 +230,10 @@ class _HighlightsTabState extends State<HighlightsTab> {
 
     final uri = Api.url(HighlightEndpoints.view(item.id));
     try {
-      final resp = await http.post(uri, headers: {"Accept": "application/json"});
+      final resp = await http.post(
+        uri,
+        headers: {"Accept": "application/json"},
+      );
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
         final data = jsonDecode(resp.body) as Map<String, dynamic>?;
         final newCount = (data?["views_count"] as num?)?.toInt();
@@ -226,7 +246,10 @@ class _HighlightsTabState extends State<HighlightsTab> {
     } catch (_) {}
   }
 
-  Future<Map<String, dynamic>?> _postComment(String highlightId, String text) async {
+  Future<Map<String, dynamic>?> _postComment(
+    String highlightId,
+    String text,
+  ) async {
     if (text.trim().isEmpty) return null;
     final token = AuthSession.instance.value.accessToken;
     if (token == null || token.isEmpty) return null;
@@ -238,7 +261,9 @@ class _HighlightsTabState extends State<HighlightsTab> {
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: jsonEncode({"text": text.trim()}), // Fixed: backend expects "text", not "comment"
+      body: jsonEncode({
+        "text": text.trim(),
+      }), // Fixed: backend expects "text", not "comment"
     );
     if (await _handleUnauthorized(resp.statusCode)) return null;
     if (resp.statusCode >= 200 && resp.statusCode < 300) {
@@ -257,9 +282,12 @@ class _HighlightsTabState extends State<HighlightsTab> {
         final newCount = (data["comments_count"] as num?)?.toInt();
         if (mounted) {
           setState(() {
-            _items[index] = item.copyWith(comments: newCount ?? item.comments + 1);
+            _items[index] = item.copyWith(
+              comments: newCount ?? item.comments + 1,
+            );
             final newComment = HighlightComment(
-              author: commentData?["user_name"] as String? ??
+              author:
+                  commentData?["user_name"] as String? ??
                   AuthSession.instance.value.displayName,
               text: commentData?["text"] as String? ?? text.trim(),
             );
@@ -283,8 +311,12 @@ class _HighlightsTabState extends State<HighlightsTab> {
     );
     if (resp.statusCode < 200 || resp.statusCode >= 300) return [];
     final decoded = jsonDecode(resp.body);
-    final results = (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
-    return results.whereType<Map<String, dynamic>>().map(_commentFromJson).toList();
+    final results =
+        (decoded is Map ? decoded["results"] : decoded) as List? ?? [];
+    return results
+        .whereType<Map<String, dynamic>>()
+        .map(_commentFromJson)
+        .toList();
   }
 
   void _openCommentSheet(int index) {
@@ -365,7 +397,9 @@ class _HighlightsTabState extends State<HighlightsTab> {
               HighlightCard(
                 imageUrl: item.coverUrl,
                 mediaItems: item.mediaItems
-                    .map((m) => HighlightMediaItem(url: m.url, isVideo: m.isVideo))
+                    .map(
+                      (m) => HighlightMediaItem(url: m.url, isVideo: m.isVideo),
+                    )
                     .toList(),
                 isActive: index == _activeIndex,
                 title: item.caption ?? t(lang, "highlights.title"),
@@ -387,7 +421,8 @@ class _HighlightsTabState extends State<HighlightsTab> {
                   });
                 },
                 onLike: () => _requireAuth(context, () => _toggleLike(index)),
-                onComment: () => _requireAuth(context, () async => _openCommentSheet(index)),
+                onComment: () =>
+                    _requireAuth(context, () async => _openCommentSheet(index)),
                 onShare: () => _share(index),
               ),
               Positioned(
@@ -471,7 +506,9 @@ class _Highlight {
   }
 
   static _Highlight fromJson(Map<String, dynamic> json) {
-    final media = (json["media"] as List? ?? []).whereType<Map<String, dynamic>>().toList();
+    final media = (json["media"] as List? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
     String? cover;
     final items = <_MediaItem>[];
     for (final m in media) {
@@ -504,7 +541,8 @@ class _Highlight {
 
 HighlightComment _commentFromJson(Map<String, dynamic> json) {
   return HighlightComment(
-    author: json["user_name"] as String? ?? // Fixed: was json["user"]
+    author:
+        json["user_name"] as String? ?? // Fixed: was json["user"]
         json["author"] as String?,
     text: json["text"] as String? ?? json["comment"] as String?,
   );
@@ -551,7 +589,7 @@ class _HighlightsSkeletonState extends State<_HighlightsSkeleton>
 
     return AnimatedBuilder(
       animation: _ctrl,
-      builder: (_, __) {
+      builder: (context, _) {
         final t = _ctrl.value;
         final base = isDark
             ? Colors.white.withValues(alpha: 0.06)
@@ -569,7 +607,9 @@ class _HighlightsSkeletonState extends State<_HighlightsSkeleton>
                 : scheme.surfaceContainerHighest.withValues(alpha: 0.20),
             child: Stack(
               children: [
-                Positioned.fill(child: Container(color: c.withValues(alpha: 0.3))),
+                Positioned.fill(
+                  child: Container(color: c.withValues(alpha: 0.3)),
+                ),
 
                 // Title skeleton
                 Positioned(
@@ -641,7 +681,10 @@ class _HighlightsSkeletonState extends State<_HighlightsSkeleton>
                   bottom: 100,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: c.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(999),
@@ -674,7 +717,10 @@ class _HighlightsSkeletonState extends State<_HighlightsSkeleton>
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: c.withValues(alpha: 0.35),
                           borderRadius: BorderRadius.circular(14),
@@ -688,7 +734,10 @@ class _HighlightsSkeletonState extends State<_HighlightsSkeleton>
                                 Container(
                                   width: 24,
                                   height: 24,
-                                  decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+                                  decoration: BoxDecoration(
+                                    color: c,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
