@@ -679,26 +679,6 @@ class _PackageCardState extends State<_PackageCard>
                     ),
                   ),
                   Positioned(
-                    top: 14,
-                    right: 14,
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.16),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.32),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.favorite_border_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  Positioned(
                     left: 16,
                     right: 16,
                     bottom: 16,
@@ -976,11 +956,6 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
                 ),
               ),
               Positioned(
-                top: 14,
-                right: 14,
-                child: _SkeletonHeart(controller: _shimmer, scheme: scheme),
-              ),
-              Positioned(
                 left: 16,
                 right: 16,
                 bottom: 16,
@@ -1089,34 +1064,6 @@ class _ShimmerBox extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _SkeletonHeart extends StatelessWidget {
-  final AnimationController controller;
-  final ColorScheme scheme;
-
-  const _SkeletonHeart({required this.controller, required this.scheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.32)),
-      ),
-      child: Center(
-        child: _ShimmerCircle(
-          controller: controller,
-          scheme: scheme,
-          size: 18,
-          isDark: true,
-        ),
-      ),
     );
   }
 }
