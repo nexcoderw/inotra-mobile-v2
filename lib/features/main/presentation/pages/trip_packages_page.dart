@@ -615,15 +615,11 @@ class _PackageCardState extends State<_PackageCard>
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(widget.isTablet ? 28 : 24);
+    final radius = BorderRadius.circular(widget.isTablet ? 30 : 26);
     final scheme = widget.scheme;
     final title = (widget.pkg.title?.trim().isNotEmpty ?? false)
         ? widget.pkg.title!.trim()
         : t(widget.lang, "packages.title");
-    final rawSubtitle = widget.pkg.subtitle?.trim() ?? "";
-    final subtitle = rawSubtitle.toLowerCase() == title.toLowerCase()
-        ? ""
-        : rawSubtitle;
     final hasDuration = widget.pkg.durationDays > 0;
     final hasActivities = widget.pkg.activitiesCount > 0;
 
@@ -644,191 +640,147 @@ class _PackageCardState extends State<_PackageCard>
               BoxShadow(
                 color: Colors.black.withValues(
                   alpha: Theme.of(context).brightness == Brightness.dark
-                      ? 0.22
-                      : 0.08,
+                      ? 0.34
+                      : 0.18,
                 ),
-                blurRadius: 24,
-                offset: const Offset(0, 16),
+                blurRadius: 28,
+                offset: const Offset(0, 18),
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLowest,
-                borderRadius: radius,
-                border: Border.all(
-                  color: scheme.outlineVariant.withValues(alpha: 0.40),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: AspectRatio(
+            aspectRatio: widget.isTablet ? 1.18 : 0.82,
+            child: ClipRRect(
+              borderRadius: radius,
+              child: Stack(
                 children: [
-                  AspectRatio(
-                    aspectRatio: widget.isTablet ? 2.55 : 1.72,
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: _CardImage(
-                            url: widget.pkg.imageUrl,
-                            scheme: scheme,
-                          ),
+                  Positioned.fill(
+                    child: _CardImage(url: widget.pkg.imageUrl, scheme: scheme),
+                  ),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.34),
+                          width: 1,
                         ),
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.02),
-                                  Colors.black.withValues(alpha: 0.14),
-                                  Colors.black.withValues(alpha: 0.58),
-                                ],
-                                stops: const [0.0, 0.52, 1.0],
-                              ),
-                            ),
-                          ),
+                        borderRadius: radius,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.02),
+                            Colors.black.withValues(alpha: 0.10),
+                            Colors.black.withValues(alpha: 0.72),
+                          ],
+                          stops: const [0.0, 0.48, 1.0],
                         ),
-                        Positioned(
-                          left: 14,
-                          right: 14,
-                          bottom: 14,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (hasDuration || hasActivities) ...[
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    if (hasDuration)
-                                      _MetaPill(
-                                        icon: HugeIcons.strokeRoundedClock01,
-                                        label:
-                                            "${widget.pkg.durationDays} ${t(widget.lang, "packages.days")}",
-                                        isOnImage: true,
-                                      ),
-                                    if (hasActivities)
-                                      _MetaPill(
-                                        icon: HugeIcons.strokeRoundedRoute03,
-                                        label:
-                                            "${widget.pkg.activitiesCount} ${t(widget.lang, "packages.activities")}",
-                                        isOnImage: true,
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                              ],
-                              Text(
-                                title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: widget.isTablet ? 22 : 19,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  height: 1.08,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
-                    child: Row(
+                  Positioned(
+                    top: 14,
+                    right: 14,
+                    child: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.32),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.favorite_border_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 16,
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: scheme.primary.withValues(alpha: 0.10),
-                            border: Border.all(
-                              color: scheme.primary.withValues(alpha: 0.14),
-                            ),
-                          ),
-                          child: Center(
-                            child: HugeIcon(
-                              icon: HugeIcons.strokeRoundedLocation01,
-                              size: 17,
-                              strokeWidth: 2,
-                              color: scheme.primary,
-                            ),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: widget.isTablet ? 25 : 21,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            height: 1.04,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                        if (hasDuration || hasActivities) ...[
+                          const SizedBox(height: 9),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
-                              if (subtitle.isNotEmpty) ...[
-                                Text(
-                                  subtitle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: widget.isTablet ? 13.5 : 12.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: scheme.onSurface.withValues(
-                                      alpha: 0.74,
-                                    ),
-                                    height: 1.35,
-                                  ),
+                              if (hasDuration)
+                                _MetaPill(
+                                  icon: HugeIcons.strokeRoundedClock01,
+                                  label:
+                                      "${widget.pkg.durationDays} ${t(widget.lang, "packages.days")}",
+                                  isOnImage: true,
                                 ),
-                                const SizedBox(height: 10),
-                              ],
-                              Row(
-                                children: [
-                                  Text(
-                                    t(widget.lang, "common.tap_details"),
+                              if (hasActivities)
+                                _MetaPill(
+                                  icon: HugeIcons.strokeRoundedRoute03,
+                                  label:
+                                      "${widget.pkg.activitiesCount} ${t(widget.lang, "packages.activities")}",
+                                  isOnImage: true,
+                                ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.58),
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.09),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                child: Center(
+                                  child: Text(
+                                    "See more",
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      color: Colors.white,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.w900,
-                                      color: scheme.primary,
                                       height: 1,
                                     ),
                                   ),
-                                  const SizedBox(width: 5),
-                                  HugeIcon(
-                                    icon: HugeIcons.strokeRoundedArrowRight01,
-                                    size: 13,
-                                    strokeWidth: 2,
-                                    color: scheme.primary,
-                                  ),
-                                ],
+                                ),
+                              ),
+                              Container(
+                                width: 46,
+                                height: 46,
+                                margin: const EdgeInsets.only(right: 5),
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 28,
+                                  color: Colors.black,
+                                ),
                               ),
                             ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: scheme.surface,
-                            border: Border.all(
-                              color: scheme.outlineVariant.withValues(
-                                alpha: 0.45,
-                              ),
-                              width: 1,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 16,
-                            color: scheme.onSurface.withValues(alpha: 0.85),
                           ),
                         ),
                       ],
@@ -976,76 +928,107 @@ class _PackageSkeletonState extends State<_PackageSkeleton>
     final scheme = Theme.of(context).colorScheme;
     final w = MediaQuery.sizeOf(context).width;
     final isTablet = w >= 700;
-    final radius = BorderRadius.circular(isTablet ? 22 : 18);
-    final imageRadius = BorderRadius.only(
-      topLeft: Radius.circular(isTablet ? 22 : 18),
-      topRight: Radius.circular(isTablet ? 22 : 18),
-    );
+    final radius = BorderRadius.circular(isTablet ? 30 : 26);
 
-    return ClipRRect(
-      borderRadius: radius,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLowest,
-          borderRadius: radius,
-          border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.35),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image shimmer
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ClipRRect(
-                borderRadius: imageRadius,
-                child: _ShimmerBox(controller: _shimmer, scheme: scheme),
-              ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.24
+                  : 0.10,
             ),
-            // Info shimmer
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _ShimmerBar(
-                          controller: _shimmer,
-                          scheme: scheme,
-                          height: 12,
-                          widthFraction: 0.7,
-                        ),
-                        const SizedBox(height: 8),
-                        _ShimmerBar(
-                          controller: _shimmer,
-                          scheme: scheme,
-                          height: 10,
-                          widthFraction: 0.5,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 36,
-                    height: 36,
+            blurRadius: 22,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerLowest,
+            borderRadius: radius,
+            border: Border.all(
+              color: scheme.outlineVariant.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: AspectRatio(
+            aspectRatio: isTablet ? 1.18 : 0.82,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: _ShimmerBox(controller: _shimmer, scheme: scheme),
+                ),
+                Positioned.fill(
+                  child: DecoratedBox(
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: scheme.surfaceContainerHighest.withValues(
-                        alpha: 0.55,
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.00),
+                          Colors.black.withValues(alpha: 0.12),
+                          Colors.black.withValues(alpha: 0.48),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _ShimmerBar(
+                        controller: _shimmer,
+                        scheme: scheme,
+                        height: 18,
+                        widthFraction: 0.68,
+                        isDarkSurface: true,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          _ShimmerPill(controller: _shimmer, scheme: scheme),
+                          const SizedBox(width: 8),
+                          _ShimmerPill(controller: _shimmer, scheme: scheme),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.34),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _ShimmerBar(
+                              controller: _shimmer,
+                              scheme: scheme,
+                              height: 12,
+                              widthFraction: 0.30,
+                              isDarkSurface: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1085,12 +1068,14 @@ class _ShimmerBar extends StatelessWidget {
   final ColorScheme scheme;
   final double height;
   final double widthFraction;
+  final bool isDarkSurface;
 
   const _ShimmerBar({
     required this.controller,
     required this.scheme,
     required this.height,
     required this.widthFraction,
+    this.isDarkSurface = false,
   });
 
   @override
@@ -1108,14 +1093,44 @@ class _ShimmerBar extends StatelessWidget {
                 begin: Alignment(-1.5 + controller.value * 3, 0),
                 end: Alignment(-0.5 + controller.value * 3, 0),
                 colors: [
-                  scheme.surfaceContainerHighest.withValues(alpha: 0.50),
-                  scheme.surfaceContainerHighest.withValues(alpha: 0.80),
-                  scheme.surfaceContainerHighest.withValues(alpha: 0.50),
+                  (isDarkSurface
+                          ? Colors.white
+                          : scheme.surfaceContainerHighest)
+                      .withValues(alpha: isDarkSurface ? 0.12 : 0.50),
+                  (isDarkSurface
+                          ? Colors.white
+                          : scheme.surfaceContainerHighest)
+                      .withValues(alpha: isDarkSurface ? 0.28 : 0.80),
+                  (isDarkSurface
+                          ? Colors.white
+                          : scheme.surfaceContainerHighest)
+                      .withValues(alpha: isDarkSurface ? 0.12 : 0.50),
                 ],
               ),
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ShimmerPill extends StatelessWidget {
+  final AnimationController controller;
+  final ColorScheme scheme;
+
+  const _ShimmerPill({required this.controller, required this.scheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 88,
+      child: _ShimmerBar(
+        controller: controller,
+        scheme: scheme,
+        height: 24,
+        widthFraction: 1,
+        isDarkSurface: true,
       ),
     );
   }
