@@ -14,6 +14,7 @@ import "../../../../core/constants/api/package_endpoints.dart";
 import "../../../../core/services/auth_session.dart";
 import "../../../../core/services/notification_service.dart";
 import "../../../../core/widgets/app_cached_image.dart";
+import "../../../auth/presentation/widgets/quick_login_dialog.dart";
 import "../../../../i18n/lang.dart";
 import "../../../../i18n/translations.dart";
 import "../widgets/discovery_search_bar.dart";
@@ -68,6 +69,7 @@ class _TripPackagesPageState extends State<TripPackagesPage>
 
     _fetchPage(reset: true);
     _scrollCtrl.addListener(_onScroll);
+    AuthSession.instance.addListener(_handleAuthSessionChanged);
 
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _entranceCtrl.forward(),
@@ -81,7 +83,12 @@ class _TripPackagesPageState extends State<TripPackagesPage>
     _showBackToTop.dispose();
     _searchDebounce?.cancel();
     _entranceCtrl.dispose();
+    AuthSession.instance.removeListener(_handleAuthSessionChanged);
     super.dispose();
+  }
+
+  void _handleAuthSessionChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _onRefresh() async =>
@@ -207,14 +214,11 @@ class _TripPackagesPageState extends State<TripPackagesPage>
         isAuthenticated: session.isAuthenticated,
         unreadCount: context.watch<NotificationService>().unreadCount,
         onBackTap: () => Navigator.maybePop(context),
-        onNotificationsTap: () => Navigator.pushNamed(
-          context,
-          session.isAuthenticated ? AppRoutes.notifications : AppRoutes.login,
-        ),
-        onProfileTap: () => Navigator.pushNamed(
-          context,
-          session.isAuthenticated ? AppRoutes.profile : AppRoutes.login,
-        ),
+        onNotificationsTap: () =>
+            Navigator.pushNamed(context, AppRoutes.notifications),
+        onProfileTap: () => session.isAuthenticated
+            ? Navigator.pushNamed(context, AppRoutes.profile)
+            : QuickLoginDialog.show(context),
       ),
       body: SafeArea(
         top: false,
