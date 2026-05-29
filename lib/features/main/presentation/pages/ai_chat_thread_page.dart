@@ -633,7 +633,11 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
                       position: PopupMenuPosition.under,
                       offset: const Offset(0, 8),
                       elevation: 14,
-                      color: scheme.surface,
+                      color: scheme.surface.withValues(
+                        alpha: scheme.brightness == Brightness.dark
+                            ? 0.96
+                            : 1.0,
+                      ),
                       surfaceTintColor: Colors.transparent,
                       shadowColor: Colors.black.withValues(
                         alpha: scheme.brightness == Brightness.dark
@@ -641,15 +645,7 @@ class _AiChatThreadPageState extends State<AiChatThreadPage>
                             : 0.16,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        side: BorderSide(
-                          color: scheme.onSurface.withValues(
-                            alpha: scheme.brightness == Brightness.dark
-                                ? 0.08
-                                : 0.06,
-                          ),
-                          width: 0.7,
-                        ),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       onSelected: (value) {
                         if (value == "end") {
@@ -873,12 +869,12 @@ class _ChatMenuAction extends StatelessWidget {
 
     return Container(
       constraints: const BoxConstraints(minWidth: 168),
-      padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+      padding: const EdgeInsets.fromLTRB(11, 11, 13, 11),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: scheme.errorContainer.withValues(alpha: isDark ? 0.16 : 0.28),
+        borderRadius: BorderRadius.circular(16),
+        color: scheme.errorContainer.withValues(alpha: isDark ? 0.18 : 0.30),
         border: Border.all(
-          color: scheme.error.withValues(alpha: isDark ? 0.18 : 0.12),
+          color: scheme.error.withValues(alpha: isDark ? 0.22 : 0.16),
           width: 0.7,
         ),
       ),
@@ -906,7 +902,7 @@ class _ChatMenuAction extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w900,
                 color: scheme.error,
               ),
             ),
